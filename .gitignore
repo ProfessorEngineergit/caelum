@@ -1,0 +1,21 @@
+## Swift / SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+*.xcodeproj
+DerivedData/
+
+## Build artifacts
+/dist/
+*.app
+*.zip
+*.dmg
+
+## macOS
+.DS_Store
+*.icns.tmp
+*.iconset
+
+## Editor
+.vscode/
+.idea/
