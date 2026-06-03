@@ -4,24 +4,38 @@ import SwiftUI
 /// filled with the aurora gradient; the rest are quiet glass.
 struct SourceStrip: View {
     @EnvironmentObject var app: AppState
+    @Environment(\.isSnapshot) private var isSnapshot
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Metrics.space2) {
             Text("Sources").microLabel()
                 .padding(.horizontal, 2)
 
-            ScrollView(.horizontal, showsIndicators: false) {
+            if isSnapshot {
+                // ScrollView doesn't render offscreen; use a static clipped row.
                 HStack(spacing: Theme.Metrics.space2) {
-                    ForEach(app.sources, id: \.id) { source in
-                        SourceChip(source: source,
-                                   active: source.id == app.activeSourceID,
-                                   accent: app.accent) {
-                            app.selectSource(source.id)
-                        }
+                    ForEach(Array(app.sources.prefix(6)), id: \.id) { source in
+                        chip(source)
                     }
                 }
-                .padding(.vertical, 2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .clipped()
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Theme.Metrics.space2) {
+                        ForEach(app.sources, id: \.id) { source in chip(source) }
+                    }
+                    .padding(.vertical, 2)
+                }
             }
+        }
+    }
+
+    private func chip(_ source: ImageSource) -> some View {
+        SourceChip(source: source,
+                   active: source.id == app.activeSourceID,
+                   accent: app.accent) {
+            app.selectSource(source.id)
         }
     }
 }

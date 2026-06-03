@@ -18,6 +18,16 @@ struct GlassBackground: View {
     }
 }
 
+// MARK: - Snapshot environment (static layout for offscreen renders)
+
+private struct IsSnapshotKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+    var isSnapshot: Bool {
+        get { self[IsSnapshotKey.self] }
+        set { self[IsSnapshotKey.self] = newValue }
+    }
+}
+
 // MARK: - Reusable surface & label modifiers
 
 extension View {

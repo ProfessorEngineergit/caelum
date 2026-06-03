@@ -5,6 +5,15 @@ if CommandLine.arguments.contains("--smoke-test") {
     SmokeTest.run()
 }
 
+// Offscreen snapshot render for docs/marketing (no GUI run loop needed).
+if let i = CommandLine.arguments.firstIndex(of: "--render-popover"),
+   i + 1 < CommandLine.arguments.count {
+    let out = CommandLine.arguments[i + 1]
+    let hero = (i + 2 < CommandLine.arguments.count && !CommandLine.arguments[i + 2].hasPrefix("--"))
+        ? CommandLine.arguments[i + 2] : nil
+    MainActor.assumeIsolated { SnapshotRenderer.run(outPath: out, heroPath: hero) }
+}
+
 // Dev override: --source <id> selects the active source at launch.
 if let i = CommandLine.arguments.firstIndex(of: "--source"),
    i + 1 < CommandLine.arguments.count {

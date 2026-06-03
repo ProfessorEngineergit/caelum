@@ -5,6 +5,7 @@ import SwiftUI
 /// and breathes with a slow ken-burns drift.
 struct HeroView: View {
     @EnvironmentObject var app: AppState
+    @Environment(\.isSnapshot) private var isSnapshot
     @State private var kenBurns = false
 
     var body: some View {
@@ -20,7 +21,10 @@ struct HeroView: View {
                     .clipped()
                     .id(app.current?.id)
                     .transition(.opacity)
-                    .onAppear { withAnimation(.easeInOut(duration: 20).repeatForever(autoreverses: true)) { kenBurns = true } }
+                    .onAppear {
+                        guard !isSnapshot else { return }
+                        withAnimation(.easeInOut(duration: 20).repeatForever(autoreverses: true)) { kenBurns = true }
+                    }
             }
 
             Theme.Gradients.heroScrim()

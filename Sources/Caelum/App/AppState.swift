@@ -44,6 +44,17 @@ final class AppState: ObservableObject {
     /// Begins background scheduling; the initial daily check triggers the first load.
     func start() { scheduler.start() }
 
+    /// Populate fixed state for an offscreen snapshot render (docs/marketing).
+    func prepareSnapshot(image: CosmicImage, hero: NSImage?, accent: Color) {
+        batch = [image]; index = 0
+        current = image
+        heroImage = hero
+        self.accent = accent
+        activeSourceID = image.sourceID
+        wallpaperAppliedID = image.id
+        phase = .ready
+    }
+
     // MARK: - Source selection & navigation
 
     func selectSource(_ id: String) {
