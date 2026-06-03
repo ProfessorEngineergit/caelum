@@ -1,0 +1,66 @@
+[
+  {
+    "title": "The Cosmic Cliffs of Carina",
+    "credit": "NASA, ESA, CSA, STScI",
+    "explanation": "The edge of the young, star-forming region NGC 3324 in the Carina Nebula, revealed in unprecedented infrared detail by the James Webb Space Telescope. What looks like a mountain range at twilight is the wall of a vast gaseous cavity, its tallest peaks some 58 light-years high.",
+    "image": "https://cdn.esawebb.org/archives/images/large/weic2205a.jpg",
+    "thumb": "https://cdn.esawebb.org/archives/images/screen/weic2205a.jpg",
+    "page": "https://esawebb.org/images/weic2205a/"
+  },
+  {
+    "title": "Pillars of Creation — Webb",
+    "credit": "NASA, ESA, CSA, STScI",
+    "explanation": "JWST's near-infrared portrait of the iconic Pillars of Creation in the Eagle Nebula (M16) — towering columns of cool gas and dust where new stars are being born.",
+    "image": "https://cdn.esawebb.org/archives/images/large/weic2216a.jpg",
+    "thumb": "https://cdn.esawebb.org/archives/images/screen/weic2216a.jpg",
+    "page": "https://esawebb.org/images/weic2216a/"
+  },
+  {
+    "title": "Pillars of Creation — Hubble",
+    "credit": "NASA, ESA, Hubble Heritage Team (STScI/AURA)",
+    "explanation": "Hubble's celebrated 2015 revisit of the Pillars of Creation, captured in visible light — a tableau that helped define a generation's image of the cosmos.",
+    "image": "https://cdn.esahubble.org/archives/images/large/heic1509a.jpg",
+    "thumb": "https://cdn.esahubble.org/archives/images/screen/heic1509a.jpg",
+    "page": "https://esahubble.org/images/heic1509a/"
+  },
+  {
+    "title": "The Milky Way over Paranal",
+    "credit": "ESO / Y. Beletsky",
+    "explanation": "A sweeping panorama of our galaxy arching over ESO's Paranal Observatory, high in the Chilean Atacama Desert — one of the darkest skies on Earth.",
+    "image": "https://cdn.eso.org/images/large/eso0932a.jpg",
+    "thumb": "https://cdn.eso.org/images/screen/eso0932a.jpg",
+    "page": "https://www.eso.org/public/images/eso0932a/"
+  },
+  {
+    "title": "A View from the Very Large Telescope",
+    "credit": "ESO",
+    "explanation": "A deep look into the southern sky from ESO's Very Large Telescope in Chile.",
+    "image": "https://cdn.eso.org/images/large/eso1907a.jpg",
+    "thumb": "https://cdn.eso.org/images/screen/eso1907a.jpg",
+    "page": "https://www.eso.org/public/images/eso1907a/"
+  },
+  {
+    "title": "Hubble Heritage",
+    "credit": "NASA, ESA, Hubble",
+    "explanation": "A classic from the Hubble Space Telescope's celebrated archive.",
+    "image": "https://cdn.esahubble.org/archives/images/large/heic0611b.jpg",
+    "thumb": "https://cdn.esahubble.org/archives/images/screen/heic0611b.jpg",
+    "page": "https://esahubble.org/images/heic0611b/"
+  },
+  {
+    "title": "ESA/Hubble Picture of the Week",
+    "credit": "ESA/Hubble & NASA",
+    "explanation": "A recent highlight from the ESA/Hubble Picture of the Week series.",
+    "image": "https://cdn.esahubble.org/archives/images/large/potw2552a.jpg",
+    "thumb": "https://cdn.esahubble.org/archives/images/screen/potw2552a.jpg",
+    "page": "https://esahubble.org/images/potw2552a/"
+  },
+  {
+    "title": "A Little Red Dot in the Early Universe",
+    "credit": "ESA/Webb, NASA & CSA",
+    "explanation": "James Webb peers across cosmic time at Abell 2744 — among the most distant objects ever studied.",
+    "image": "https://cdn.esawebb.org/archives/images/large/weic2609c.jpg",
+    "thumb": "https://cdn.esawebb.org/archives/images/screen/weic2609c.jpg",
+    "page": "https://esawebb.org/images/weic2609c/"
+  }
+]

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caelum — The cosmos, every day, on your desktop</title>
+  <meta name="description" content="Caelum is a beautifully designed macOS menu-bar app that sets the latest NASA Astronomy Picture of the Day as your wallpaper — plus 10 stellar sources and a cinematic ambient mode." />
+  <meta name="theme-color" content="#06070D" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Caelum — The cosmos, every day, on your desktop" />
+  <meta property="og:description" content="A menu-bar instrument that keeps the latest NASA APOD on your desktop. 10 sources, an ambient screensaver, and a design carved from obsidian glass." />
+  <meta property="og:image" content="https://professorengineergit.github.io/caelum/assets/popover.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="assets/icon-512.png" />
+  <link rel="apple-touch-icon" href="assets/icon-512.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="starfield"></div>
+  <canvas id="stars"></canvas>
+
+  <!-- Nav -->
+  <nav id="nav">
+    <a class="brand" href="#top">
+      <img src="assets/icon-512.png" alt="Caelum" />
+      <b>CAELUM</b>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#sources">Sources</a>
+      <a href="#ambient">Ambient</a>
+      <a href="https://github.com/ProfessorEngineergit/caelum" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn-primary" id="nav-download" href="https://github.com/ProfessorEngineergit/caelum/releases/latest">Download</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero" id="top">
+    <div class="hero-bg" id="hero-bg"></div>
+    <div class="hero-scrim"></div>
+    <div class="container">
+      <div class="eyebrow"><span class="dot"></span> macOS menu-bar app</div>
+      <h1>The cosmos, <span class="aurora-text">every day</span>, on your desktop.</h1>
+      <p class="lede">Caelum quietly keeps the latest NASA Astronomy Picture of the Day as your wallpaper — with 10 stellar sources and a cinematic ambient mode. All from a single point of light in your menu bar.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" id="hero-download" href="https://github.com/ProfessorEngineergit/caelum/releases/latest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+          Download for macOS
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/ProfessorEngineergit/caelum" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.8 18.3 5.1 18.3 5.1c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
+          View on GitHub
+        </a>
+      </div>
+      <p class="hero-apod" id="hero-apod">Loading today's Astronomy Picture of the Day…</p>
+    </div>
+    <div class="scroll-hint">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </header>
+
+  <!-- Showcase -->
+  <section id="showcase">
+    <div class="container showcase">
+      <div class="showcase-copy reveal">
+        <span class="section-tag">The Viewport</span>
+        <h2 class="section-title">A menu-bar instrument,<br><span class="aurora-text">carved from obsidian glass.</span></h2>
+        <p class="section-sub">Click the star in your menu bar and a panel of frosted black glass floats over your desktop. Today's image fills the hero; the interface quietly re-tints to wear its colours. One tap sets it as your wallpaper.</p>
+      </div>
+      <div class="showcase-art reveal">
+        <div class="popover-frame">
+          <img src="assets/popover.png" alt="The Caelum panel showing the NASA Astronomy Picture of the Day" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="container">
+      <div class="center reveal">
+        <span class="section-tag">Features</span>
+        <h2 class="section-title">Simple on the surface.<br>Deep underneath.</h2>
+      </div>
+      <div class="feature-grid">
+        <div class="card reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></div>
+          <h3>Always the latest APOD</h3>
+          <p>Every day, Caelum fetches NASA's Astronomy Picture of the Day and sets it as your wallpaper — automatically, in the background.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 12a9 4.5 0 0 0 18 0a9 4.5 0 0 0-18 0"/></svg></div>
+          <h3>10 stellar sources</h3>
+          <p>APOD is the star — joined by ESA/Hubble, James Webb, ESO, NASA EPIC, Bing, Wikimedia and a hand-curated gallery.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></div>
+          <h3>Cinematic ambient mode</h3>
+          <p>When you step away, Caelum drifts through your gallery full-screen with a slow ken-burns glide — a planetarium for your Mac.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><circle cx="17" cy="6" r="1" fill="currentColor"/></svg></div>
+          <h3>Lives in your menu bar</h3>
+          <p>No Dock icon, no windows, no clutter. Just a single quiet glyph that opens the whole cosmos.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18"/></svg></div>
+          <h3>The UI wears the cosmos</h3>
+          <p>Caelum extracts the dominant colour of each image and tints its accents to match — every image gives the app a new mood.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg></div>
+          <h3>Private & open source</h3>
+          <p>No accounts, no tracking, no analytics. Images come straight from public APIs. The whole thing is MIT-licensed on GitHub.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sources -->
+  <section id="sources">
+    <div class="container">
+      <div class="center reveal">
+        <span class="section-tag">Ten Libraries</span>
+        <h2 class="section-title">APOD is the star.<br>It's in good company.</h2>
+        <p class="section-sub" style="margin-inline:auto;">Switch sources from the strip inside the panel. Everything works out of the box — no API keys required.</p>
+      </div>
+      <div class="sources-grid" id="sources-grid"></div>
+    </div>
+  </section>
+
+  <!-- Ambient -->
+  <section id="ambient">
+    <div class="container ambient">
+      <div class="ambient-visual reveal">
+        <img id="ambient-img" src="assets/popover.png" alt="Ambient mode preview" />
+        <div class="label">CAELUM · AMBIENT</div>
+      </div>
+      <div class="reveal">
+        <span class="section-tag">Ambient Mode</span>
+        <h2 class="section-title">A planetarium<br>for idle moments.</h2>
+        <p class="section-sub">Set an idle timer and Caelum takes over every display with a slow, cinematic cross-fade through your cached gallery — minimal metadata in instrument typography, the rest is pure cosmos. Move the mouse to return.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section id="install">
+    <div class="container">
+      <div class="center reveal">
+        <span class="section-tag">Install</span>
+        <h2 class="section-title">On your desktop in a minute.</h2>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="num aurora-text">1</div>
+          <h3>Download &amp; unzip</h3>
+          <p>Grab the latest <code>Caelum.zip</code> from GitHub Releases and unzip it into <code>/Applications</code>.</p>
+        </div>
+        <div class="step reveal">
+          <div class="num aurora-text">2</div>
+          <h3>Right-click → Open</h3>
+          <p>Caelum is free and open source, so it isn't notarized. On first launch, right-click the app and choose <b>Open</b> to get past Gatekeeper.</p>
+        </div>
+        <div class="step reveal">
+          <div class="num aurora-text">3</div>
+          <h3>Find the star</h3>
+          <p>Look for the orbit glyph in your menu bar. Click it, pick a source, and you're flying.</p>
+        </div>
+      </div>
+      <div class="note reveal">
+        <b>Tip:</b> APOD and other NASA feeds share a key. The bundled <code>DEMO_KEY</code> is rate-limited — drop a free personal key into Settings for higher limits (takes 30 seconds at <a href="https://api.nasa.gov" target="_blank" rel="noopener" style="color:var(--cyan)">api.nasa.gov</a>).
+      </div>
+      <div class="download-cta reveal">
+        <a class="btn btn-primary" href="https://github.com/ProfessorEngineergit/caelum/releases/latest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+          Download Caelum for macOS
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">
+            <img src="assets/icon-512.png" alt="Caelum" />
+            <div>
+              <b style="font-family:var(--font-display);letter-spacing:4px;">CAELUM</b>
+              <div style="color:var(--text-3);font-size:13px;">The cosmos, every day.</div>
+            </div>
+          </div>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Project</h4>
+            <a href="https://github.com/ProfessorEngineergit/caelum" target="_blank" rel="noopener">GitHub</a>
+            <a href="https://github.com/ProfessorEngineergit/caelum/releases/latest">Download</a>
+            <a href="https://github.com/ProfessorEngineergit/caelum#readme" target="_blank" rel="noopener">Documentation</a>
+            <a href="https://github.com/ProfessorEngineergit/caelum/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+          </div>
+          <div class="footer-col">
+            <h4>Imagery</h4>
+            <a href="https://apod.nasa.gov/apod/" target="_blank" rel="noopener">NASA APOD</a>
+            <a href="https://esahubble.org" target="_blank" rel="noopener">ESA/Hubble</a>
+            <a href="https://esawebb.org" target="_blank" rel="noopener">ESA/Webb</a>
+            <a href="https://www.eso.org/public/" target="_blank" rel="noopener">ESO</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        © <span id="year"></span> Caelum · MIT License · Made for the love of the night sky.<br>
+        Imagery © NASA · ESA · ESO and respective owners. Caelum is an independent project, not affiliated with NASA, ESA or ESO.
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
