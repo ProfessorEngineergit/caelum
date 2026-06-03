@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode (full toolchain for universal build)
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          swift --version
+          xcodebuild -version
+
+      - name: Build universal Caelum.app
+        run: bash scripts/build-app.sh release --universal
+
+      - name: Verify architectures
+        run: lipo -info dist/Caelum.app/Contents/MacOS/Caelum
+
+      - name: Zip app
+        run: |
+          cd dist
+          ditto -c -k --keepParent Caelum.app Caelum.zip
+          shasum -a 256 Caelum.zip
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Caelum.zip
+          generate_release_notes: true
+          name: Caelum ${{ github.ref_name }}
+          body: |
+            ### Caelum ${{ github.ref_name }}
+
+            A macOS menu-bar app that keeps the latest NASA Astronomy Picture of the Day on your desktop.
+
+            **Install:** unzip into `/Applications`, then **right-click → Open** on first launch
+            (Caelum is open source and not notarized). If macOS still refuses:
+            `xattr -dr com.apple.quarantine /Applications/Caelum.app`
+
+            Universal binary · requires macOS 13+.
