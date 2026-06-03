@@ -9,6 +9,9 @@ final class ImageCache {
 
     let directory: URL
     private let maxFiles = 80
+    /// APOD (and others) occasionally serve gigapixel images hundreds of MB in
+    /// size. Above this cap we fall back to the smaller variant for wallpaper.
+    private let maxWallpaperBytes: Int64 = 45_000_000
 
     init() {
         let base = FileManager.default.urls(for: .applicationSupportDirectory,
@@ -19,17 +22,38 @@ final class ImageCache {
     }
 
     /// Returns a local file URL for the image, downloading it if not cached.
+    /// Falls back to the smaller variant if the HD image is enormous.
     func localURL(for image: CosmicImage) async throws -> URL {
-        let file = directory.appendingPathComponent(filename(for: image.imageURL))
+        let chosen = await wallpaperURL(for: image)
+        let file = directory.appendingPathComponent(filename(for: chosen))
         if FileManager.default.fileExists(atPath: file.path) {
             touch(file)
             return file
         }
-        let data = try await HTTPClient.data(from: image.imageURL)
+        let data = try await HTTPClient.data(from: chosen)
         guard data.count > 1024 else { throw SourceError.noImage }
         try data.write(to: file, options: .atomic)
         prune()
         return file
+    }
+
+    /// Pick the HD image unless it exceeds the cap, in which case use the
+    /// (smaller) thumbnail variant. One lightweight HEAD request.
+    private func wallpaperURL(for image: CosmicImage) async -> URL {
+        guard let thumb = image.thumbURL, thumb != image.imageURL else { return image.imageURL }
+        if let size = await contentLength(image.imageURL), size > maxWallpaperBytes {
+            return thumb
+        }
+        return image.imageURL
+    }
+
+    private func contentLength(_ url: URL) async -> Int64? {
+        var request = URLRequest(url: url)
+        request.httpMethod = "HEAD"
+        request.timeoutInterval = 12
+        guard let (_, response) = try? await HTTPClient.session.data(for: request) else { return nil }
+        let length = response.expectedContentLength
+        return length > 0 ? length : nil
     }
 
     /// Local files currently in the cache, newest first.

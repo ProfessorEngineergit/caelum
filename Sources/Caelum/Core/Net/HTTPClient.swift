@@ -11,14 +11,14 @@ enum HTTPClient {
         let config = URLSessionConfiguration.default
         config.httpAdditionalHeaders = ["User-Agent": userAgent,
                                         "Accept": "application/json, application/rss+xml, */*"]
-        config.timeoutIntervalForRequest = 25
-        config.timeoutIntervalForResource = 60
-        config.waitsForConnectivity = true
+        config.timeoutIntervalForRequest = 15
+        config.timeoutIntervalForResource = 120
+        config.waitsForConnectivity = false   // fail fast so fallbacks kick in
         config.requestCachePolicy = .reloadRevalidatingCacheData
         return URLSession(configuration: config)
     }()
 
-    private static let maxAttempts = 3
+    private static let maxAttempts = 2
 
     static func data(from url: URL) async throws -> Data {
         var attempt = 0
@@ -58,9 +58,11 @@ enum HTTPClient {
     // MARK: - Retry helpers
 
     private static func isTransient(_ error: URLError) -> Bool {
+        // Only retry fast-failing connection errors — not timeouts (which have
+        // already waited) so flaky endpoints fall through to their fallback.
         switch error.code {
-        case .timedOut, .networkConnectionLost, .cannotConnectToHost,
-             .cannotFindHost, .dnsLookupFailed, .resourceUnavailable:
+        case .networkConnectionLost, .cannotConnectToHost,
+             .cannotFindHost, .dnsLookupFailed:
             return true
         default:
             return false
