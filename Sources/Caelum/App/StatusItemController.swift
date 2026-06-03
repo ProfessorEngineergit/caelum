@@ -15,6 +15,8 @@ final class StatusItemController: NSObject {
     private let appState: AppState
     private let statusItem: NSStatusItem
     private let panel: CaelumPanel
+    private var glassContainer: NSVisualEffectView?
+    private var hostingView: NSView?
     private var clickMonitor: Any?
     private var glyphTimer: Timer?
 
@@ -64,13 +66,24 @@ final class StatusItemController: NSObject {
         effect.layer?.borderWidth = 1
         effect.layer?.borderColor = NSColor.white.withAlphaComponent(0.14).cgColor
         effect.frame = NSRect(x: 0, y: 0, width: Theme.Metrics.popoverWidth, height: 560)
-
-        let hosting = NSHostingView(rootView: PopoverView().environmentObject(appState))
-        hosting.frame = effect.bounds
-        hosting.autoresizingMask = [.width, .height]
-        effect.addSubview(hosting)
-
         panel.contentView = effect
+        glassContainer = effect
+    }
+
+    /// Mount the SwiftUI view only while the panel is visible — a menu-bar app
+    /// must not run SwiftUI layout/animations in the background when closed.
+    private func mountContent() {
+        guard hostingView == nil, let container = glassContainer else { return }
+        let hosting = NSHostingView(rootView: PopoverView().environmentObject(appState))
+        hosting.frame = container.bounds
+        hosting.autoresizingMask = [.width, .height]
+        container.addSubview(hosting)
+        hostingView = hosting
+    }
+
+    private func unmountContent() {
+        hostingView?.removeFromSuperview()
+        hostingView = nil
     }
 
     // MARK: - Toggle
@@ -84,6 +97,7 @@ final class StatusItemController: NSObject {
     }
 
     private func showPanel() {
+        mountContent()
         positionPanel()
         panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
@@ -104,6 +118,7 @@ final class StatusItemController: NSObject {
             panel.animator().alphaValue = 0
         }, completionHandler: { [weak self] in
             self?.panel.orderOut(nil)
+            self?.unmountContent()
         })
     }
 

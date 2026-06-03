@@ -70,13 +70,11 @@ final class AppState: ObservableObject {
     func loadLatest(applyWallpaper: Bool) async {
         loadToken += 1
         let token = loadToken
-        NSLog("Caelum: loadLatest source=%@ apply=%d", activeSource.id, applyWallpaper ? 1 : 0)
         withAnimation(Theme.Motion.gentle) { phase = .loading; errorText = nil }
         do {
             let images = try await activeSource.fetchRecent(limit: 12)
             guard token == loadToken else { return }
             guard !images.isEmpty else { throw SourceError.empty }
-            NSLog("Caelum: fetched %d images", images.count)
             batch = images
             index = images.firstIndex(where: { !$0.isVideo }) ?? 0
             await present(images[index], applyWallpaper: applyWallpaper, token: token)
@@ -123,12 +121,9 @@ final class AppState: ObservableObject {
         withAnimation(Theme.Motion.snappy) { isApplyingWallpaper = true }
         defer { withAnimation(Theme.Motion.snappy) { isApplyingWallpaper = false } }
         do {
-            NSLog("Caelum: applyWallpaper downloading %@", image.imageURL.absoluteString)
             let file = try await ImageCache.shared.localURL(for: image)
             let didSet = WallpaperManager.apply(localFileURL: file,
                                                 allScreens: Preferences.shared.setOnAllScreens)
-            NSLog("Caelum: wallpaper set=%d screens=%d file=%@", didSet ? 1 : 0,
-                  NSScreen.screens.count, file.path)
             if didSet {
                 withAnimation(Theme.Motion.bouncy) { wallpaperAppliedID = image.id }
                 if Preferences.shared.chimeOnUpdate { NSSound(named: "Glass")?.play() }

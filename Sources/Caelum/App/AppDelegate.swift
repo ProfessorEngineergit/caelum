@@ -24,7 +24,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         idleMonitor.start()
 
         // Kick off scheduling — the initial daily check loads the first image.
-        NSLog("Caelum: didFinishLaunching, starting scheduler")
         appState.start()
     }
 
