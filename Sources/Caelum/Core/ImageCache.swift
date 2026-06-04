@@ -1,6 +1,7 @@
 import Foundation
 import CryptoKit
 import ImageIO
+import AppKit
 
 /// Downloads remote imagery to Application Support and hands back local file
 /// URLs (the wallpaper API and the ambient slideshow both need on-disk files).
@@ -10,9 +11,9 @@ final class ImageCache {
 
     let directory: URL
     private let maxFiles = 80
-    /// APOD (and others) occasionally serve gigapixel images hundreds of MB in
-    /// size. Above this cap we fall back to the smaller variant for wallpaper.
-    private let maxWallpaperBytes: Int64 = 45_000_000
+    /// We fetch the absolute-maximum-resolution asset for every source. Only
+    /// genuinely gigapixel files (hundreds of MB) fall back to a smaller variant.
+    private let maxWallpaperBytes: Int64 = 120_000_000
 
     init() {
         let base = FileManager.default.urls(for: .applicationSupportDirectory,
@@ -74,6 +75,31 @@ final class ImageCache {
         guard let (_, response) = try? await HTTPClient.session.data(for: request) else { return nil }
         let length = response.expectedContentLength
         return length > 0 ? length : nil
+    }
+
+    /// Returns the cached local file for an image if it's already on disk
+    /// (checks both the HD and thumbnail variants), without downloading.
+    func cachedFileIfPresent(for image: CosmicImage) -> URL? {
+        for url in [image.imageURL, image.thumbURL].compactMap({ $0 }) {
+            let file = directory.appendingPathComponent(filename(for: url))
+            if FileManager.default.fileExists(atPath: file.path) { touch(file); return file }
+        }
+        return nil
+    }
+
+    /// Decodes a crisp, memory-light downsample of an image straight to a target
+    /// pixel size — sharp on Retina even from a gigapixel original, without
+    /// loading the whole thing into memory. Used for the hero preview.
+    func downsampled(_ fileURL: URL, maxPixel: Int) -> NSImage? {
+        guard let source = CGImageSourceCreateWithURL(fileURL as CFURL, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+        ]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        return NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
     }
 
     /// Reads true pixel dimensions of an image file without decoding it

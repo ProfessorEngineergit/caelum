@@ -1,10 +1,14 @@
 import Foundation
 
-/// A themed source backed by the NASA Image & Video Library search API. Rotates
-/// through a set of curated queries and upgrades every result to the reliably
-/// high-resolution `~orig` asset (the `~large` variant 403s for many items).
-/// The original preview stays as the thumbnail, and `ImageCache` falls back to
-/// it if the `~orig` download ever fails — so a cell is never broken.
+/// A themed source backed by the NASA Image & Video Library search API.
+///
+/// NASA's library is noisy (award ceremonies, hardware photos, concept art), so
+/// each collection is constrained two ways:
+///   • `idPrefix` — only keep assets whose `nasa_id` starts with this (e.g.
+///     "PIA" = JPL planetary imagery, "iss" = astronaut photography).
+///   • a shared noise filter on the title.
+/// Results upgrade to the reliably high-resolution `~orig` asset; `ImageCache`
+/// falls back to the thumbnail if that ever fails, so a cell is never broken.
 struct NASASearchSource: ImageSource {
     let id: String
     let name: String
@@ -12,7 +16,15 @@ struct NASASearchSource: ImageSource {
     let symbol: String
     let accentHex: UInt32
     let queries: [String]
+    var idPrefix: String? = nil
     var typicalResolution: ResolutionHint { .uhd }
+
+    private static let noise = [
+        "award", "concept", "illustration", "artist", "mockup", "training",
+        "ceremony", "portrait", "receives", "administrator", "briefing",
+        "conference", "interview", "press", "team", "crew ", "flight control",
+        "hangout", "anniversary", "patch", "logo", "poster", "tweetup",
+    ]
 
     private struct Response: Decodable {
         struct Collection: Decodable { let items: [Item] }
@@ -28,7 +40,9 @@ struct NASASearchSource: ImageSource {
     }
 
     func fetchRecent(limit: Int) async throws -> [CosmicImage] {
-        let query = queries.randomElement() ?? queries.first ?? "nebula"
+        // Deterministic per day so the prefetcher caches exactly what's shown.
+        let dayIndex = Int(Date().timeIntervalSince1970 / 86_400)
+        let query = queries[dayIndex % queries.count]
         var components = URLComponents(string: "https://images-api.nasa.gov/search")!
         components.queryItems = [.init(name: "q", value: query),
                                  .init(name: "media_type", value: "image")]
@@ -37,18 +51,25 @@ struct NASASearchSource: ImageSource {
         let response = try await HTTPClient.json(Response.self, from: url)
         let iso = ISO8601DateFormatter()
 
-        let images: [CosmicImage] = response.collection.items.compactMap { item in
+        let images: [CosmicImage] = response.collection.items.compactMap { item -> CosmicImage? in
             guard let meta = item.data.first,
+                  let title = meta.title,
                   let preview = item.links?.first?.href,
                   let thumbURL = URL(string: preview) else { return nil }
-            // Any size suffix → ~orig (reliably present & high-res).
+            // ID-prefix gate (planetary / astronaut imagery only).
+            if let prefix = idPrefix,
+               !(meta.nasa_id?.uppercased().hasPrefix(prefix.uppercased()) ?? false) { return nil }
+            // Noise gate.
+            let lower = title.lowercased()
+            if Self.noise.contains(where: { lower.contains($0) }) { return nil }
+
             let origString = preview.replacingOccurrences(
                 of: "~(thumb|small|medium|large)\\.(jpg|jpeg|png)",
                 with: "~orig.$2", options: .regularExpression)
             guard let imageURL = URL(string: origString) else { return nil }
             return CosmicImage(
                 id: "\(id)-\(meta.nasa_id ?? preview)",
-                title: meta.title ?? name,
+                title: title,
                 credit: "NASA",
                 explanation: meta.description,
                 date: meta.date_created.flatMap { iso.date(from: $0) },
@@ -60,7 +81,7 @@ struct NASASearchSource: ImageSource {
                 resolution: .uhd)
         }
         guard !images.isEmpty else { throw SourceError.empty }
-        return Array(images.shuffled().prefix(max(limit, 1)))
+        return Array(images.prefix(max(limit, 1)))
     }
 }
 
@@ -68,28 +89,29 @@ struct NASASearchSource: ImageSource {
 
 extension NASASearchSource {
     static let earth = NASASearchSource(
-        id: "earth", name: "Earth from Space", subtitle: "Our pale blue dot",
+        id: "earth", name: "Earth from Space", subtitle: "Astronaut photography",
         symbol: "globe.europe.africa.fill", accentHex: 0x5EF2B0,
-        queries: ["earth from space", "blue marble earth", "earthrise",
-                  "earth from iss", "earth limb sunrise"])
+        queries: ["earth airglow", "earth at night", "earth aurora from space",
+                  "earth limb sunrise", "earth from station"],
+        idPrefix: "iss")
 
     static let solar = NASASearchSource(
         id: "solar", name: "Solar System", subtitle: "Planets & moons",
         symbol: "sun.max.fill", accentHex: 0xFFD166,
-        queries: ["saturn cassini", "jupiter great red spot", "mars surface",
-                  "pluto new horizons", "enceladus", "io volcano"])
+        // Restricted to planets whose JPL imagery is reliably 4K+.
+        queries: ["saturn cassini", "jupiter", "mars surface"],
+        idPrefix: "PIA")
 
     static let stations = NASASearchSource(
-        id: "stations", name: "Space Stations", subtitle: "ISS & spacecraft",
+        id: "stations", name: "Space Stations", subtitle: "ISS in orbit",
         symbol: "antenna.radiowaves.left.and.right", accentHex: 0xFF8A5E,
-        queries: ["international space station", "iss cupola earth",
-                  "spacewalk astronaut", "space station solar array"])
+        queries: ["international space station orbit", "space station earth",
+                  "international space station aurora"])
 
-    /// Interstellar — themed after the film: black holes, accretion disks,
-    /// gravitational lensing and wormholes.
+    /// Interstellar — themed after the film: black holes, nebulae, galaxies.
     static let interstellar = NASASearchSource(
-        id: "interstellar", name: "Interstellar", subtitle: "Black holes & wormholes",
+        id: "interstellar", name: "Interstellar", subtitle: "Black holes & galaxies",
         symbol: "hurricane", accentHex: 0x8B7CFF,
-        queries: ["black hole", "accretion disk black hole", "black hole simulation",
-                  "supermassive black hole", "gravitational lensing"])
+        queries: ["black hole", "crab nebula", "carina nebula",
+                  "spiral galaxy", "supernova remnant"])
 }

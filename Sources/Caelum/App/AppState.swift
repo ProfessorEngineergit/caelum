@@ -31,6 +31,14 @@ final class AppState: ObservableObject {
     private var index = 0
     private var loadToken = 0
     private var resolutionCache: [String: ResolutionHint] = [:]
+    /// In-memory cache of crisp, downsampled hero images for instant re-display.
+    private let heroCache: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>()
+        cache.countLimit = 12
+        return cache
+    }()
+    /// Longest edge (px) of the hero downsample — sharp on Retina, light on memory.
+    private let heroMaxPixel = 1600
 
     var activeSource: ImageSource { SourceRegistry.source(id: activeSourceID) }
     var sources: [ImageSource] { SourceRegistry.all }
@@ -108,57 +116,72 @@ final class AppState: ObservableObject {
             current = image
             actualResolution = resolutionCache[image.id]   // instant if already analysed
         }
-        let loaded = await Self.loadImage(image.previewURL)
-        guard token == loadToken else { return }
-        withAnimation(Theme.Motion.gentle) {
-            heroImage = loaded
-            if Preferences.shared.dynamicAccent, let loaded {
-                accent = Color(nsColor: DominantColor.accent(from: loaded))
-            }
-            phase = .ready
+
+        // Stage 0 — instant crisp hero from memory (re-selecting a source, etc.).
+        if let cached = heroCache.object(forKey: image.id as NSString) {
+            setHero(cached)
+        } else if let file = ImageCache.shared.cachedFileIfPresent(for: image),
+                  let crisp = ImageCache.shared.downsampled(file, maxPixel: heroMaxPixel) {
+            // Already prefetched to disk → decode a crisp downsample instantly.
+            heroCache.setObject(crisp, forKey: image.id as NSString)
+            setHero(crisp)
+        } else {
+            // Stage 1 — fast remote thumbnail for an immediate first paint.
+            let quick = await Self.loadImage(image.previewURL)
+            guard token == loadToken else { return }
+            if let quick { setHero(quick) }
         }
         onImageReady?()
-        analyzeResolution(for: image)
-        // Record the successful fetch so the daily watchdog knows today's image is up-to-date.
         Preferences.shared.recordFetch()
-        if applyWallpaper && !image.isVideo { await applyWallpaperNow() }
-    }
 
-    // MARK: - Resolution analysis
-
-    /// Determines the image's true resolution by reading the cached file's pixel
-    /// dimensions (downloading it if needed — which also warms the cache). APOD
-    /// in particular varies wildly, so we never trust a fixed per-source hint.
-    private func analyzeResolution(for image: CosmicImage) {
-        if let cached = resolutionCache[image.id] {
-            actualResolution = cached
+        // Stage 2 — ensure the full image is cached (instant if prefetched), then
+        // upgrade to a crisp high-res hero, read the true resolution, set wallpaper.
+        guard let file = try? await ImageCache.shared.localURL(for: image), token == loadToken else {
+            if applyWallpaper && !image.isVideo { await applyWallpaperNow() }
             return
         }
-        Task {
-            guard let file = try? await ImageCache.shared.localURL(for: image),
-                  let size = ImageCache.shared.pixelSize(of: file) else { return }
-            let hint = ResolutionHint.classify(width: size.width, height: size.height)
+        if let crisp = ImageCache.shared.downsampled(file, maxPixel: heroMaxPixel) {
+            heroCache.setObject(crisp, forKey: image.id as NSString)
+            if current?.id == image.id { setHero(crisp) }
+        }
+        if let dims = ImageCache.shared.pixelSize(of: file) {
+            let hint = ResolutionHint.classify(width: dims.width, height: dims.height)
             resolutionCache[image.id] = hint
-            if current?.id == image.id { actualResolution = hint }
+            if current?.id == image.id { withAnimation(Theme.Motion.snappy) { actualResolution = hint } }
+        }
+        if applyWallpaper && !image.isVideo { await apply(file: file, id: image.id) }
+    }
+
+    private func setHero(_ image: NSImage) {
+        withAnimation(Theme.Motion.gentle) {
+            heroImage = image
+            if Preferences.shared.dynamicAccent {
+                accent = Color(nsColor: DominantColor.accent(from: image))
+            }
+            phase = .ready
         }
     }
 
     // MARK: - Wallpaper
 
-    func applyWallpaperNow() async {
-        guard let image = current, !image.isVideo else { return }
+    /// Applies an already-cached local file as the wallpaper (no re-download).
+    private func apply(file: URL, id: String) async {
         withAnimation(Theme.Motion.snappy) { isApplyingWallpaper = true }
         defer { withAnimation(Theme.Motion.snappy) { isApplyingWallpaper = false } }
+        let didSet = WallpaperManager.apply(localFileURL: file,
+                                            allScreens: Preferences.shared.setOnAllScreens)
+        if didSet {
+            withAnimation(Theme.Motion.bouncy) { wallpaperAppliedID = id }
+            if Preferences.shared.chimeOnUpdate { NSSound(named: "Glass")?.play() }
+        }
+    }
+
+    func applyWallpaperNow() async {
+        guard let image = current, !image.isVideo else { return }
         do {
             let file = try await ImageCache.shared.localURL(for: image)
-            let didSet = WallpaperManager.apply(localFileURL: file,
-                                                allScreens: Preferences.shared.setOnAllScreens)
-            if didSet {
-                withAnimation(Theme.Motion.bouncy) { wallpaperAppliedID = image.id }
-                if Preferences.shared.chimeOnUpdate { NSSound(named: "Glass")?.play() }
-            }
+            await apply(file: file, id: image.id)
         } catch {
-            NSLog("Caelum: applyWallpaper ERROR %@", String(describing: error))
             withAnimation { errorText = friendly(error) }
         }
     }

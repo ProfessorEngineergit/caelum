@@ -29,6 +29,8 @@ struct HeroView: View {
             if let image = app.heroImage {
                 Image(nsImage: image)
                     .resizable()
+                    .interpolation(.high)
+                    .antialiased(true)
                     .aspectRatio(contentMode: .fill)
                     .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.heroHeight)
                     .clipped()

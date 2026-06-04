@@ -14,11 +14,11 @@ enum SourceRegistry {
         EPICSource(),                    // Earth from DSCOVR
         NASAIOTDSource(),                // NASA Image of the Day
 
-        // Themed NASA-library collections (4K ~orig assets)
-        NASASearchSource.earth,          // Earth from Space
-        NASASearchSource.solar,          // Solar System
-        NASASearchSource.stations,       // Space Stations
-        NASASearchSource.interstellar,   // Interstellar (black holes & wormholes)
+        // Themed collections (max-resolution ~orig assets)
+        NASASearchSource.earth,          // Earth from Space (astronaut photography)
+        StaticGallerySource.solar,       // Solar System (verified planetary imagery)
+        NASASearchSource.stations,       // Space Stations (ISS in orbit)
+        NASASearchSource.interstellar,   // Interstellar (black holes & galaxies)
     ]
 
     static func source(id: String) -> ImageSource {
