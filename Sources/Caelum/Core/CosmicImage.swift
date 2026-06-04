@@ -15,6 +15,14 @@ enum ResolutionHint: String, Codable {
         case .sd:   return 0x5A6080   // muted gray
         }
     }
+
+    /// Classify by the longer pixel edge.
+    static func classify(width: Int, height: Int) -> ResolutionHint {
+        let longest = max(width, height)
+        if longest >= 3840 { return .uhd }   // 4K and up
+        if longest >= 1920 { return .hd }     // Full-HD and up
+        return .sd
+    }
 }
 
 // MARK: - CosmicImage

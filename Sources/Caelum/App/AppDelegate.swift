@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusController: StatusItemController!
     private var ambientController: AmbientController!
     private var idleMonitor: IdleMonitor!
+    private let prefetcher = Prefetcher()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -16,6 +17,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Ambient ("screensaver") mode — manual trigger + idle auto-start.
         ambientController = AmbientController()
         appState.startAmbient = { [weak self] in self?.ambientController.start() }
+
+        // Background prefetcher — keep the cache warm so switches feel instant.
+        appState.onSourceSelected = { [weak self] in self?.prefetcher.nudgeActive() }
+        prefetcher.start()
 
         idleMonitor = IdleMonitor { [weak self] in
             guard Preferences.shared.ambientEnabled else { return }
@@ -29,5 +34,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         idleMonitor?.stop()
+        prefetcher.stop()
     }
 }

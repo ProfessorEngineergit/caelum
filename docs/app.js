@@ -62,15 +62,18 @@
   };
   const sources = [
     { n: "NASA APOD", s: "Astronomy Picture of the Day", g: G.star, star: true },
-    { n: "ESA/Hubble", s: "Picture of the Week", g: G.hex },
+    { n: "ESA/Hubble", s: "Picture of the Week", g: G.starc },
     { n: "James Webb", s: "ESA/Webb", g: G.hex },
     { n: "ESO", s: "Picture of the Week", g: G.mount },
     { n: "NASA EPIC", s: "Earth from DSCOVR", g: G.globe },
     { n: "NASA Library", s: "Image & Video", g: G.book },
-    { n: "Bing", s: "Photo of the Day", g: G.photo },
-    { n: "Wikimedia", s: "Picture of the Day", g: G.globe },
     { n: "NASA Image of the Day", s: "The daily pick", g: G.globe },
-    { n: "Caelum Curated", s: "Hand-picked", g: G.starc },
+    { n: "Wikimedia", s: "Picture of the Day", g: G.globe },
+    { n: "Deep Space", s: "Curated · 4K", g: G.star },
+    { n: "Earth from Space", s: "Curated · 4K", g: G.globe },
+    { n: "Solar System", s: "Curated · 4K", g: G.orbit },
+    { n: "Space Stations", s: "Curated · 4K", g: G.hex },
+    { n: "Interstellar", s: "Curated · 4K", g: G.starc },
   ];
   const grid = document.getElementById("sources-grid");
   grid.innerHTML = sources

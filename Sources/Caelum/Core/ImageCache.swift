@@ -1,5 +1,6 @@
 import Foundation
 import CryptoKit
+import ImageIO
 
 /// Downloads remote imagery to Application Support and hands back local file
 /// URLs (the wallpaper API and the ambient slideshow both need on-disk files).
@@ -54,6 +55,22 @@ final class ImageCache {
         guard let (_, response) = try? await HTTPClient.session.data(for: request) else { return nil }
         let length = response.expectedContentLength
         return length > 0 ? length : nil
+    }
+
+    /// Reads true pixel dimensions of an image file without decoding it
+    /// (CGImageSource reads only the header). Cheap enough to call freely.
+    func pixelSize(of fileURL: URL) -> (width: Int, height: Int)? {
+        guard let source = CGImageSourceCreateWithURL(fileURL as CFURL, nil),
+              let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let w = props[kCGImagePropertyPixelWidth] as? Int,
+              let h = props[kCGImagePropertyPixelHeight] as? Int else { return nil }
+        return (w, h)
+    }
+
+    /// Whether the image is already on disk (no download needed).
+    func isCached(_ image: CosmicImage) -> Bool {
+        let names = [filename(for: image.imageURL)]
+        return names.contains { FileManager.default.fileExists(atPath: directory.appendingPathComponent($0).path) }
     }
 
     /// Local files currently in the cache, newest first.

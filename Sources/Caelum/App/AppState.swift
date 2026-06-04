@@ -14,6 +14,8 @@ final class AppState: ObservableObject {
     @Published private(set) var accent: Color = Theme.Palette.auroraViolet
     @Published private(set) var isApplyingWallpaper = false
     @Published private(set) var wallpaperAppliedID: String?
+    /// The analysed (true) resolution of the current image, once known.
+    @Published private(set) var actualResolution: ResolutionHint?
 
     @Published var activeSourceID: String = Preferences.shared.activeSourceID
     @Published var showExplanation = false
@@ -23,11 +25,14 @@ final class AppState: ObservableObject {
     var onImageReady: (() -> Void)?
     /// Hook to launch ambient mode (installed by AppDelegate).
     var startAmbient: (() -> Void)?
+    /// Hook to nudge the prefetcher when the user switches source.
+    var onSourceSelected: (() -> Void)?
 
     let scheduler = Scheduler()
     private var batch: [CosmicImage] = []
     private var index = 0
     private var loadToken = 0
+    private var resolutionCache: [String: ResolutionHint] = [:]
 
     var activeSource: ImageSource { SourceRegistry.source(id: activeSourceID) }
     var sources: [ImageSource] { SourceRegistry.all }
@@ -61,6 +66,7 @@ final class AppState: ObservableObject {
         guard id != activeSourceID else { return }
         withAnimation(Theme.Motion.snappy) { activeSourceID = id }
         Preferences.shared.activeSourceID = id
+        onSourceSelected?()   // nudge the prefetcher to warm this source
         Task { await loadLatest(applyWallpaper: false) }
     }
 
@@ -100,7 +106,10 @@ final class AppState: ObservableObject {
     // MARK: - Presentation
 
     private func present(_ image: CosmicImage, applyWallpaper: Bool, token: Int) async {
-        withAnimation(Theme.Motion.snappy) { current = image }
+        withAnimation(Theme.Motion.snappy) {
+            current = image
+            actualResolution = resolutionCache[image.id]   // instant if already analysed
+        }
         let loaded = await Self.loadImage(image.previewURL)
         guard token == loadToken else { return }
         withAnimation(Theme.Motion.gentle) {
@@ -111,9 +120,29 @@ final class AppState: ObservableObject {
             phase = .ready
         }
         onImageReady?()
+        analyzeResolution(for: image)
         // Record the successful fetch so the daily watchdog knows today's image is up-to-date.
         Preferences.shared.recordFetch()
         if applyWallpaper && !image.isVideo { await applyWallpaperNow() }
+    }
+
+    // MARK: - Resolution analysis
+
+    /// Determines the image's true resolution by reading the cached file's pixel
+    /// dimensions (downloading it if needed — which also warms the cache). APOD
+    /// in particular varies wildly, so we never trust a fixed per-source hint.
+    private func analyzeResolution(for image: CosmicImage) {
+        if let cached = resolutionCache[image.id] {
+            actualResolution = cached
+            return
+        }
+        Task {
+            guard let file = try? await ImageCache.shared.localURL(for: image),
+                  let size = ImageCache.shared.pixelSize(of: file) else { return }
+            let hint = ResolutionHint.classify(width: size.width, height: size.height)
+            resolutionCache[image.id] = hint
+            if current?.id == image.id { actualResolution = hint }
+        }
     }
 
     // MARK: - Wallpaper

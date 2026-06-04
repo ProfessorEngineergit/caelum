@@ -5,7 +5,7 @@ import AppKit
 /// the README and marketing site. Usage: `Caelum --render-popover <out.png> [hero.jpg]`
 @MainActor
 enum SnapshotRenderer {
-    static func run(outPath: String, heroPath: String?) {
+    static func run(outPath: String, heroPath: String?, settings: Bool = false) {
         let heroImage: NSImage? = {
             if let heroPath, let img = NSImage(contentsOfFile: heroPath) { return img }
             return ImageCache.shared.cachedFiles().first.flatMap { NSImage(contentsOf: $0) }
@@ -25,6 +25,7 @@ enum SnapshotRenderer {
         let app = AppState()
         let accent = heroImage.map { Color(nsColor: DominantColor.accent(from: $0)) } ?? Theme.Palette.auroraViolet
         app.prepareSnapshot(image: sample, hero: heroImage, accent: accent)
+        if settings { app.showSettings = true }
 
         let view = PopoverView()
             .environmentObject(app)

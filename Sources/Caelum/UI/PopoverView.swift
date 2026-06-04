@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// "The Viewport" — the entire menu-bar panel. Hero on top, control deck and
-/// source strip below, a footer micro-bar, and slide-up overlays for the
-/// explanation and settings.
+/// "The Viewport" — the entire menu-bar panel. A fixed hero on top, a fixed
+/// control deck, then a **scrollable** source grid that fills the remaining
+/// space, and a fixed footer micro-bar. Slide-up overlays for explanation and
+/// settings.
 struct PopoverView: View {
     @EnvironmentObject var app: AppState
 
@@ -11,14 +12,13 @@ struct PopoverView: View {
             GlassBackground(accent: app.accent)
 
             VStack(spacing: 0) {
-                HeroView()
-                VStack(spacing: Theme.Metrics.space4) {
-                    ControlDeck()
-                    SourceStrip()
-                }
-                .padding(Theme.Metrics.space4)
-                Spacer(minLength: 0)
-                FooterBar()
+                HeroView()                               // fixed 220
+                ControlDeck()                            // fixed
+                    .padding(.horizontal, Theme.Metrics.space4)
+                    .padding(.top, Theme.Metrics.space4)
+                    .padding(.bottom, Theme.Metrics.space3)
+                SourceStrip()                            // flexible — scrolls
+                FooterBar()                              // fixed bottom
             }
 
             if app.showExplanation {
@@ -35,7 +35,7 @@ struct PopoverView: View {
                 .zIndex(2)
             }
         }
-        .frame(width: Theme.Metrics.popoverWidth, height: 620)
+        .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight)
         .clipShape(RoundedRectangle(cornerRadius: Theme.Metrics.radiusPanel, style: .continuous))
         .environment(\.colorScheme, .dark)
     }
@@ -64,7 +64,7 @@ private struct FooterBar: View {
         .padding(.horizontal, Theme.Metrics.space4)
         .padding(.vertical, Theme.Metrics.space3)
         .background(
-            Rectangle().fill(Theme.Palette.obsidian0.opacity(0.4))
+            Rectangle().fill(Theme.Palette.obsidian0.opacity(0.55))
                 .overlay(Rectangle().frame(height: 1).foregroundStyle(Theme.Palette.hairline), alignment: .top)
         )
     }

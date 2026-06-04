@@ -47,6 +47,7 @@ final class SettingsModel: ObservableObject {
 struct SettingsView: View {
     let onDismiss: () -> Void
     @StateObject private var model: SettingsModel
+    @Environment(\.isSnapshot) private var isSnapshot
 
     // Static accent — does not change on image updates, no re-renders.
     private let accent = Theme.Palette.auroraViolet
@@ -56,56 +57,62 @@ struct SettingsView: View {
         self.onDismiss = onDismiss
     }
 
+    @ViewBuilder private var formContent: some View {
+        // .frame(maxWidth:) prevents ideal-size propagation up through
+        // the ScrollView — the root cause of the layout loop.
+        VStack(spacing: Theme.Metrics.space5) {
+            section("Wallpaper") {
+                toggle("Refresh daily automatically", $model.autoDaily)
+                toggle("Set on all displays", $model.setOnAllScreens)
+                toggle("Rotate through the library", $model.rotateLibrary)
+                if model.rotateLibrary {
+                    stepperRow("Every", value: $model.rotateMinutes,
+                               range: 5...720, step: 5, unit: "min")
+                }
+            }
+            section("Ambient mode") {
+                toggle("Enable on idle", $model.ambientEnabled)
+                stepperRow("Start after", value: $model.ambientIdleMinutes,
+                           range: 1...60, step: 1, unit: "min")
+                stepperRow("Seconds per image", value: $model.ambientInterval,
+                           range: 4...60, step: 1, unit: "s")
+            }
+            section("Appearance") {
+                toggle("Tint interface to the image", $model.dynamicAccent)
+                toggle("Chime when wallpaper updates", $model.chime)
+            }
+            section("Startup") {
+                toggle("Launch Caelum at login", $model.launchAtLogin)
+            }
+            section("NASA API key") {
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("DEMO_KEY (bundled)", text: $model.nasaKey)
+                        .textFieldStyle(.plain)
+                        .font(Theme.Fonts.mono(12))
+                        .foregroundStyle(Theme.Palette.textPrimary)
+                        .padding(10)
+                        .glassCard(cornerRadius: 10, fill: 0.6)
+                    Text("APOD, EPIC and other NASA feeds share a key. The bundled DEMO_KEY is rate-limited — a free personal key lifts the limits.")
+                        .font(Theme.Fonts.body(11))
+                        .foregroundStyle(Theme.Palette.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    linkButton("Get a free key →", "https://api.nasa.gov")
+                }
+            }
+            aboutSection
+        }
+        .frame(maxWidth: .infinity)
+        .padding(Theme.Metrics.space5)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider().overlay(Theme.Palette.hairline)
-            ScrollView {
-                // .frame(maxWidth:) prevents ideal-size propagation up through
-                // the ScrollView — the root cause of the layout loop.
-                VStack(spacing: Theme.Metrics.space5) {
-                    section("Wallpaper") {
-                        toggle("Refresh daily automatically", $model.autoDaily)
-                        toggle("Set on all displays", $model.setOnAllScreens)
-                        toggle("Rotate through the library", $model.rotateLibrary)
-                        if model.rotateLibrary {
-                            stepperRow("Every", value: $model.rotateMinutes,
-                                       range: 5...720, step: 5, unit: "min")
-                        }
-                    }
-                    section("Ambient mode") {
-                        toggle("Enable on idle", $model.ambientEnabled)
-                        stepperRow("Start after", value: $model.ambientIdleMinutes,
-                                   range: 1...60, step: 1, unit: "min")
-                        stepperRow("Seconds per image", value: $model.ambientInterval,
-                                   range: 4...60, step: 1, unit: "s")
-                    }
-                    section("Appearance") {
-                        toggle("Tint interface to the image", $model.dynamicAccent)
-                        toggle("Chime when wallpaper updates", $model.chime)
-                    }
-                    section("Startup") {
-                        toggle("Launch Caelum at login", $model.launchAtLogin)
-                    }
-                    section("NASA API key") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            TextField("DEMO_KEY (bundled)", text: $model.nasaKey)
-                                .textFieldStyle(.plain)
-                                .font(Theme.Fonts.mono(12))
-                                .foregroundStyle(Theme.Palette.textPrimary)
-                                .padding(10)
-                                .glassCard(cornerRadius: 10, fill: 0.6)
-                            Text("APOD, EPIC and other NASA feeds share a key. The bundled DEMO_KEY is rate-limited — a free personal key lifts the limits.")
-                                .font(Theme.Fonts.body(11))
-                                .foregroundStyle(Theme.Palette.textTertiary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            linkButton("Get a free key →", "https://api.nasa.gov")
-                        }
-                    }
-                    aboutSection
-                }
-                .frame(maxWidth: .infinity)   // ← breaks ideal-size propagation
-                .padding(Theme.Metrics.space5)
+            if isSnapshot {
+                formContent   // ScrollView renders empty offscreen
+            } else {
+                ScrollView { formContent }
             }
         }
         .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight)
@@ -199,7 +206,7 @@ struct SettingsView: View {
             Text("CAELUM")
                 .font(Theme.Fonts.micro(11)).tracking(4)
                 .foregroundStyle(Theme.Palette.textSecondary)
-            Text("Version 1.0.2 · MIT License")
+            Text("Version 1.0.3 · MIT License")
                 .font(Theme.Fonts.mono(10)).foregroundStyle(Theme.Palette.textTertiary)
             HStack(spacing: 14) {
                 linkButton("GitHub", "https://github.com/ProfessorEngineergit/caelum")

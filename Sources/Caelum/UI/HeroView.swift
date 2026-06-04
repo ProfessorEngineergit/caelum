@@ -67,7 +67,7 @@ struct HeroView: View {
                     .microLabel(app.accent)
                     .foregroundStyle(app.accent)
 
-                resolutionBadge(app.current?.resolution ?? app.activeSource.typicalResolution)
+                resolutionBadge(app.actualResolution ?? app.current?.resolution ?? app.activeSource.typicalResolution)
 
                 if app.current?.isVideo == true {
                     Text("VIDEO").microLabel(Theme.Palette.warning)

@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// 3-column grid of all image sources. Each cell shows the source glyph,
-/// name, subtitle and a resolution badge. The active source is highlighted
-/// with the aurora gradient; the rest are quiet glass.
+/// Scrollable 3-column grid of all image sources. Fills the space between the
+/// control deck and the footer. The active source glows with the aurora
+/// gradient; each cell shows a typical-resolution badge.
 struct SourceStrip: View {
     @EnvironmentObject var app: AppState
     @Environment(\.isSnapshot) private var isSnapshot
@@ -13,23 +13,45 @@ struct SourceStrip: View {
         GridItem(.flexible(), spacing: 8),
     ]
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Metrics.space2) {
-            Text("Sources").microLabel()
-                .padding(.horizontal, 2)
-
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(app.sources, id: \.id) { source in
-                    SourceCell(
-                        source: source,
-                        active: source.id == app.activeSourceID,
-                        accent: app.accent
-                    ) {
-                        app.selectSource(source.id)
-                    }
+    private var grid: some View {
+        LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(app.sources, id: \.id) { source in
+                SourceCell(
+                    source: source,
+                    active: source.id == app.activeSourceID,
+                    accent: app.accent
+                ) {
+                    app.selectSource(source.id)
                 }
             }
         }
+        .padding(.horizontal, Theme.Metrics.space4)
+        .padding(.bottom, Theme.Metrics.space3)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Sources")
+                .microLabel()
+                .padding(.horizontal, Theme.Metrics.space5)
+
+            Group {
+                if isSnapshot {
+                    // ScrollView renders empty offscreen — show the grid directly.
+                    grid
+                } else {
+                    ScrollView(.vertical, showsIndicators: false) { grid }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .overlay(
+                Rectangle().frame(height: 1)
+                    .foregroundStyle(Theme.Palette.hairline.opacity(0.6)),
+                alignment: .top
+            )
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(.top, Theme.Metrics.space1)
     }
 }
 
@@ -41,43 +63,40 @@ private struct SourceCell: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
-                // Icon
+            VStack(spacing: 5) {
                 ZStack {
                     Circle()
                         .fill(active
                             ? AnyShapeStyle(Theme.Gradients.auroraHorizontal)
-                            : AnyShapeStyle(Theme.Palette.obsidian3.opacity(0.8)))
-                        .frame(width: 36, height: 36)
+                            : AnyShapeStyle(Theme.Palette.obsidian3.opacity(0.85)))
+                        .frame(width: 32, height: 32)
                     Image(systemName: source.symbol)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(active ? Color.black : Theme.Palette.textSecondary)
                 }
-                .shadow(color: active ? accent.opacity(0.5) : .clear, radius: 8, y: 2)
+                .shadow(color: active ? accent.opacity(0.55) : .clear, radius: 7, y: 2)
 
-                // Name
                 Text(source.name)
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .font(.system(size: 9.5, weight: .semibold, design: .rounded))
                     .foregroundStyle(active ? Theme.Palette.textPrimary : Theme.Palette.textSecondary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .minimumScaleFactor(0.7)
 
-                // Resolution badge
                 resBadge(source.typicalResolution)
             }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 4)
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .padding(.horizontal, 3)
             .background(
                 RoundedRectangle(cornerRadius: Theme.Metrics.radiusChip, style: .continuous)
                     .fill(active
-                        ? AnyShapeStyle(Theme.Palette.obsidian2.opacity(0.9))
-                        : AnyShapeStyle(Theme.Palette.obsidian1.opacity(0.5)))
+                        ? AnyShapeStyle(Theme.Palette.obsidian2.opacity(0.95))
+                        : AnyShapeStyle(Theme.Palette.obsidian1.opacity(0.45)))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Metrics.radiusChip, style: .continuous)
                     .strokeBorder(
-                        active ? AnyShapeStyle(Theme.Gradients.auroraHorizontal.opacity(0.5))
+                        active ? AnyShapeStyle(Theme.Gradients.auroraHorizontal.opacity(0.55))
                                : AnyShapeStyle(Theme.Palette.hairline),
                         lineWidth: 1)
             )
@@ -93,7 +112,7 @@ private struct SourceCell: View {
             .font(.system(size: 8, weight: .bold, design: .monospaced))
             .tracking(0.5)
             .foregroundStyle(c)
-            .padding(.horizontal, 5).padding(.vertical, 2)
+            .padding(.horizontal, 5).padding(.vertical, 1.5)
             .background(Capsule().fill(c.opacity(0.12)))
             .overlay(Capsule().strokeBorder(c.opacity(0.25), lineWidth: 0.5))
     }
