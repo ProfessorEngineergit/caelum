@@ -29,7 +29,7 @@ enum SnapshotRenderer {
         let view = PopoverView()
             .environmentObject(app)
             .environment(\.isSnapshot, true)
-            .frame(width: Theme.Metrics.popoverWidth, height: 560)
+            .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight)
             .background(Theme.Palette.obsidian0)
             .clipShape(RoundedRectangle(cornerRadius: Theme.Metrics.radiusPanel, style: .continuous))
 

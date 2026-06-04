@@ -9,6 +9,7 @@ struct EPICSource: ImageSource {
     let symbol = "globe.americas.fill"
     let accentHex: UInt32 = 0x5EC8FF
     let usesNASAKey = true
+    let typicalResolution: ResolutionHint = .hd
 
     private var apiKey: String { Preferences.shared.nasaAPIKey }
 

@@ -10,6 +10,7 @@ struct WikimediaSource: ImageSource {
     let subtitle = "Picture of the Day"
     let symbol = "globe"
     let accentHex: UInt32 = 0xB8C0FF
+    let typicalResolution: ResolutionHint = .hd
 
     private struct Feed: Decodable {
         struct Image: Decodable {

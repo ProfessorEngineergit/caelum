@@ -15,6 +15,8 @@ protocol ImageSource {
     var accentHex: UInt32 { get }
     /// Whether this source uses the (bundled, user-overridable) NASA API key.
     var usesNASAKey: Bool { get }
+    /// Typical resolution of images from this source (used for badge display).
+    var typicalResolution: ResolutionHint { get }
 
     /// Most recent images, newest first.
     func fetchRecent(limit: Int) async throws -> [CosmicImage]
@@ -22,6 +24,7 @@ protocol ImageSource {
 
 extension ImageSource {
     var usesNASAKey: Bool { false }
+    var typicalResolution: ResolutionHint { .hd }
 
     func fetchLatest() async throws -> CosmicImage {
         guard let first = try await fetchRecent(limit: 1).first else { throw SourceError.empty }

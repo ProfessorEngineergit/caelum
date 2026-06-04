@@ -111,6 +111,8 @@ final class AppState: ObservableObject {
             phase = .ready
         }
         onImageReady?()
+        // Record the successful fetch so the daily watchdog knows today's image is up-to-date.
+        Preferences.shared.recordFetch()
         if applyWallpaper && !image.isVideo { await applyWallpaperNow() }
     }
 

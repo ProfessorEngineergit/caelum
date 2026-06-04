@@ -42,7 +42,7 @@ struct ExplanationSheet: View {
                 .padding(Theme.Metrics.space5)
             }
         }
-        .frame(width: Theme.Metrics.popoverWidth, height: 560)
+        .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight)
         .background(Theme.Palette.obsidian1.opacity(0.975))
         .clipShape(RoundedRectangle(cornerRadius: Theme.Metrics.radiusPanel, style: .continuous))
     }

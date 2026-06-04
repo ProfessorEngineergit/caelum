@@ -110,6 +110,7 @@ enum Theme {
 
     enum Metrics {
         static let popoverWidth: CGFloat = 360
+        static let popoverHeight: CGFloat = 620
         static let heroHeight: CGFloat = 220
 
         static let radiusPanel: CGFloat = 22

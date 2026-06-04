@@ -19,6 +19,8 @@ final class Preferences {
         static let chimeOnUpdate    = "chimeOnUpdate"
         static let dynamicAccent    = "dynamicAccent"
         static let setOnAllScreens  = "setOnAllScreens"
+        static let lastFetchedDate  = "lastFetchedDate"
+        static let hasOnboarded     = "hasCompletedOnboarding"
     }
 
     init() {
@@ -95,8 +97,28 @@ final class Preferences {
         set { store.set(newValue, forKey: Key.setOnAllScreens) }
     }
 
-    /// The hand-curated "Caelum Curated" manifest, served from GitHub Pages.
-    var curatedManifestURL: URL {
-        URL(string: "https://professorengineergit.github.io/caelum/curated.json")!
+    // MARK: - Daily watchdog
+
+    /// The date Caelum last successfully fetched and applied a new image,
+    /// persisted in UserDefaults so the check survives app restarts.
+    var lastFetchedDate: Date? {
+        get { store.string(forKey: Key.lastFetchedDate).flatMap { CaelumDates.ymd.date(from: $0) } }
+    }
+
+    func recordFetch() {
+        store.set(CaelumDates.ymd.string(from: Date()), forKey: Key.lastFetchedDate)
+    }
+
+    /// True if the last successful fetch happened on a different calendar day than today.
+    var fetchNeededToday: Bool {
+        guard let last = lastFetchedDate else { return true }
+        return !Calendar.current.isDateInToday(last)
+    }
+
+    // MARK: - Onboarding
+
+    var hasCompletedOnboarding: Bool {
+        get { store.bool(forKey: Key.hasOnboarded) }
+        set { store.set(newValue, forKey: Key.hasOnboarded) }
     }
 }

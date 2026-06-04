@@ -17,8 +17,7 @@ struct ControlDeck: View {
                            disabled: app.current?.explanation == nil) {
                     withAnimation(Theme.Motion.gentle) { app.showExplanation = true }
                 }
-                iconButton("square.and.arrow.down", "Save") { app.saveToDownloads() }
-                iconButton("arrow.up.forward.app", "Open",
+                iconButton("arrow.up.forward.app", "Open original page",
                            disabled: app.current?.pageURL == nil) { app.openSourcePage() }
             }
         }

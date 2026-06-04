@@ -12,6 +12,7 @@ struct DjangoplicitySource: ImageSource {
     let accentHex: UInt32
     let feedURL: URL
     let creditLine: String
+    let typicalResolution: ResolutionHint
 
     func fetchRecent(limit: Int) async throws -> [CosmicImage] {
         let data = try await HTTPClient.data(from: feedURL)
@@ -47,19 +48,22 @@ struct DjangoplicitySource: ImageSource {
 extension DjangoplicitySource {
     static let hubble = DjangoplicitySource(
         id: "hubble", name: "ESA/Hubble", subtitle: "Picture of the Week",
-        symbol: "circle.hexagongrid.fill", accentHex: 0x8B7CFF,
+        symbol: "scope", accentHex: 0x8B7CFF,
         feedURL: URL(string: "https://esahubble.org/images/potw/feed/")!,
-        creditLine: "ESA/Hubble & NASA")
+        creditLine: "ESA/Hubble & NASA",
+        typicalResolution: .uhd)
 
     static let webb = DjangoplicitySource(
         id: "webb", name: "James Webb", subtitle: "ESA/Webb Images",
-        symbol: "hexagon.fill", accentHex: 0xFFB45E,
+        symbol: "circle.hexagongrid.fill", accentHex: 0xFFB45E,
         feedURL: URL(string: "https://esawebb.org/images/feed/")!,
-        creditLine: "ESA/Webb, NASA & CSA")
+        creditLine: "ESA/Webb, NASA & CSA",
+        typicalResolution: .uhd)
 
     static let eso = DjangoplicitySource(
         id: "eso", name: "ESO", subtitle: "Picture of the Week",
         symbol: "mountain.2.fill", accentHex: 0x5EF2B0,
         feedURL: URL(string: "https://www.eso.org/public/images/potw/feed/")!,
-        creditLine: "ESO")
+        creditLine: "ESO",
+        typicalResolution: .uhd)
 }

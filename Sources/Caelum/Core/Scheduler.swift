@@ -1,25 +1,32 @@
 import AppKit
 
-/// Drives Caelum's background behaviour: a daily refresh (also on wake from
-/// sleep and on day change), plus an optional library-rotation interval.
-/// Callback-based so `AppState` stays the single source of truth.
+/// Drives Caelum's background behaviour:
+///   • A daily refresh, triggered on launch, on wake, and via a watchdog timer.
+///   • The last fetch date is persisted in UserDefaults so day changes are
+///     detected correctly even after an app restart.
+///   • An optional library-rotation interval.
 final class Scheduler {
     var onDailyRefresh: (() -> Void)?
     var onRotate: (() -> Void)?
 
-    private var dayTimer: Timer?
+    private var watchdogTimer: Timer?
     private var rotateTimer: Timer?
-    private var lastRefreshedDay = -1
 
     func start() {
-        scheduleDayWatch()
+        installWatchdog()
         rescheduleRotation()
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self, selector: #selector(systemDidWake),
-            name: NSWorkspace.didWakeNotification, object: nil)
+        let nc = NSWorkspace.shared.notificationCenter
+        nc.addObserver(self, selector: #selector(systemDidWake),
+                       name: NSWorkspace.didWakeNotification, object: nil)
+        // Also fire when the date changes while the app is open (e.g. running across midnight)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(significantTimeChange),
+            name: .NSSystemClockDidChange, object: nil)
+        // Initial check on first launch
+        checkAndRefreshIfNeeded()
     }
 
-    /// Re-read rotation preferences and restart that timer (call after settings change).
+    /// Re-read rotation preferences and restart that timer.
     func rescheduleRotation() {
         rotateTimer?.invalidate()
         rotateTimer = nil
@@ -30,25 +37,31 @@ final class Scheduler {
         }
     }
 
-    // MARK: - Daily
+    // MARK: - Watchdog
 
-    private func scheduleDayWatch() {
-        // Check every 15 minutes whether the calendar day has rolled over.
-        dayTimer = Timer.scheduledTimer(withTimeInterval: 900, repeats: true) { [weak self] _ in
-            self?.checkDayChange()
+    /// Watchdog fires every 5 minutes — cheap date comparison that handles:
+    ///   • Mac sleeping past midnight
+    ///   • App relaunch after a missed day
+    ///   • Normal day-boundary crossing while the app is running
+    private func installWatchdog() {
+        watchdogTimer = Timer.scheduledTimer(withTimeInterval: 5 * 60, repeats: true) { [weak self] _ in
+            self?.checkAndRefreshIfNeeded()
         }
-        checkDayChange()   // also fires the initial refresh at launch
     }
 
-    private func checkDayChange() {
-        let today = Calendar.current.ordinality(of: .day, in: .era, for: Date()) ?? 0
-        guard Preferences.shared.autoDailyRefresh, today != lastRefreshedDay else { return }
-        lastRefreshedDay = today
+    private func checkAndRefreshIfNeeded() {
+        guard Preferences.shared.autoDailyRefresh,
+              Preferences.shared.fetchNeededToday else { return }
         onDailyRefresh?()
     }
 
     @objc private func systemDidWake() {
+        // Always check on wake — the Mac may have slept over midnight
         guard Preferences.shared.autoDailyRefresh else { return }
         onDailyRefresh?()
+    }
+
+    @objc private func significantTimeChange() {
+        checkAndRefreshIfNeeded()
     }
 }

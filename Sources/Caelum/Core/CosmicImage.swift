@@ -1,5 +1,24 @@
 import Foundation
 
+// MARK: - Resolution
+
+/// Typical display resolution of an image from a given source.
+enum ResolutionHint: String, Codable {
+    case uhd  = "4K"
+    case hd   = "HD"
+    case sd   = "SD"
+
+    var accentHex: UInt32 {
+        switch self {
+        case .uhd:  return 0x5EE7FF   // aurora cyan
+        case .hd:   return 0x8B7CFF   // aurora violet
+        case .sd:   return 0x5A6080   // muted gray
+        }
+    }
+}
+
+// MARK: - CosmicImage
+
 /// A single image (or video day) from any source — the universal currency of Caelum.
 struct CosmicImage: Identifiable, Codable, Equatable, Hashable {
     let id: String
@@ -15,6 +34,7 @@ struct CosmicImage: Identifiable, Codable, Equatable, Hashable {
     let thumbURL: URL?
     /// True for APOD/ESO "video" days — never used as wallpaper.
     let isVideo: Bool
+    let resolution: ResolutionHint
 
     init(id: String,
          title: String,
@@ -25,7 +45,8 @@ struct CosmicImage: Identifiable, Codable, Equatable, Hashable {
          pageURL: URL? = nil,
          imageURL: URL,
          thumbURL: URL? = nil,
-         isVideo: Bool = false) {
+         isVideo: Bool = false,
+         resolution: ResolutionHint = .hd) {
         self.id = id
         self.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         self.credit = credit
@@ -36,6 +57,7 @@ struct CosmicImage: Identifiable, Codable, Equatable, Hashable {
         self.imageURL = imageURL
         self.thumbURL = thumbURL
         self.isVideo = isVideo
+        self.resolution = resolution
     }
 
     /// The URL best suited for a quick preview (thumb if present, else full).

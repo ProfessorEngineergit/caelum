@@ -27,12 +27,15 @@ struct PopoverView: View {
                     .zIndex(2)
             }
             if app.showSettings {
-                SettingsView(scheduler: app.scheduler)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .zIndex(2)
+                SettingsView(
+                    scheduler: app.scheduler,
+                    onDismiss: { withAnimation(Theme.Motion.gentle) { app.showSettings = false } }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .zIndex(2)
             }
         }
-        .frame(width: Theme.Metrics.popoverWidth, height: 560)
+        .frame(width: Theme.Metrics.popoverWidth, height: 620)
         .clipShape(RoundedRectangle(cornerRadius: Theme.Metrics.radiusPanel, style: .continuous))
         .environment(\.colorScheme, .dark)
     }

@@ -10,6 +10,7 @@ struct NASAIOTDSource: ImageSource {
     let subtitle = "The agency's daily pick"
     let symbol = "globe.europe.africa.fill"
     let accentHex: UInt32 = 0xFF8A5E
+    let typicalResolution: ResolutionHint = .hd
 
     private let feedURL = URL(string: "https://www.nasa.gov/feeds/iotd-feed/")!
 

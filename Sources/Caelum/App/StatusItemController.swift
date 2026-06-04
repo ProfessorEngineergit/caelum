@@ -24,7 +24,7 @@ final class StatusItemController: NSObject {
         self.appState = appState
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         panel = CaelumPanel(
-            contentRect: NSRect(x: 0, y: 0, width: Theme.Metrics.popoverWidth, height: 560),
+            contentRect: NSRect(x: 0, y: 0, width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered, defer: true)
         super.init()
@@ -65,7 +65,7 @@ final class StatusItemController: NSObject {
         effect.layer?.masksToBounds = true
         effect.layer?.borderWidth = 1
         effect.layer?.borderColor = NSColor.white.withAlphaComponent(0.14).cgColor
-        effect.frame = NSRect(x: 0, y: 0, width: Theme.Metrics.popoverWidth, height: 560)
+        effect.frame = NSRect(x: 0, y: 0, width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight)
         panel.contentView = effect
         glassContainer = effect
     }

@@ -12,6 +12,7 @@ struct APODSource: ImageSource {
     let symbol = "sparkles"
     let accentHex: UInt32 = 0x5EE7FF
     let usesNASAKey = true
+    let typicalResolution: ResolutionHint = .uhd
 
     private var apiKey: String { Preferences.shared.nasaAPIKey }
     private static let website = "https://apod.nasa.gov/apod/"
@@ -81,7 +82,8 @@ struct APODSource: ImageSource {
             pageURL: pageURL(for: date),
             imageURL: imageURL,
             thumbURL: isVideo ? imageURL : dto.url.flatMap(URL.init(string:)),
-            isVideo: isVideo)
+            isVideo: isVideo,
+            resolution: isVideo ? .sd : (dto.hdurl != nil ? .uhd : .hd))
     }
 
     private func pageURL(for date: Date?) -> URL? {
@@ -115,7 +117,8 @@ struct APODSource: ImageSource {
             pageURL: URL(string: Self.website + "astropix.html"),
             imageURL: imageURL,
             thumbURL: imageURL,
-            isVideo: false)
+            isVideo: false,
+            resolution: .hd)   // website fallback: unknown HD but not verified UHD
     }
 
     /// First capture group of `pattern` in `text` (dot-matches-newline, case-insensitive).

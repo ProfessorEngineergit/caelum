@@ -10,6 +10,7 @@ struct NASAImageLibrarySource: ImageSource {
     let subtitle = "Image & Video Library"
     let symbol = "books.vertical.fill"
     let accentHex: UInt32 = 0xFF6AD5
+    let typicalResolution: ResolutionHint = .hd
 
     private let queries = ["nebula", "galaxy", "aurora borealis", "supernova",
                            "star cluster", "spiral galaxy", "deep field",
