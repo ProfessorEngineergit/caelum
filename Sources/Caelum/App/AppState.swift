@@ -23,8 +23,6 @@ final class AppState: ObservableObject {
 
     /// Hook the status-item controller installs to spin the brand glyph.
     var onImageReady: (() -> Void)?
-    /// Hook to launch ambient mode (installed by AppDelegate).
-    var startAmbient: (() -> Void)?
     /// Hook to nudge the prefetcher when the user switches source.
     var onSourceSelected: (() -> Void)?
 

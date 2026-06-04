@@ -1,27 +1,29 @@
 import Foundation
 
-/// Hidden diagnostic: `Caelum --smoke-test` fetches the latest image from every
-/// registered source and prints the result, then exits. Used during development
-/// and in CI to confirm every source's parsing still works.
+/// Hidden diagnostic: `Caelum --smoke-test` fetches AND downloads the latest
+/// image from every source, then reports real pixel dimensions / resolution.
+/// This catches sources that return metadata but whose image won't actually load.
 enum SmokeTest {
     static func run() {
         let group = DispatchGroup()
         group.enter()
         Task {
-            print("Caelum source smoke-test · \(SourceRegistry.all.count) sources\n")
+            print("Caelum smoke-test · \(SourceRegistry.all.count) sources (fetch + download)\n")
             var ok = 0
             for source in SourceRegistry.all {
                 do {
                     let image = try await source.fetchLatestImage()
+                    let file = try await ImageCache.shared.localURL(for: image)
+                    let dims = ImageCache.shared.pixelSize(of: file)
+                    let res = dims.map { ResolutionHint.classify(width: $0.width, height: $0.height).rawValue } ?? "??"
+                    let dimStr = dims.map { "\($0.width)×\($0.height)" } ?? "unknown"
                     ok += 1
-                    let kind = image.isVideo ? "[video]" : "[image]"
-                    print("✓ \(source.id.padded(10)) \(kind) \(image.title.prefix(48))")
-                    print("    \(image.imageURL.absoluteString)")
+                    print("✓ \(source.id.padded(13)) [\(res.padded(2))] \(dimStr.padded(11)) \(image.title.prefix(38))")
                 } catch {
-                    print("✗ \(source.id.padded(10)) \(error.localizedDescription)")
+                    print("✗ \(source.id.padded(13)) FAILED: \(error.localizedDescription)")
                 }
             }
-            print("\n\(ok)/\(SourceRegistry.all.count) sources returned an image.")
+            print("\n\(ok)/\(SourceRegistry.all.count) sources produced a usable image.")
             group.leave()
         }
         group.wait()

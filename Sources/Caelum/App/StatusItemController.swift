@@ -156,9 +156,6 @@ final class StatusItemController: NSObject {
         let refresh = NSMenuItem(title: "Refresh now", action: #selector(menuRefresh), keyEquivalent: "r")
         refresh.target = self
         menu.addItem(refresh)
-        let ambient = NSMenuItem(title: "Ambient mode", action: #selector(menuAmbient), keyEquivalent: "")
-        ambient.target = self
-        menu.addItem(ambient)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Caelum",
                                 action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
@@ -169,7 +166,6 @@ final class StatusItemController: NSObject {
     }
 
     @objc private func menuRefresh() { appState.refresh() }
-    @objc private func menuAmbient() { appState.startAmbient?() }
 
     // MARK: - Brand glyph animation (dot completes one orbit on new image)
 

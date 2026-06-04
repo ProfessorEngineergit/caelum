@@ -15,9 +15,6 @@ final class SettingsModel: ObservableObject {
     @Published var rotateMinutes: Int     { didSet { Preferences.shared.rotateMinutes = rotateMinutes; scheduler.rescheduleRotation() } }
     @Published var dynamicAccent: Bool    { didSet { Preferences.shared.dynamicAccent = dynamicAccent } }
     @Published var chime: Bool            { didSet { Preferences.shared.chimeOnUpdate = chime } }
-    @Published var ambientEnabled: Bool   { didSet { Preferences.shared.ambientEnabled = ambientEnabled } }
-    @Published var ambientIdleMinutes: Int { didSet { Preferences.shared.ambientIdleSeconds = ambientIdleMinutes * 60 } }
-    @Published var ambientInterval: Int   { didSet { Preferences.shared.ambientIntervalSeconds = ambientInterval } }
     @Published var launchAtLogin: Bool    { didSet { LaunchAtLogin.set(launchAtLogin) } }
     @Published var nasaKey: String        { didSet { Preferences.shared.nasaAPIKey = nasaKey } }
 
@@ -30,9 +27,6 @@ final class SettingsModel: ObservableObject {
         rotateMinutes    = prefs.rotateMinutes
         dynamicAccent    = prefs.dynamicAccent
         chime            = prefs.chimeOnUpdate
-        ambientEnabled   = prefs.ambientEnabled
-        ambientIdleMinutes = max(1, prefs.ambientIdleSeconds / 60)
-        ambientInterval  = prefs.ambientIntervalSeconds
         launchAtLogin    = LaunchAtLogin.isEnabled
         nasaKey          = prefs.usingDemoKey ? "" : prefs.nasaAPIKey
     }
@@ -69,13 +63,6 @@ struct SettingsView: View {
                     stepperRow("Every", value: $model.rotateMinutes,
                                range: 5...720, step: 5, unit: "min")
                 }
-            }
-            section("Ambient mode") {
-                toggle("Enable on idle", $model.ambientEnabled)
-                stepperRow("Start after", value: $model.ambientIdleMinutes,
-                           range: 1...60, step: 1, unit: "min")
-                stepperRow("Seconds per image", value: $model.ambientInterval,
-                           range: 4...60, step: 1, unit: "s")
             }
             section("Appearance") {
                 toggle("Tint interface to the image", $model.dynamicAccent)
@@ -206,7 +193,7 @@ struct SettingsView: View {
             Text("CAELUM")
                 .font(Theme.Fonts.micro(11)).tracking(4)
                 .foregroundStyle(Theme.Palette.textSecondary)
-            Text("Version 1.0.3 · MIT License")
+            Text("Version 1.0.4 · MIT License")
                 .font(Theme.Fonts.mono(10)).foregroundStyle(Theme.Palette.textTertiary)
             HStack(spacing: 14) {
                 linkButton("GitHub", "https://github.com/ProfessorEngineergit/caelum")

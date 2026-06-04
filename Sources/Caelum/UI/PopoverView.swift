@@ -50,7 +50,6 @@ private struct FooterBar: View {
             footerButton("gearshape.fill", "Settings") {
                 withAnimation(Theme.Motion.gentle) { app.showSettings = true }
             }
-            footerButton("moon.stars.fill", "Ambient mode") { app.startAmbient?() }
             footerButton("arrow.clockwise", "Refresh") { app.refresh() }
 
             Spacer()

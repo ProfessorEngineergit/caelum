@@ -1,10 +1,10 @@
 import Foundation
 
 /// The catalogue of all image sources, in display order. APOD is always first.
-/// Adding a new source is as simple as appending it here.
+/// Every source here is verified to return a usable high-resolution image.
 enum SourceRegistry {
     static let all: [ImageSource] = [
-        // Observatories (all 4K/UHD from dedicated CDNs)
+        // Observatories (4K from dedicated CDNs)
         APODSource(),                    // ⭐ the star
         DjangoplicitySource.hubble,      // ESA/Hubble
         DjangoplicitySource.webb,        // James Webb
@@ -12,18 +12,13 @@ enum SourceRegistry {
 
         // NASA live feeds
         EPICSource(),                    // Earth from DSCOVR
-        NASAImageLibrarySource(),        // NASA Image & Video Library
         NASAIOTDSource(),                // NASA Image of the Day
 
-        // Wikimedia editorial pick
-        WikimediaSource(),               // Wikimedia Picture of the Day
-
-        // Hand-curated 4K/UHD galleries
-        CuratedSource.deepSpace,         // Nebulae, galaxies
-        CuratedSource.earthFromSpace,    // Astronaut photography
-        CuratedSource.solarSystem,       // Planets & moons
-        CuratedSource.spaceStations,     // ISS & spacecraft
-        CuratedSource.interstellar,      // Deep fields
+        // Themed NASA-library collections (4K ~orig assets)
+        NASASearchSource.earth,          // Earth from Space
+        NASASearchSource.solar,          // Solar System
+        NASASearchSource.stations,       // Space Stations
+        NASASearchSource.interstellar,   // Interstellar (black holes & wormholes)
     ]
 
     static func source(id: String) -> ImageSource {

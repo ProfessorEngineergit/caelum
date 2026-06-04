@@ -23,16 +23,35 @@ final class ImageCache {
     }
 
     /// Returns a local file URL for the image, downloading it if not cached.
-    /// Falls back to the smaller variant if the HD image is enormous.
+    /// Tries the chosen (HD) URL first; if that fails (e.g. a 403 on the ~orig
+    /// asset) it falls back to the thumbnail so a source is never broken.
     func localURL(for image: CosmicImage) async throws -> URL {
-        let chosen = await wallpaperURL(for: image)
-        let file = directory.appendingPathComponent(filename(for: chosen))
-        if FileManager.default.fileExists(atPath: file.path) {
-            touch(file)
-            return file
+        let primary = await wallpaperURL(for: image)
+        if let file = cachedFile(for: primary) { return file }
+
+        do {
+            return try await download(primary)
+        } catch {
+            // Fall back to the (always-valid) thumbnail variant.
+            if let thumb = image.thumbURL, thumb != primary {
+                if let file = cachedFile(for: thumb) { return file }
+                return try await download(thumb)
+            }
+            throw error
         }
-        let data = try await HTTPClient.data(from: chosen)
+    }
+
+    private func cachedFile(for url: URL) -> URL? {
+        let file = directory.appendingPathComponent(filename(for: url))
+        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
+        touch(file)
+        return file
+    }
+
+    private func download(_ url: URL) async throws -> URL {
+        let data = try await HTTPClient.data(from: url)
         guard data.count > 1024 else { throw SourceError.noImage }
+        let file = directory.appendingPathComponent(filename(for: url))
         try data.write(to: file, options: .atomic)
         prune()
         return file

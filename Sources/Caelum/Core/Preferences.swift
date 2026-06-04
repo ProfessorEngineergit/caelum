@@ -12,9 +12,6 @@ final class Preferences {
         static let autoDaily        = "autoDailyRefresh"
         static let rotateLibrary    = "rotateLibrary"
         static let rotateMinutes    = "rotateMinutes"
-        static let ambientEnabled   = "ambientEnabled"
-        static let ambientIdleSecs  = "ambientIdleSeconds"
-        static let ambientInterval  = "ambientIntervalSeconds"
         static let launchAtLogin    = "launchAtLogin"
         static let chimeOnUpdate    = "chimeOnUpdate"
         static let dynamicAccent    = "dynamicAccent"
@@ -29,9 +26,6 @@ final class Preferences {
             Key.autoDaily:       true,
             Key.rotateLibrary:   false,
             Key.rotateMinutes:   60,
-            Key.ambientEnabled:  true,
-            Key.ambientIdleSecs: 300,
-            Key.ambientInterval: 12,
             Key.launchAtLogin:   false,
             Key.chimeOnUpdate:   true,
             Key.dynamicAccent:   true,
@@ -65,19 +59,6 @@ final class Preferences {
     var rotateMinutes: Int {
         get { max(5, store.integer(forKey: Key.rotateMinutes)) }
         set { store.set(newValue, forKey: Key.rotateMinutes) }
-    }
-
-    var ambientEnabled: Bool {
-        get { store.bool(forKey: Key.ambientEnabled) }
-        set { store.set(newValue, forKey: Key.ambientEnabled) }
-    }
-    var ambientIdleSeconds: Int {
-        get { max(20, store.integer(forKey: Key.ambientIdleSecs)) }
-        set { store.set(newValue, forKey: Key.ambientIdleSecs) }
-    }
-    var ambientIntervalSeconds: Int {
-        get { max(4, store.integer(forKey: Key.ambientInterval)) }
-        set { store.set(newValue, forKey: Key.ambientInterval) }
     }
 
     var launchAtLogin: Bool {
