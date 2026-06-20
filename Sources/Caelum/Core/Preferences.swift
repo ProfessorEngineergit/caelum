@@ -18,6 +18,7 @@ final class Preferences {
         static let setOnAllScreens  = "setOnAllScreens"
         static let lastFetchedDate  = "lastFetchedDate"
         static let hasOnboarded     = "hasCompletedOnboarding"
+        static let lastRunVersion   = "lastRunVersion"
     }
 
     init() {
@@ -119,5 +120,12 @@ final class Preferences {
     var hasCompletedOnboarding: Bool {
         get { store.bool(forKey: Key.hasOnboarded) }
         set { store.set(newValue, forKey: Key.hasOnboarded) }
+    }
+
+    /// The app version seen on the previous launch — `nil` on a fresh install.
+    /// Used to show the "getting things ready" hint only after install/update.
+    var lastRunVersion: String? {
+        get { store.string(forKey: Key.lastRunVersion) }
+        set { store.set(newValue, forKey: Key.lastRunVersion) }
     }
 }

@@ -35,7 +35,7 @@ final class OnboardingController {
         let root = OnboardingView(
             onComplete: { [weak self] key in self?.finish(key) },
             onChime: { [weak self] soft in self?.audio.chime(soft: soft) },
-            onBoom: { [weak self] in self?.audio.boom() })
+            onDrone: { [weak self] in self?.audio.drone() })
         let hosting = NSHostingView(rootView: root)
         hosting.frame = NSRect(origin: .zero, size: screen.frame.size)
         hosting.autoresizingMask = [.width, .height]

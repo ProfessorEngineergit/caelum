@@ -20,6 +20,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appState.onBatchLoaded = { [weak self] images in self?.prefetcher.warm(images) }
         prefetcher.start()
 
+        // Gentle "getting things ready" hint — only on a genuinely cold start after a
+        // fresh install or update (and only if the cache is actually cold), so it
+        // never false-alarms on a normal relaunch. Auto-fades once warm.
+        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        let installedOrUpdated = Preferences.shared.lastRunVersion != currentVersion
+        Preferences.shared.lastRunVersion = currentVersion
+        if installedOrUpdated, ImageCache.shared.cachedFiles().count < 6 {
+            appState.beginWarmup()
+        }
+
         // First run → cinematic full-screen onboarding (over everything).
         // The wallpaper loads behind it so it's ready when the user enters.
         if !Preferences.shared.hasCompletedOnboarding {

@@ -18,6 +18,8 @@ final class AppState: ObservableObject {
     @Published private(set) var wallpaperAppliedID: String?
     /// The analysed (true) resolution of the current image, once known.
     @Published private(set) var actualResolution: ResolutionHint?
+    /// Gentle first-run hint shown while the cache warms (only after install/update).
+    @Published private(set) var isWarmingUp = false
 
     @Published var activeSourceID: String = Preferences.shared.activeSourceID
     @Published var showExplanation = false
@@ -35,6 +37,7 @@ final class AppState: ObservableObject {
     private var batch: [CosmicImage] = []
     private var index = 0
     private var loadToken = 0
+    private var warmupTask: Task<Void, Never>?
     private var resolutionCache: [String: ResolutionHint] = [:]
     private var preparedWallpaperFiles: [String: URL] = [:]
     private var preparedFullWallpaperFiles: [String: URL] = [:]
@@ -264,6 +267,30 @@ final class AppState: ObservableObject {
         if !key.isEmpty { Preferences.shared.nasaAPIKey = key }
         Preferences.shared.hasCompletedOnboarding = true
         withAnimation(Theme.Motion.gentle) { showOnboarding = false }
+    }
+
+    // MARK: - Warm-up hint
+
+    /// Show the "getting things ready" hint, then clear it once the cache holds a
+    /// preview for roughly every source — or after a safety timeout. Called only on
+    /// a cold start after a fresh install or update, so it never false-alarms.
+    func beginWarmup() {
+        withAnimation(Theme.Motion.gentle) { isWarmingUp = true }
+        warmupTask?.cancel()
+        warmupTask = Task { [weak self] in
+            let deadline = Date().addingTimeInterval(75)
+            while !Task.isCancelled {
+                if ImageCache.shared.cachedFiles().count >= 8 || Date() > deadline { break }
+                try? await Task.sleep(nanoseconds: 2_500_000_000)
+            }
+            self?.markWarmupComplete()
+        }
+    }
+
+    func markWarmupComplete() {
+        warmupTask?.cancel()
+        guard isWarmingUp else { return }
+        withAnimation(Theme.Motion.gentle) { isWarmingUp = false }
     }
 
     /// Save the full-resolution image to ~/Downloads.

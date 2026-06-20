@@ -8,7 +8,7 @@ import AppKit
 struct OnboardingView: View {
     let onComplete: (String) -> Void
     var onChime: (Bool) -> Void = { _ in }
-    var onBoom: () -> Void = {}
+    var onDrone: () -> Void = {}
 
     @State private var step = 0
     @State private var apiKey = ""
@@ -51,7 +51,7 @@ struct OnboardingView: View {
             // Hold on pure black for a beat — "man sieht nichts" — then the nebula
             // blooms in and the boom lands at the very same instant.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                onBoom()
+                onDrone()
                 withAnimation(.easeOut(duration: 1.9)) { revealed = true }
             }
             // Auto-advance the splash into the first message.

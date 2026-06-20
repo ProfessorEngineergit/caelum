@@ -36,8 +36,8 @@ final class OnboardingAudio {
             pad.play()
         }
         rampPad(to: 0.42, duration: 4.0)   // slow ambient swell
-        // The signature "boom" is fired by the view at the exact moment the nebula
-        // blooms (see OnboardingView.onBoom) — not here — so sound and image land together.
+        // The signature drone is fired by the view at the exact moment the nebula
+        // blooms (see OnboardingView.onDrone) — not here — so sound and image land together.
     }
 
     func chime(soft: Bool = true) {
@@ -46,10 +46,10 @@ final class OnboardingAudio {
         if !chimeNode.isPlaying { chimeNode.play() }
     }
 
-    /// A deep cinematic impact — the nebula's arrival. Pitch-swept sub sine with a
-    /// short noise transient for the punch.
-    func boom() {
-        guard running, let buffer = makeBoom() else { return }
+    /// The nebula's arrival — a warm, resonant Apple-style drone ("dröhnen") that
+    /// swells in smoothly and rings out with a long, living tail.
+    func drone() {
+        guard running, let buffer = makeDrone() else { return }
         impact.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
         if !impact.isPlaying { impact.play() }
     }
@@ -143,26 +143,45 @@ final class OnboardingAudio {
         return buffer
     }
 
-    /// The opening impact: a sine that sweeps down from ~130 Hz into the sub-bass,
-    /// an octave-below layer for weight, and a brief noise transient for the punch.
-    private func makeBoom() -> AVAudioPCMBuffer? {
-        let seconds = 2.8
+    /// A warm, resonant low-A drone — fundamental plus its harmonic series, a
+    /// perfect fifth and an octave for a full chord. Smooth raised-cosine swell
+    /// (no transient click), a long resonant decay, and a slow chorus "breathing"
+    /// from per-partial detune so it feels alive — Apple-sting "dröhnen".
+    private func makeDrone() -> AVAudioPCMBuffer? {
+        let seconds = 4.8
         let frames = AVAudioFrameCount(seconds * sampleRate)
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames) else { return nil }
         buffer.frameLength = frames
         guard let L = buffer.floatChannelData?[0], let R = buffer.floatChannelData?[1] else { return nil }
-        var phase = 0.0
+
+        let root = 55.0   // A1
+        // (frequency multiple of root, amplitude, slight detune in Hz for chorus)
+        let partials: [(mult: Double, amp: Double, detune: Double)] = [
+            (1.0, 0.42,  0.00),   // 55  — fundamental weight
+            (2.0, 0.26,  0.12),   // 110 — octave
+            (1.5, 0.12,  0.09),   // 82.5 — perfect fifth (the chord "dröhnen")
+            (3.0, 0.14, -0.15),   // 165
+            (4.0, 0.09,  0.20),   // 220
+            (5.0, 0.05, -0.10),   // 275 — air
+            (6.0, 0.03,  0.07),   // 330
+        ]
+        var phases = [Double](repeating: 0, count: partials.count)
+        let attackTime = 0.42
         for n in 0..<Int(frames) {
             let t = Double(n) / sampleRate
-            let freq = 38.0 + 95.0 * exp(-t * 7.0)          // 133 Hz → 38 Hz drop
-            phase += 2 * .pi * freq / sampleRate
-            let body  = sin(phase) * exp(-t * 2.0)          // booming low sine
-            let sub   = sin(phase * 0.5) * exp(-t * 1.5) * 0.6   // sub octave for weight
-            let punch = Double.random(in: -1...1) * exp(-t * 55.0) * 0.45  // ~20 ms transient
-            let attack = min(1.0, t / 0.004)                // 4 ms to avoid a click
-            let s = ((body + sub) * 0.7 + punch) * attack
-            let v = Float(max(-1, min(1, s)) * 0.92)
-            L[n] = v; R[n] = v
+            // Smooth swell in, then a long exponential resonant tail.
+            let swell = t < attackTime ? 0.5 - 0.5 * cos(.pi * t / attackTime) : 1.0
+            let tail = exp(-max(0, t - attackTime) * 0.9)
+            let breathe = 1.0 + 0.05 * sin(2 * .pi * 0.5 * t)
+            let env = swell * tail * breathe
+            var s = 0.0
+            for i in partials.indices {
+                phases[i] += 2 * .pi * (root * partials[i].mult + partials[i].detune) / sampleRate
+                s += partials[i].amp * sin(phases[i])
+            }
+            let v = s * env * 0.8   // fuller "dröhnen"; offline peak ≈ 0.65, no clip
+            L[n] = Float(max(-1, min(1, v)))
+            R[n] = Float(max(-1, min(1, v * (0.98 + 0.02 * sin(2 * .pi * 0.37 * t)))))  // subtle width
         }
         return buffer
     }

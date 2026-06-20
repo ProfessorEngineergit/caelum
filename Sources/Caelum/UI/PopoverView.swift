@@ -13,6 +13,12 @@ struct PopoverView: View {
 
             VStack(spacing: 0) {
                 HeroView()                               // fixed 220
+                if app.isWarmingUp {
+                    WarmingBanner()
+                        .padding(.horizontal, Theme.Metrics.space4)
+                        .padding(.top, Theme.Metrics.space3)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
                 if Preferences.shared.usingDemoKey {
                     DemoKeyBanner { withAnimation(Theme.Motion.gentle) { app.showSettings = true } }
                         .padding(.horizontal, Theme.Metrics.space4)
@@ -43,6 +49,27 @@ struct PopoverView: View {
         .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight)
         .clipShape(RoundedRectangle(cornerRadius: Theme.Metrics.radiusPanel, style: .continuous))
         .environment(\.colorScheme, .dark)
+    }
+}
+
+/// Slim, info-styled hint shown on a cold first run while the cache warms; fades
+/// itself out once things are ready (see AppState.beginWarmup).
+private struct WarmingBanner: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            OrbitalLoader(tint: Theme.Palette.auroraCyan, size: 13)
+            Text("Getting things ready — the first few images may be a little slow")
+                .font(Theme.Fonts.body(11))
+                .lineLimit(1).minimumScaleFactor(0.75)
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(Theme.Palette.textSecondary)
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(Theme.Palette.auroraCyan.opacity(0.10)))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(Theme.Palette.auroraCyan.opacity(0.22), lineWidth: 1))
     }
 }
 
