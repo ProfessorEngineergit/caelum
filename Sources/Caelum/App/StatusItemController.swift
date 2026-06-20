@@ -15,16 +15,24 @@ final class StatusItemController: NSObject {
     private let appState: AppState
     private let statusItem: NSStatusItem
     private let panel: CaelumPanel
-    private var glassContainer: NSVisualEffectView?
+    private var glassContainer: NSView?
     private var hostingView: NSView?
     private var clickMonitor: Any?
     private var glyphTimer: Timer?
+
+    /// Transparent margin around the content so the soft drop shadow has room.
+    private let shadowMargin: CGFloat = 32
+
+    private var contentWidth: CGFloat { Theme.Metrics.popoverWidth }
+    private var contentHeight: CGFloat { Theme.Metrics.popoverHeight }
 
     init(appState: AppState) {
         self.appState = appState
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         panel = CaelumPanel(
-            contentRect: NSRect(x: 0, y: 0, width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight),
+            contentRect: NSRect(x: 0, y: 0,
+                                width: Theme.Metrics.popoverWidth + 64,
+                                height: Theme.Metrics.popoverHeight + 64),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered, defer: true)
         super.init()
@@ -50,23 +58,53 @@ final class StatusItemController: NSObject {
         panel.level = .popUpMenu
         panel.backgroundColor = .clear
         panel.isOpaque = false
-        panel.hasShadow = true
+        panel.hasShadow = false   // we draw our own rounded shadow (no square "ears")
         panel.hidesOnDeactivate = false
         panel.isMovable = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.animationBehavior = .none
 
-        let effect = NSVisualEffectView()
+        let radius = Theme.Metrics.radiusPanel
+        let contentRect = NSRect(x: shadowMargin, y: shadowMargin,
+                                 width: contentWidth, height: contentHeight)
+
+        // Wrapper fills the whole (oversized) window; stays transparent.
+        let wrapper = NSView(frame: NSRect(x: 0, y: 0,
+                                           width: contentWidth + shadowMargin * 2,
+                                           height: contentHeight + shadowMargin * 2))
+        wrapper.wantsLayer = true
+
+        // Card carries the soft, perfectly-rounded drop shadow (not clipped).
+        let card = NSView(frame: contentRect)
+        card.wantsLayer = true
+        if let layer = card.layer {
+            layer.cornerRadius = radius
+            layer.cornerCurve = .continuous
+            layer.shadowColor = NSColor.black.cgColor
+            layer.shadowOpacity = 0.55
+            layer.shadowRadius = 26
+            layer.shadowOffset = NSSize(width: 0, height: -10)
+            layer.shadowPath = CGPath(roundedRect: card.bounds,
+                                      cornerWidth: radius, cornerHeight: radius, transform: nil)
+            layer.masksToBounds = false
+        }
+
+        // Real frosted glass: blurs the desktop behind the panel.
+        let effect = NSVisualEffectView(frame: card.bounds)
         effect.material = .hudWindow
         effect.blendingMode = .behindWindow
         effect.state = .active
         effect.wantsLayer = true
-        effect.layer?.cornerRadius = Theme.Metrics.radiusPanel
+        effect.layer?.cornerRadius = radius
+        effect.layer?.cornerCurve = .continuous
         effect.layer?.masksToBounds = true
         effect.layer?.borderWidth = 1
-        effect.layer?.borderColor = NSColor.white.withAlphaComponent(0.14).cgColor
-        effect.frame = NSRect(x: 0, y: 0, width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight)
-        panel.contentView = effect
+        effect.layer?.borderColor = NSColor.white.withAlphaComponent(0.16).cgColor
+        effect.autoresizingMask = [.width, .height]
+
+        card.addSubview(effect)
+        wrapper.addSubview(card)
+        panel.contentView = wrapper
         glassContainer = effect
     }
 
@@ -117,23 +155,26 @@ final class StatusItemController: NSObject {
             ctx.duration = 0.13
             panel.animator().alphaValue = 0
         }, completionHandler: { [weak self] in
-            self?.panel.orderOut(nil)
-            self?.unmountContent()
+            Task { @MainActor in
+                self?.panel.orderOut(nil)
+                self?.unmountContent()
+            }
         })
     }
 
     private func positionPanel() {
         guard let button = statusItem.button, let buttonWindow = button.window else { return }
-        let buttonRect = button.convert(button.bounds, to: nil)
-        let onScreen = buttonWindow.convertToScreen(buttonRect)
-        var x = onScreen.midX - panel.frame.width / 2
-        let y = onScreen.minY - panel.frame.height - 6
+        let onScreen = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+        // Position the visible card (inset by shadowMargin), not the whole window.
+        var cardX = onScreen.midX - contentWidth / 2
+        let cardTopY = onScreen.minY - 6
         if let screen = buttonWindow.screen ?? NSScreen.main {
-            let maxX = screen.visibleFrame.maxX - panel.frame.width - 8
+            let maxX = screen.visibleFrame.maxX - contentWidth - 8
             let minX = screen.visibleFrame.minX + 8
-            x = min(max(x, minX), maxX)
+            cardX = min(max(cardX, minX), maxX)
         }
-        panel.setFrameOrigin(NSPoint(x: x, y: y))
+        panel.setFrameOrigin(NSPoint(x: cardX - shadowMargin,
+                                     y: (cardTopY - contentHeight) - shadowMargin))
     }
 
     // MARK: - Dismiss on outside click
@@ -141,7 +182,7 @@ final class StatusItemController: NSObject {
     private func installClickMonitor() {
         clickMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            self?.hidePanel()
+            Task { @MainActor in self?.hidePanel() }
         }
     }
 
@@ -153,10 +194,6 @@ final class StatusItemController: NSObject {
 
     private func showContextMenu() {
         let menu = NSMenu()
-        let refresh = NSMenuItem(title: "Refresh now", action: #selector(menuRefresh), keyEquivalent: "r")
-        refresh.target = self
-        menu.addItem(refresh)
-        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Caelum",
                                 action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         if let button = statusItem.button {
@@ -164,8 +201,6 @@ final class StatusItemController: NSObject {
                        at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
         }
     }
-
-    @objc private func menuRefresh() { appState.refresh() }
 
     // MARK: - Brand glyph animation (dot completes one orbit on new image)
 

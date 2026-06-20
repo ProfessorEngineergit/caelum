@@ -8,9 +8,11 @@ struct GlassBackground: View {
 
     var body: some View {
         ZStack {
-            Theme.Gradients.panel.opacity(0.74)
-            RadialGradient(colors: [accent.opacity(0.22), .clear],
-                           center: .topTrailing, startRadius: 0, endRadius: 280)
+            // Real frosted vibrancy sits behind (NSVisualEffectView); keep the
+            // obsidian tint translucent so the blur reads as glass.
+            Theme.Gradients.panel.opacity(0.6)
+            RadialGradient(colors: [accent.opacity(0.24), .clear],
+                           center: .topTrailing, startRadius: 0, endRadius: 300)
             RadialGradient(colors: [Theme.Palette.auroraCyan.opacity(0.10), .clear],
                            center: .bottomLeading, startRadius: 0, endRadius: 240)
         }
@@ -81,26 +83,31 @@ struct GlassIconButtonStyle: ButtonStyle {
 /// Primary aurora pill (the "Set as Wallpaper" action).
 struct AuroraPillButtonStyle: ButtonStyle {
     var filled: Bool = true
+    @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Theme.Fonts.title(14))
-            .foregroundStyle(filled ? Color.black : Theme.Palette.textPrimary)
+            .foregroundStyle(isEnabled
+                ? (filled ? Color.black : Theme.Palette.textPrimary)
+                : Theme.Palette.textTertiary)
             .frame(maxWidth: .infinity)
             .frame(height: 46)
             .background(
                 RoundedRectangle(cornerRadius: Theme.Metrics.radiusButton, style: .continuous)
-                    .fill(filled
+                    .fill(isEnabled && filled
                         ? AnyShapeStyle(Theme.Gradients.auroraHorizontal)
                         : AnyShapeStyle(Theme.Palette.obsidian2.opacity(0.7)))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Metrics.radiusButton, style: .continuous)
-                    .strokeBorder(Color.white.opacity(filled ? 0.18 : 0.10), lineWidth: 1)
+                    .strokeBorder(Color.white.opacity(isEnabled && filled ? 0.18 : 0.10), lineWidth: 1)
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .shadow(color: filled ? Theme.Palette.auroraViolet.opacity(0.45) : .clear,
+            .opacity(isEnabled ? 1 : 0.55)
+            .shadow(color: isEnabled && filled ? Theme.Palette.auroraViolet.opacity(0.45) : .clear,
                     radius: 14, y: 4)
             .animation(Theme.Motion.snappy, value: configuration.isPressed)
+            .animation(Theme.Motion.snappy, value: isEnabled)
     }
 }

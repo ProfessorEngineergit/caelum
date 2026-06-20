@@ -7,21 +7,41 @@ enum WallpaperManager {
 
     @discardableResult
     static func apply(localFileURL: URL, allScreens: Bool) -> Bool {
+        if allScreens {
+            let didSetPrimary = applyPrimary(localFileURL: localFileURL)
+            applySecondaryScreens(localFileURL: localFileURL)
+            return didSetPrimary
+        }
+
+        return applyPrimary(localFileURL: localFileURL)
+    }
+
+    @discardableResult
+    static func applyPrimary(localFileURL: URL) -> Bool {
+        guard let screen = NSScreen.main else { return false }
+        return apply(localFileURL: localFileURL, to: screen)
+    }
+
+    static func applySecondaryScreens(localFileURL: URL) {
+        guard let main = NSScreen.main else { return }
+        for screen in NSScreen.screens where screen !== main {
+            _ = apply(localFileURL: localFileURL, to: screen)
+        }
+    }
+
+    @discardableResult
+    private static func apply(localFileURL: URL, to screen: NSScreen) -> Bool {
         let workspace = NSWorkspace.shared
         let options: [NSWorkspace.DesktopImageOptionKey: Any] = [
             .imageScaling: NSImageScaling.scaleProportionallyUpOrDown.rawValue,
             .allowClipping: true,
         ]
-        let screens = allScreens ? NSScreen.screens : [NSScreen.main].compactMap { $0 }
-        var didSet = false
-        for screen in screens {
-            do {
-                try workspace.setDesktopImageURL(localFileURL, for: screen, options: options)
-                didSet = true
-            } catch {
-                NSLog("Caelum: failed to set wallpaper on a screen: \(error.localizedDescription)")
-            }
+        do {
+            try workspace.setDesktopImageURL(localFileURL, for: screen, options: options)
+            return true
+        } catch {
+            NSLog("Caelum: failed to set wallpaper on a screen: \(error.localizedDescription)")
+            return false
         }
-        return didSet
     }
 }

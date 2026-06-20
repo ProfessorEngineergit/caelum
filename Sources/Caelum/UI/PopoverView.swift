@@ -31,8 +31,13 @@ struct PopoverView: View {
                     scheduler: app.scheduler,
                     onDismiss: { withAnimation(Theme.Motion.gentle) { app.showSettings = false } }
                 )
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .transition(.opacity)
                 .zIndex(2)
+            }
+            if app.showOnboarding {
+                WelcomeView()
+                    .transition(.opacity)
+                    .zIndex(3)
             }
         }
         .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight)
@@ -50,7 +55,6 @@ private struct FooterBar: View {
             footerButton("gearshape.fill", "Settings") {
                 withAnimation(Theme.Motion.gentle) { app.showSettings = true }
             }
-            footerButton("arrow.clockwise", "Refresh") { app.refresh() }
 
             Spacer()
             Text("CAELUM")

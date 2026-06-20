@@ -11,6 +11,8 @@ final class ImageCache {
 
     let directory: URL
     private let maxFiles = 80
+    private let inFlightLock = NSLock()
+    private var inFlightDownloads: [String: Task<URL, Error>] = [:]
     /// We fetch the absolute-maximum-resolution asset for every source. Only
     /// genuinely gigapixel files (hundreds of MB) fall back to a smaller variant.
     private let maxWallpaperBytes: Int64 = 120_000_000
@@ -42,6 +44,14 @@ final class ImageCache {
         }
     }
 
+    /// Returns a small local image quickly, suitable for immediate preview or
+    /// first-pass wallpaper application while the full-resolution file warms.
+    func localPreviewURL(for image: CosmicImage) async throws -> URL {
+        guard let preview = image.thumbURL else { return try await localURL(for: image) }
+        if let file = cachedFile(for: preview) { return file }
+        return try await download(preview)
+    }
+
     private func cachedFile(for url: URL) -> URL? {
         let file = directory.appendingPathComponent(filename(for: url))
         guard FileManager.default.fileExists(atPath: file.path) else { return nil }
@@ -50,12 +60,48 @@ final class ImageCache {
     }
 
     private func download(_ url: URL) async throws -> URL {
+        let key = url.absoluteString
+        let (task, isOwner) = inFlightDownload(for: key) {
+            Task<URL, Error> { [self] in
+                try await performDownload(url)
+            }
+        }
+
+        defer {
+            if isOwner { clearInFlightDownload(for: key) }
+        }
+        return try await task.value
+    }
+
+    private func inFlightDownload(
+        for key: String,
+        create: () -> Task<URL, Error>
+    ) -> (task: Task<URL, Error>, isOwner: Bool) {
+        inFlightLock.lock()
+        defer { inFlightLock.unlock() }
+
+        if let existing = inFlightDownloads[key] {
+            return (existing, false)
+        }
+
+        let task = create()
+        inFlightDownloads[key] = task
+        return (task, true)
+    }
+
+    private func performDownload(_ url: URL) async throws -> URL {
         let data = try await HTTPClient.data(from: url)
         guard data.count > 1024 else { throw SourceError.noImage }
         let file = directory.appendingPathComponent(filename(for: url))
         try data.write(to: file, options: .atomic)
         prune()
         return file
+    }
+
+    private func clearInFlightDownload(for key: String) {
+        inFlightLock.lock()
+        inFlightDownloads[key] = nil
+        inFlightLock.unlock()
     }
 
     /// Pick the HD image unless it exceeds the cap, in which case use the
@@ -114,8 +160,13 @@ final class ImageCache {
 
     /// Whether the image is already on disk (no download needed).
     func isCached(_ image: CosmicImage) -> Bool {
-        let names = [filename(for: image.imageURL)]
-        return names.contains { FileManager.default.fileExists(atPath: directory.appendingPathComponent($0).path) }
+        cachedFileIfPresent(for: image) != nil
+    }
+
+    /// Whether the full source image is already on disk. Prefetching uses this
+    /// so a cached thumbnail does not block the full-resolution warmup.
+    func isFullSizeCached(_ image: CosmicImage) -> Bool {
+        cachedFile(for: image.imageURL) != nil
     }
 
     /// Local files currently in the cache, newest first.

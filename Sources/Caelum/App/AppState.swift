@@ -13,6 +13,8 @@ final class AppState: ObservableObject {
     @Published private(set) var errorText: String?
     @Published private(set) var accent: Color = Theme.Palette.auroraViolet
     @Published private(set) var isApplyingWallpaper = false
+    @Published private(set) var isCurrentWallpaperReady = false
+    @Published private(set) var isPreparingCurrentWallpaper = false
     @Published private(set) var wallpaperAppliedID: String?
     /// The analysed (true) resolution of the current image, once known.
     @Published private(set) var actualResolution: ResolutionHint?
@@ -20,17 +22,23 @@ final class AppState: ObservableObject {
     @Published var activeSourceID: String = Preferences.shared.activeSourceID
     @Published var showExplanation = false
     @Published var showSettings = false
+    @Published var showOnboarding = !Preferences.shared.hasCompletedOnboarding
 
     /// Hook the status-item controller installs to spin the brand glyph.
     var onImageReady: (() -> Void)?
     /// Hook to nudge the prefetcher when the user switches source.
     var onSourceSelected: (() -> Void)?
+    /// Hook to warm newly fetched batches before the user clicks through them.
+    var onBatchLoaded: (([CosmicImage]) -> Void)?
 
     let scheduler = Scheduler()
     private var batch: [CosmicImage] = []
     private var index = 0
     private var loadToken = 0
     private var resolutionCache: [String: ResolutionHint] = [:]
+    private var preparedWallpaperFiles: [String: URL] = [:]
+    private var preparedFullWallpaperFiles: [String: URL] = [:]
+    private var appliedWallpaperFiles: [String: URL] = [:]
     /// In-memory cache of crisp, downsampled hero images for instant re-display.
     private let heroCache: NSCache<NSString, NSImage> = {
         let cache = NSCache<NSString, NSImage>()
@@ -63,6 +71,9 @@ final class AppState: ObservableObject {
         self.accent = accent
         activeSourceID = image.sourceID
         wallpaperAppliedID = image.id
+        isCurrentWallpaperReady = true
+        isPreparingCurrentWallpaper = false
+        showOnboarding = false
         phase = .ready
     }
 
@@ -88,6 +99,7 @@ final class AppState: ObservableObject {
             guard token == loadToken else { return }
             guard !images.isEmpty else { throw SourceError.empty }
             batch = images
+            onBatchLoaded?(images)
             index = images.firstIndex(where: { !$0.isVideo }) ?? 0
             await present(images[index], applyWallpaper: applyWallpaper, token: token)
         } catch {
@@ -112,23 +124,41 @@ final class AppState: ObservableObject {
     // MARK: - Presentation
 
     private func present(_ image: CosmicImage, applyWallpaper: Bool, token: Int) async {
+        let cachedFile = cachedWallpaperFile(for: image)
         withAnimation(Theme.Motion.snappy) {
             current = image
             actualResolution = resolutionCache[image.id]   // instant if already analysed
+            isCurrentWallpaperReady = cachedFile != nil
+            isPreparingCurrentWallpaper = !image.isVideo && cachedFile == nil
+        }
+        let previewWallpaperTask: Task<URL?, Never>? = image.isVideo || cachedFile != nil ? nil : Task.detached(priority: .userInitiated) {
+            try? await ImageCache.shared.localPreviewURL(for: image)
+        }
+        let fullWallpaperTask: Task<URL?, Never>? = image.isVideo ? nil : Task.detached(priority: .userInitiated) {
+            try? await ImageCache.shared.localURL(for: image)
         }
 
         // Stage 0 — instant crisp hero from memory (re-selecting a source, etc.).
         if let cached = heroCache.object(forKey: image.id as NSString) {
             setHero(cached)
-        } else if let file = ImageCache.shared.cachedFileIfPresent(for: image),
+        } else if let file = cachedFile,
                   let crisp = ImageCache.shared.downsampled(file, maxPixel: heroMaxPixel) {
             // Already prefetched to disk → decode a crisp downsample instantly.
             heroCache.setObject(crisp, forKey: image.id as NSString)
             setHero(crisp)
         } else {
             // Stage 1 — fast remote thumbnail for an immediate first paint.
-            let quick = await Self.loadImage(image.previewURL)
+            let previewFile = await previewWallpaperTask?.value
+            var quick = previewFile.flatMap {
+                ImageCache.shared.downsampled($0, maxPixel: heroMaxPixel)
+            }
+            if quick == nil {
+                quick = await Self.loadImage(image.previewURL)
+            }
             guard token == loadToken else { return }
+            if let file = previewFile {
+                markWallpaperReady(file, for: image, fullResolution: false)
+            }
             if let quick { setHero(quick) }
         }
         onImageReady?()
@@ -136,20 +166,45 @@ final class AppState: ObservableObject {
 
         // Stage 2 — ensure the full image is cached (instant if prefetched), then
         // upgrade to a crisp high-res hero, read the true resolution, set wallpaper.
-        guard let file = try? await ImageCache.shared.localURL(for: image), token == loadToken else {
+        guard let fullWallpaperTask, let file = await fullWallpaperTask.value else {
+            // Both the preview and the full download failed (e.g. APOD's server is
+            // unreachable). Never leave the panel stuck on the loader.
+            if token == loadToken, current?.id == image.id, phase == .loading {
+                withAnimation(Theme.Motion.gentle) {
+                    phase = .error
+                    errorText = "Couldn't reach the image server. Tap to try again."
+                }
+            }
+            markWallpaperPreparationFinished(for: image)
             if applyWallpaper && !image.isVideo { await applyWallpaperNow() }
             return
         }
+        markWallpaperReady(file, for: image, fullResolution: true)
+        guard token == loadToken else { return }
         if let crisp = ImageCache.shared.downsampled(file, maxPixel: heroMaxPixel) {
             heroCache.setObject(crisp, forKey: image.id as NSString)
             if current?.id == image.id { setHero(crisp) }
+        } else if current?.id == image.id, phase == .loading, let direct = NSImage(contentsOf: file) {
+            // Couldn't downsample but the file is there — show it directly.
+            setHero(direct)
         }
         if let dims = ImageCache.shared.pixelSize(of: file) {
             let hint = ResolutionHint.classify(width: dims.width, height: dims.height)
             resolutionCache[image.id] = hint
             if current?.id == image.id { withAnimation(Theme.Motion.snappy) { actualResolution = hint } }
         }
-        if applyWallpaper && !image.isVideo { await apply(file: file, id: image.id) }
+        // Final safety net: if nothing painted, surface an error instead of hanging.
+        if token == loadToken, current?.id == image.id, phase == .loading {
+            withAnimation(Theme.Motion.gentle) {
+                phase = .error
+                errorText = "Couldn't load this image. Tap to try again."
+            }
+        }
+        if applyWallpaper && !image.isVideo {
+            await apply(file: file, id: image.id)
+        } else if wallpaperAppliedID == image.id, appliedWallpaperFiles[image.id] != file {
+            await apply(file: file, id: image.id, playChime: false)
+        }
     }
 
     private func setHero(_ image: NSImage) {
@@ -165,28 +220,51 @@ final class AppState: ObservableObject {
     // MARK: - Wallpaper
 
     /// Applies an already-cached local file as the wallpaper (no re-download).
-    private func apply(file: URL, id: String) async {
+    private func apply(file: URL, id: String, playChime: Bool = true) async {
         withAnimation(Theme.Motion.snappy) { isApplyingWallpaper = true }
         defer { withAnimation(Theme.Motion.snappy) { isApplyingWallpaper = false } }
-        let didSet = WallpaperManager.apply(localFileURL: file,
-                                            allScreens: Preferences.shared.setOnAllScreens)
+        let shouldApplyAllScreens = Preferences.shared.setOnAllScreens
+        let didSet = WallpaperManager.applyPrimary(localFileURL: file)
         if didSet {
+            appliedWallpaperFiles[id] = file
             withAnimation(Theme.Motion.bouncy) { wallpaperAppliedID = id }
-            if Preferences.shared.chimeOnUpdate { NSSound(named: "Glass")?.play() }
+            if playChime && Preferences.shared.chimeOnUpdate { NSSound(named: "Glass")?.play() }
+            if shouldApplyAllScreens {
+                Task.detached(priority: .utility) {
+                    WallpaperManager.applySecondaryScreens(localFileURL: file)
+                }
+            }
         }
     }
 
     func applyWallpaperNow() async {
         guard let image = current, !image.isVideo else { return }
-        do {
-            let file = try await ImageCache.shared.localURL(for: image)
+        if let file = cachedWallpaperFile(for: image) {
+            markWallpaperReady(file, for: image, fullResolution: preparedFullWallpaperFiles[image.id] == file)
             await apply(file: file, id: image.id)
+            return
+        }
+        do {
+            let file = try await ImageCache.shared.localPreviewURL(for: image)
+            markWallpaperReady(file, for: image, fullResolution: false)
+            await apply(file: file, id: image.id)
+            if let full = try? await ImageCache.shared.localURL(for: image), full != file {
+                markWallpaperReady(full, for: image, fullResolution: true)
+                await apply(file: full, id: image.id, playChime: false)
+            }
         } catch {
             withAnimation { errorText = friendly(error) }
         }
     }
 
     func setWallpaper() { Task { await applyWallpaperNow() } }
+
+    func completeOnboarding(apiKey: String) {
+        let key = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !key.isEmpty { Preferences.shared.nasaAPIKey = key }
+        Preferences.shared.hasCompletedOnboarding = true
+        withAnimation(Theme.Motion.gentle) { showOnboarding = false }
+    }
 
     /// Save the full-resolution image to ~/Downloads.
     func saveToDownloads() {
@@ -206,6 +284,31 @@ final class AppState: ObservableObject {
     }
 
     // MARK: - Helpers
+
+    private func cachedWallpaperFile(for image: CosmicImage) -> URL? {
+        if let file = preparedWallpaperFiles[image.id] {
+            if FileManager.default.fileExists(atPath: file.path) { return file }
+            preparedWallpaperFiles[image.id] = nil
+        }
+        guard let file = ImageCache.shared.cachedFileIfPresent(for: image) else { return nil }
+        preparedWallpaperFiles[image.id] = file
+        return file
+    }
+
+    private func markWallpaperReady(_ file: URL, for image: CosmicImage, fullResolution: Bool) {
+        preparedWallpaperFiles[image.id] = file
+        if fullResolution { preparedFullWallpaperFiles[image.id] = file }
+        guard current?.id == image.id else { return }
+        withAnimation(Theme.Motion.snappy) {
+            isCurrentWallpaperReady = true
+            isPreparingCurrentWallpaper = !fullResolution
+        }
+    }
+
+    private func markWallpaperPreparationFinished(for image: CosmicImage) {
+        guard current?.id == image.id else { return }
+        withAnimation(Theme.Motion.snappy) { isPreparingCurrentWallpaper = false }
+    }
 
     private func friendly(_ error: Error) -> String {
         (error as? LocalizedError)?.errorDescription ?? error.localizedDescription

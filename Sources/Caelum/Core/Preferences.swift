@@ -36,12 +36,30 @@ final class Preferences {
     /// NASA key — bundled `DEMO_KEY` unless the user supplies their own free key.
     var nasaAPIKey: String {
         get {
-            let key = store.string(forKey: Key.nasaAPIKey)?.trimmingCharacters(in: .whitespaces)
-            return (key?.isEmpty == false) ? key! : "DEMO_KEY"
+            guard let raw = store.string(forKey: Key.nasaAPIKey) else { return "DEMO_KEY" }
+            guard let key = Self.cleanNASAKey(raw) else {
+                store.removeObject(forKey: Key.nasaAPIKey)
+                return "DEMO_KEY"
+            }
+            return key
         }
-        set { store.set(newValue, forKey: Key.nasaAPIKey) }
+        set {
+            if let key = Self.cleanNASAKey(newValue) {
+                store.set(key, forKey: Key.nasaAPIKey)
+            } else {
+                store.removeObject(forKey: Key.nasaAPIKey)
+            }
+        }
     }
     var usingDemoKey: Bool { nasaAPIKey == "DEMO_KEY" }
+
+    private static func cleanNASAKey(_ value: String) -> String? {
+        let key = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty, key.count <= 128 else { return nil }
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "._-"))
+        guard key.unicodeScalars.allSatisfy({ allowed.contains($0) }) else { return nil }
+        return key
+    }
 
     var activeSourceID: String {
         get { store.string(forKey: Key.activeSourceID) ?? "apod" }

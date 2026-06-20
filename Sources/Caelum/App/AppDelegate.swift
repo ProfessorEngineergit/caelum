@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Background prefetcher — keep the cache warm so switches feel instant.
         appState.onSourceSelected = { [weak self] in self?.prefetcher.nudgeActive() }
+        appState.onBatchLoaded = { [weak self] images in self?.prefetcher.warm(images) }
         prefetcher.start()
 
         // Kick off scheduling — the initial daily check loads the first image.

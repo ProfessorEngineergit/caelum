@@ -10,15 +10,12 @@ enum SourceRegistry {
         DjangoplicitySource.webb,        // James Webb
         DjangoplicitySource.eso,         // ESO
 
-        // NASA live feeds
-        EPICSource(),                    // Earth from DSCOVR
-        NASAIOTDSource(),                // NASA Image of the Day
-
-        // Themed collections (max-resolution ~orig assets)
-        NASASearchSource.earth,          // Earth from Space (astronaut photography)
+        // Curated collections (pixel-verified, no noisy search results)
+        StaticGallerySource.deep,        // Deep Space (stable 4K+ observatory classics)
+        StaticGallerySource.earth,       // Earth from Space (orbit & lunar views)
         StaticGallerySource.solar,       // Solar System (verified planetary imagery)
-        NASASearchSource.stations,       // Space Stations (ISS in orbit)
-        NASASearchSource.interstellar,   // Interstellar (black holes & galaxies)
+        StaticGallerySource.stations,    // Spacecraft (Orion, ISS & satellites)
+        StaticGallerySource.interstellar,// Interstellar (ships, planets, black holes)
     ]
 
     static func source(id: String) -> ImageSource {

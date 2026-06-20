@@ -15,7 +15,7 @@ final class SettingsModel: ObservableObject {
     @Published var rotateMinutes: Int     { didSet { Preferences.shared.rotateMinutes = rotateMinutes; scheduler.rescheduleRotation() } }
     @Published var dynamicAccent: Bool    { didSet { Preferences.shared.dynamicAccent = dynamicAccent } }
     @Published var chime: Bool            { didSet { Preferences.shared.chimeOnUpdate = chime } }
-    @Published var launchAtLogin: Bool    { didSet { LaunchAtLogin.set(launchAtLogin) } }
+    @Published var launchAtLogin: Bool    { didSet { Preferences.shared.launchAtLogin = launchAtLogin; LaunchAtLogin.set(launchAtLogin) } }
     @Published var nasaKey: String        { didSet { Preferences.shared.nasaAPIKey = nasaKey } }
 
     init(scheduler: Scheduler) {
@@ -27,7 +27,7 @@ final class SettingsModel: ObservableObject {
         rotateMinutes    = prefs.rotateMinutes
         dynamicAccent    = prefs.dynamicAccent
         chime            = prefs.chimeOnUpdate
-        launchAtLogin    = LaunchAtLogin.isEnabled
+        launchAtLogin    = prefs.launchAtLogin
         nasaKey          = prefs.usingDemoKey ? "" : prefs.nasaAPIKey
     }
 }
@@ -73,13 +73,22 @@ struct SettingsView: View {
             }
             section("NASA API key") {
                 VStack(alignment: .leading, spacing: 8) {
-                    TextField("DEMO_KEY (bundled)", text: $model.nasaKey)
-                        .textFieldStyle(.plain)
-                        .font(Theme.Fonts.mono(12))
-                        .foregroundStyle(Theme.Palette.textPrimary)
-                        .padding(10)
-                        .glassCard(cornerRadius: 10, fill: 0.6)
-                    Text("APOD, EPIC and other NASA feeds share a key. The bundled DEMO_KEY is rate-limited — a free personal key lifts the limits.")
+                    if isSnapshot {
+                        Text(model.nasaKey.isEmpty ? "DEMO_KEY (bundled)" : "************")
+                            .font(Theme.Fonts.mono(12))
+                            .foregroundStyle(Theme.Palette.textTertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(10)
+                            .glassCard(cornerRadius: 10, fill: 0.6)
+                    } else {
+                        TextField("DEMO_KEY (bundled)", text: $model.nasaKey)
+                            .textFieldStyle(.plain)
+                            .font(Theme.Fonts.mono(12))
+                            .foregroundStyle(Theme.Palette.textPrimary)
+                            .padding(10)
+                            .glassCard(cornerRadius: 10, fill: 0.6)
+                    }
+                    Text("APOD uses NASA's API key. The bundled DEMO_KEY is rate-limited — a free personal key lifts the limits.")
                         .font(Theme.Fonts.body(11))
                         .foregroundStyle(Theme.Palette.textTertiary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -133,12 +142,32 @@ struct SettingsView: View {
     }
 
     private func toggle(_ title: String, _ binding: Binding<Bool>) -> some View {
-        Toggle(isOn: binding) {
-            Text(title)
-                .font(Theme.Fonts.body(13))
-                .foregroundStyle(Theme.Palette.textPrimary)
+        Button {
+            withAnimation(Theme.Motion.snappy) { binding.wrappedValue.toggle() }
+        } label: {
+            HStack(spacing: Theme.Metrics.space3) {
+                Text(title)
+                    .font(Theme.Fonts.body(13))
+                    .foregroundStyle(Theme.Palette.textPrimary)
+                Spacer(minLength: Theme.Metrics.space3)
+                switchMark(isOn: binding.wrappedValue)
+            }
+            .contentShape(Rectangle())
         }
-        .toggleStyle(.switch)
+        .buttonStyle(.plain)
+    }
+
+    private func switchMark(isOn: Bool) -> some View {
+        Capsule()
+            .fill(isOn ? accent.opacity(0.9) : Theme.Palette.obsidian3)
+            .frame(width: 42, height: 24)
+            .overlay(alignment: isOn ? .trailing : .leading) {
+                Circle()
+                    .fill(isOn ? Theme.Palette.textPrimary : Theme.Palette.textTertiary)
+                    .frame(width: 18, height: 18)
+                    .padding(3)
+            }
+            .overlay(Capsule().strokeBorder(Theme.Palette.hairline, lineWidth: 1))
     }
 
     /// Custom +/− stepper — layout-stable unlike macOS Stepper which propagates
@@ -193,7 +222,7 @@ struct SettingsView: View {
             Text("CAELUM")
                 .font(Theme.Fonts.micro(11)).tracking(4)
                 .foregroundStyle(Theme.Palette.textSecondary)
-            Text("Version 1.0.5 · MIT License")
+            Text("Version 1.0.6 · MIT License")
                 .font(Theme.Fonts.mono(10)).foregroundStyle(Theme.Palette.textTertiary)
             HStack(spacing: 14) {
                 linkButton("GitHub", "https://github.com/ProfessorEngineergit/caelum")

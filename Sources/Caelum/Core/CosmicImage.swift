@@ -79,8 +79,6 @@ enum CaelumDates {
     static let ymd: DateFormatter = formatter("yyyy-MM-dd")
     /// "yyyyMMdd" (Bing)
     static let compact: DateFormatter = formatter("yyyyMMdd")
-    /// "yyyy-MM-dd HH:mm:ss" (NASA EPIC)
-    static let epic: DateFormatter = formatter("yyyy-MM-dd HH:mm:ss")
 
     private static func formatter(_ format: String) -> DateFormatter {
         let f = DateFormatter()

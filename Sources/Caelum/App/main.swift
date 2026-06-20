@@ -12,7 +12,10 @@ if let i = CommandLine.arguments.firstIndex(of: "--render-popover"),
     let hero = (i + 2 < CommandLine.arguments.count && !CommandLine.arguments[i + 2].hasPrefix("--"))
         ? CommandLine.arguments[i + 2] : nil
     let settings = CommandLine.arguments.contains("--settings")
-    MainActor.assumeIsolated { SnapshotRenderer.run(outPath: out, heroPath: hero, settings: settings) }
+    let welcome = CommandLine.arguments.contains("--welcome")
+    MainActor.assumeIsolated {
+        SnapshotRenderer.run(outPath: out, heroPath: hero, settings: settings, welcome: welcome)
+    }
 }
 
 // Dev override: --source <id> selects the active source at launch.

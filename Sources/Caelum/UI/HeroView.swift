@@ -9,33 +9,10 @@ struct HeroView: View {
     @Environment(\.isSnapshot) private var isSnapshot
     @State private var kenBurns = false
 
-    /// Vertical alpha mask: fully visible at the top, fading to transparent
-    /// toward the bottom, starting roughly where the title sits.
-    private var fadeMask: LinearGradient {
-        LinearGradient(
-            stops: [
-                .init(color: .black,               location: 0.00),
-                .init(color: .black,               location: 0.42),
-                .init(color: .black.opacity(0.55), location: 0.66),
-                .init(color: .black.opacity(0.18), location: 0.85),
-                .init(color: .black.opacity(0.0),  location: 1.00),
-            ],
-            startPoint: .top, endPoint: .bottom
-        )
-    }
-
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             if let image = app.heroImage {
-                Image(nsImage: image)
-                    .resizable()
-                    .interpolation(.high)
-                    .antialiased(true)
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.heroHeight)
-                    .clipped()
-                    .scaleEffect(kenBurns ? 1.07 : 1.0)
-                    .mask(fadeMask)
+                heroLayers(image)
                     .id(app.current?.id)
                     .transition(.opacity.animation(Theme.Motion.gentle))
                     .onAppear {
@@ -46,6 +23,19 @@ struct HeroView: View {
                     }
             }
 
+            // Darken the lower third for title legibility; fades out at the very
+            // bottom so it doesn't add a band over the panel background.
+            LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0.0),
+                    .init(color: .clear, location: 0.42),
+                    .init(color: .black.opacity(0.38), location: 0.74),
+                    .init(color: .black.opacity(0.0), location: 1.0),
+                ],
+                startPoint: .top, endPoint: .bottom
+            )
+            .allowsHitTesting(false)
+
             content
                 .padding(.horizontal, Theme.Metrics.space4)
                 .padding(.bottom, Theme.Metrics.space2)
@@ -55,6 +45,45 @@ struct HeroView: View {
         }
         .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.heroHeight)
         .clipped()
+    }
+
+    /// Two stacked copies of the image: a sharp one that fades out by ~75%, and
+    /// a blurred one that takes over in the transition zone and dissolves to
+    /// transparent — so the image gets progressively less opaque, blurrier and
+    /// (over the dark glass) blacker, melting perfectly into the panel.
+    @ViewBuilder
+    private func heroLayers(_ image: NSImage) -> some View {
+        ZStack {
+            heroFill(image, blur: 0)
+                .mask(LinearGradient(
+                    stops: [
+                        .init(color: .black, location: 0.00),
+                        .init(color: .black, location: 0.44),
+                        .init(color: .black.opacity(0.0), location: 0.78),
+                    ],
+                    startPoint: .top, endPoint: .bottom))
+
+            heroFill(image, blur: 20)
+                .mask(LinearGradient(
+                    stops: [
+                        .init(color: .black.opacity(0.0), location: 0.40),
+                        .init(color: .black, location: 0.66),
+                        .init(color: .black.opacity(0.0), location: 1.00),
+                    ],
+                    startPoint: .top, endPoint: .bottom))
+        }
+    }
+
+    private func heroFill(_ image: NSImage, blur: CGFloat) -> some View {
+        Image(nsImage: image)
+            .resizable()
+            .interpolation(.high)
+            .antialiased(true)
+            .aspectRatio(contentMode: .fill)
+            .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.heroHeight)
+            .clipped()
+            .scaleEffect(kenBurns ? 1.07 : 1.0)
+            .blur(radius: blur)
     }
 
     // MARK: - Content overlay
@@ -116,12 +145,26 @@ struct HeroView: View {
 
     // MARK: - Loading / Error states
 
+    @ViewBuilder
     private var loadingOverlay: some View {
-        VStack(spacing: 12) {
-            OrbitalLoader(tint: app.accent)
-            Text("Summoning the cosmos…").microLabel()
+        if app.heroImage == nil {
+            // First load — full centered loader.
+            VStack(spacing: 12) {
+                OrbitalLoader(tint: app.accent)
+                Text("Summoning the cosmos…").microLabel()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            // Reloading — keep the previous image, show a quiet corner spinner.
+            VStack {
+                HStack {
+                    Spacer()
+                    OrbitalLoader(tint: app.accent, size: 20)
+                        .padding(12)
+                }
+                Spacer()
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var errorOverlay: some View {
@@ -134,12 +177,13 @@ struct HeroView: View {
                 .foregroundStyle(Theme.Palette.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
-            Button("Try again") { app.refresh() }
-                .buttonStyle(.plain)
+            Text("Tap to retry")
                 .font(Theme.Fonts.title(12))
                 .foregroundStyle(app.accent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.Palette.obsidian0.opacity(0.55))
+        .background(Theme.Palette.obsidian0.opacity(0.6))
+        .contentShape(Rectangle())
+        .onTapGesture { app.refresh() }
     }
 }

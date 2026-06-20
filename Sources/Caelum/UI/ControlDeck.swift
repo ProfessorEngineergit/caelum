@@ -7,12 +7,13 @@ struct ControlDeck: View {
 
     private var isApplied: Bool { app.wallpaperAppliedID == app.current?.id }
     private var isVideo: Bool { app.current?.isVideo == true }
+    private var canShuffle: Bool { app.activeSourceID != "apod" && app.phase == .ready }
 
     var body: some View {
         VStack(spacing: Theme.Metrics.space3) {
             primaryButton
             HStack(spacing: Theme.Metrics.space3) {
-                iconButton("shuffle", "Shuffle") { app.shuffleNext() }
+                iconButton("shuffle", "Shuffle", disabled: !canShuffle) { app.shuffleNext() }
                 iconButton("text.alignleft", "Explanation",
                            disabled: app.current?.explanation == nil) {
                     withAnimation(Theme.Motion.gentle) { app.showExplanation = true }
@@ -33,6 +34,10 @@ struct ControlDeck: View {
             Button { app.setWallpaper() } label: {
                 if app.isApplyingWallpaper {
                     Label("Setting wallpaper…", systemImage: "circle.dotted")
+                } else if !app.isCurrentWallpaperReady && app.isPreparingCurrentWallpaper {
+                    Label("Preparing wallpaper…", systemImage: "arrow.down.circle.fill")
+                } else if !app.isCurrentWallpaperReady {
+                    Label("Wallpaper unavailable", systemImage: "exclamationmark.triangle.fill")
                 } else if isApplied {
                     Label("On Your Desktop", systemImage: "checkmark.circle.fill")
                 } else {
@@ -40,7 +45,7 @@ struct ControlDeck: View {
                 }
             }
             .buttonStyle(AuroraPillButtonStyle(filled: !isApplied))
-            .disabled(app.phase != .ready)
+            .disabled(app.phase != .ready || !app.isCurrentWallpaperReady)
         }
     }
 
