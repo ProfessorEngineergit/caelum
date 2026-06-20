@@ -10,12 +10,9 @@ final class ImageCache {
     static let shared = ImageCache()
 
     let directory: URL
-    private let maxFiles = 80
+    private let maxFiles = 150   // headroom so background prefetch doesn't thrash the cache
     private let inFlightLock = NSLock()
     private var inFlightDownloads: [String: Task<URL, Error>] = [:]
-    /// We fetch the absolute-maximum-resolution asset for every source. Only
-    /// genuinely gigapixel files (hundreds of MB) fall back to a smaller variant.
-    private let maxWallpaperBytes: Int64 = 120_000_000
 
     init() {
         let base = FileManager.default.urls(for: .applicationSupportDirectory,
@@ -26,10 +23,11 @@ final class ImageCache {
     }
 
     /// Returns a local file URL for the image, downloading it if not cached.
-    /// Tries the chosen (HD) URL first; if that fails (e.g. a 403 on the ~orig
-    /// asset) it falls back to the thumbnail so a source is never broken.
+    /// Goes straight for the maximum-resolution asset (no pre-flight HEAD — that
+    /// added a full round-trip to every load); if it fails (e.g. a 403 on the
+    /// ~orig asset) it falls back to the thumbnail so a source is never broken.
     func localURL(for image: CosmicImage) async throws -> URL {
-        let primary = await wallpaperURL(for: image)
+        let primary = image.imageURL
         if let file = cachedFile(for: primary) { return file }
 
         do {
@@ -102,25 +100,6 @@ final class ImageCache {
         inFlightLock.lock()
         inFlightDownloads[key] = nil
         inFlightLock.unlock()
-    }
-
-    /// Pick the HD image unless it exceeds the cap, in which case use the
-    /// (smaller) thumbnail variant. One lightweight HEAD request.
-    private func wallpaperURL(for image: CosmicImage) async -> URL {
-        guard let thumb = image.thumbURL, thumb != image.imageURL else { return image.imageURL }
-        if let size = await contentLength(image.imageURL), size > maxWallpaperBytes {
-            return thumb
-        }
-        return image.imageURL
-    }
-
-    private func contentLength(_ url: URL) async -> Int64? {
-        var request = URLRequest(url: url)
-        request.httpMethod = "HEAD"
-        request.timeoutInterval = 12
-        guard let (_, response) = try? await HTTPClient.session.data(for: request) else { return nil }
-        let length = response.expectedContentLength
-        return length > 0 ? length : nil
     }
 
     /// Returns the cached local file for an image if it's already on disk
