@@ -16,7 +16,7 @@ struct ControlDeck: View {
                 iconButton("shuffle", "Shuffle", disabled: !canShuffle) { app.shuffleNext() }
                 iconButton("text.alignleft", "Explanation",
                            disabled: app.current?.explanation == nil) {
-                    withAnimation(Theme.Motion.gentle) { app.showExplanation = true }
+                    withAnimation(Theme.Motion.bouncy) { app.showExplanation = true }
                 }
                 iconButton("arrow.up.forward.app", "Open original page",
                            disabled: app.current?.pageURL == nil) { app.openSourcePage() }

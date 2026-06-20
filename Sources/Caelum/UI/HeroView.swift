@@ -14,7 +14,7 @@ struct HeroView: View {
             if let image = app.heroImage {
                 heroLayers(image)
                     .id(app.current?.id)
-                    .transition(.opacity.animation(Theme.Motion.gentle))
+                    .transition(.opacity.animation(.easeOut(duration: 0.22)))
                     .onAppear {
                         guard !isSnapshot else { return }
                         withAnimation(.easeInOut(duration: 24).repeatForever(autoreverses: true)) {

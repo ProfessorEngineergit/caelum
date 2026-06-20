@@ -63,7 +63,7 @@ struct ExplanationSheet: View {
             }
             Spacer()
             Button {
-                withAnimation(Theme.Motion.gentle) { app.showExplanation = false }
+                withAnimation(Theme.Motion.bouncy) { app.showExplanation = false }
             } label: { Image(systemName: "xmark") }
                 .buttonStyle(GlassIconButtonStyle(size: 34))
         }

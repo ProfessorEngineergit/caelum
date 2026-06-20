@@ -20,7 +20,7 @@ struct PopoverView: View {
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
                 if Preferences.shared.usingDemoKey {
-                    DemoKeyBanner { withAnimation(Theme.Motion.gentle) { app.showSettings = true } }
+                    DemoKeyBanner { withAnimation(Theme.Motion.bouncy) { app.showSettings = true } }
                         .padding(.horizontal, Theme.Metrics.space4)
                         .padding(.top, Theme.Metrics.space3)
                 }
@@ -40,9 +40,12 @@ struct PopoverView: View {
             if app.showSettings {
                 SettingsView(
                     scheduler: app.scheduler,
-                    onDismiss: { withAnimation(Theme.Motion.gentle) { app.showSettings = false } }
+                    onDismiss: { withAnimation(Theme.Motion.bouncy) { app.showSettings = false } }
                 )
-                .transition(.opacity)
+                .transition(.asymmetric(
+                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                    removal:   .move(edge: .bottom).combined(with: .opacity)
+                ))
                 .zIndex(2)
             }
         }
@@ -105,7 +108,7 @@ private struct FooterBar: View {
     var body: some View {
         HStack(spacing: Theme.Metrics.space2) {
             footerButton("gearshape.fill", "Settings") {
-                withAnimation(Theme.Motion.gentle) { app.showSettings = true }
+                withAnimation(Theme.Motion.bouncy) { app.showSettings = true }
             }
 
             Spacer()

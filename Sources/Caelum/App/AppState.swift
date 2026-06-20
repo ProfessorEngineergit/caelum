@@ -231,7 +231,7 @@ final class AppState: ObservableObject {
         if didSet {
             appliedWallpaperFiles[id] = file
             withAnimation(Theme.Motion.bouncy) { wallpaperAppliedID = id }
-            if playChime && Preferences.shared.chimeOnUpdate { NSSound(named: "Glass")?.play() }
+            if playChime && Preferences.shared.chimeOnUpdate { WallpaperChime.shared.play() }
             if shouldApplyAllScreens {
                 Task.detached(priority: .utility) {
                     WallpaperManager.applySecondaryScreens(localFileURL: file)
