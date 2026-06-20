@@ -8,6 +8,7 @@ final class OnboardingAudio {
     private let engine = AVAudioEngine()
     private let pad = AVAudioPlayerNode()
     private let chimeNode = AVAudioPlayerNode()
+    private let impact = AVAudioPlayerNode()    // the deep opening "boom"
     private let sampleRate = 44_100.0
     private var format: AVAudioFormat { AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 2)! }
     private var fadeTimer: Timer?
@@ -17,9 +18,16 @@ final class OnboardingAudio {
         guard !running else { return }
         engine.attach(pad)
         engine.attach(chimeNode)
+        engine.attach(impact)
         engine.connect(pad, to: engine.mainMixerNode, format: format)
         engine.connect(chimeNode, to: engine.mainMixerNode, format: format)
-        engine.mainMixerNode.outputVolume = 0
+        engine.connect(impact, to: engine.mainMixerNode, format: format)
+        // Master stays open; per-node volumes shape the mix so the boom can hit at
+        // full force while the ambient pad is still swelling in underneath it.
+        engine.mainMixerNode.outputVolume = 1
+        pad.volume = 0
+        chimeNode.volume = 0.9
+        impact.volume = 1
         do { try engine.start() } catch { return }
         running = true
 
@@ -27,15 +35,23 @@ final class OnboardingAudio {
             pad.scheduleBuffer(buffer, at: nil, options: .loops, completionHandler: nil)
             pad.play()
         }
-        fade(to: 0.42, duration: 3.5)
-        // Signature opening chime.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in self?.chime(soft: false) }
+        rampPad(to: 0.42, duration: 4.0)   // slow ambient swell
+        // The signature "boom" is fired by the view at the exact moment the nebula
+        // blooms (see OnboardingView.onBoom) — not here — so sound and image land together.
     }
 
     func chime(soft: Bool = true) {
         guard running, let buffer = makeChime(soft: soft) else { return }
         chimeNode.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
         if !chimeNode.isPlaying { chimeNode.play() }
+    }
+
+    /// A deep cinematic impact — the nebula's arrival. Pitch-swept sub sine with a
+    /// short noise transient for the punch.
+    func boom() {
+        guard running, let buffer = makeBoom() else { return }
+        impact.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
+        if !impact.isPlaying { impact.play() }
     }
 
     func stop() {
@@ -59,6 +75,20 @@ final class OnboardingAudio {
             let t = Float(i) / Float(steps)
             self?.engine.mainMixerNode.outputVolume = start + (target - start) * t
             if i >= steps { timer.invalidate(); completion?() }
+        }
+    }
+
+    /// Swells only the ambient pad's volume (master stays full), so a boom or chime
+    /// can ring out at full level while the pad is still rising.
+    private func rampPad(to target: Float, duration: TimeInterval) {
+        let start = pad.volume
+        let steps = 60
+        let dt = duration / Double(steps)
+        var i = 0
+        Timer.scheduledTimer(withTimeInterval: dt, repeats: true) { [weak self] timer in
+            i += 1
+            self?.pad.volume = start + (target - start) * (Float(i) / Float(steps))
+            if i >= steps { timer.invalidate() }
         }
     }
 
@@ -108,6 +138,30 @@ final class OnboardingAudio {
             var s = 0.0
             for p in partials { s += p.amp * sin(2 * .pi * base * p.mult * t) * exp(-t * p.decay) }
             let v = Float(s) * peak
+            L[n] = v; R[n] = v
+        }
+        return buffer
+    }
+
+    /// The opening impact: a sine that sweeps down from ~130 Hz into the sub-bass,
+    /// an octave-below layer for weight, and a brief noise transient for the punch.
+    private func makeBoom() -> AVAudioPCMBuffer? {
+        let seconds = 2.8
+        let frames = AVAudioFrameCount(seconds * sampleRate)
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames) else { return nil }
+        buffer.frameLength = frames
+        guard let L = buffer.floatChannelData?[0], let R = buffer.floatChannelData?[1] else { return nil }
+        var phase = 0.0
+        for n in 0..<Int(frames) {
+            let t = Double(n) / sampleRate
+            let freq = 38.0 + 95.0 * exp(-t * 7.0)          // 133 Hz → 38 Hz drop
+            phase += 2 * .pi * freq / sampleRate
+            let body  = sin(phase) * exp(-t * 2.0)          // booming low sine
+            let sub   = sin(phase * 0.5) * exp(-t * 1.5) * 0.6   // sub octave for weight
+            let punch = Double.random(in: -1...1) * exp(-t * 55.0) * 0.45  // ~20 ms transient
+            let attack = min(1.0, t / 0.004)                // 4 ms to avoid a click
+            let s = ((body + sub) * 0.7 + punch) * attack
+            let v = Float(max(-1, min(1, s)) * 0.92)
             L[n] = v; R[n] = v
         }
         return buffer

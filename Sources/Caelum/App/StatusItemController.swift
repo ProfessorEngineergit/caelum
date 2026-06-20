@@ -21,7 +21,8 @@ final class StatusItemController: NSObject {
     private var glyphTimer: Timer?
 
     /// Transparent margin around the content so the soft drop shadow has room.
-    private let shadowMargin: CGFloat = 32
+    /// Kept tight so the window doesn't swallow clicks far around the visible card.
+    private static let shadowMargin: CGFloat = 20
 
     private var contentWidth: CGFloat { Theme.Metrics.popoverWidth }
     private var contentHeight: CGFloat { Theme.Metrics.popoverHeight }
@@ -31,8 +32,8 @@ final class StatusItemController: NSObject {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         panel = CaelumPanel(
             contentRect: NSRect(x: 0, y: 0,
-                                width: Theme.Metrics.popoverWidth + 64,
-                                height: Theme.Metrics.popoverHeight + 64),
+                                width: Theme.Metrics.popoverWidth + Self.shadowMargin * 2,
+                                height: Theme.Metrics.popoverHeight + Self.shadowMargin * 2),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered, defer: true)
         super.init()
@@ -65,13 +66,13 @@ final class StatusItemController: NSObject {
         panel.animationBehavior = .none
 
         let radius = Theme.Metrics.radiusPanel
-        let contentRect = NSRect(x: shadowMargin, y: shadowMargin,
+        let contentRect = NSRect(x: Self.shadowMargin, y: Self.shadowMargin,
                                  width: contentWidth, height: contentHeight)
 
         // Wrapper fills the whole (oversized) window; stays transparent.
         let wrapper = NSView(frame: NSRect(x: 0, y: 0,
-                                           width: contentWidth + shadowMargin * 2,
-                                           height: contentHeight + shadowMargin * 2))
+                                           width: contentWidth + Self.shadowMargin * 2,
+                                           height: contentHeight + Self.shadowMargin * 2))
         wrapper.wantsLayer = true
 
         // Card carries the soft, perfectly-rounded drop shadow (not clipped).
@@ -81,9 +82,9 @@ final class StatusItemController: NSObject {
             layer.cornerRadius = radius
             layer.cornerCurve = .continuous
             layer.shadowColor = NSColor.black.cgColor
-            layer.shadowOpacity = 0.55
-            layer.shadowRadius = 26
-            layer.shadowOffset = NSSize(width: 0, height: -10)
+            layer.shadowOpacity = 0.5
+            layer.shadowRadius = 13
+            layer.shadowOffset = NSSize(width: 0, height: -5)
             layer.shadowPath = CGPath(roundedRect: card.bounds,
                                       cornerWidth: radius, cornerHeight: radius, transform: nil)
             layer.masksToBounds = false
@@ -173,8 +174,8 @@ final class StatusItemController: NSObject {
             let minX = screen.visibleFrame.minX + 8
             cardX = min(max(cardX, minX), maxX)
         }
-        panel.setFrameOrigin(NSPoint(x: cardX - shadowMargin,
-                                     y: (cardTopY - contentHeight) - shadowMargin))
+        panel.setFrameOrigin(NSPoint(x: cardX - Self.shadowMargin,
+                                     y: (cardTopY - contentHeight) - Self.shadowMargin))
     }
 
     // MARK: - Dismiss on outside click

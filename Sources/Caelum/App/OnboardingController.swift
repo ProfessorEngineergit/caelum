@@ -34,7 +34,8 @@ final class OnboardingController {
 
         let root = OnboardingView(
             onComplete: { [weak self] key in self?.finish(key) },
-            onChime: { [weak self] soft in self?.audio.chime(soft: soft) })
+            onChime: { [weak self] soft in self?.audio.chime(soft: soft) },
+            onBoom: { [weak self] in self?.audio.boom() })
         let hosting = NSHostingView(rootView: root)
         hosting.frame = NSRect(origin: .zero, size: screen.frame.size)
         hosting.autoresizingMask = [.width, .height]
@@ -46,8 +47,10 @@ final class OnboardingController {
         self.window = window
 
         audio.start()
+        // Snap to black fast ("springt auf den Desktop, man sieht nichts"); the view
+        // then holds black briefly before blooming the nebula with the boom.
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.9
+            ctx.duration = 0.35
             window.animator().alphaValue = 1
         }
     }

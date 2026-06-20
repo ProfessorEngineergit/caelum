@@ -8,6 +8,7 @@ import AppKit
 struct OnboardingView: View {
     let onComplete: (String) -> Void
     var onChime: (Bool) -> Void = { _ in }
+    var onBoom: () -> Void = {}
 
     @State private var step = 0
     @State private var apiKey = ""
@@ -18,7 +19,9 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            OnboardingBackground()
+            OnboardingBackground(intensity: revealed ? (step == 0 ? 1.0 : 0.62) : 0)
+                .animation(.easeOut(duration: 1.9), value: revealed)
+                .animation(.easeInOut(duration: 0.8), value: step)
 
             // The illuminating sphere — large on the splash, then it rises and
             // shrinks to sit above the text on later steps.
@@ -45,9 +48,14 @@ struct OnboardingView: View {
         .environment(\.colorScheme, .dark)
         .onExitCommand { onComplete(apiKey) }   // Esc always escapes the takeover
         .onAppear {
-            withAnimation(.easeOut(duration: 1.6)) { revealed = true }
+            // Hold on pure black for a beat — "man sieht nichts" — then the nebula
+            // blooms in and the boom lands at the very same instant.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                onBoom()
+                withAnimation(.easeOut(duration: 1.9)) { revealed = true }
+            }
             // Auto-advance the splash into the first message.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.8) {
                 if step == 0 { advance() }
             }
         }
@@ -269,18 +277,59 @@ private struct AuroraOrb: View {
 // MARK: - Background (obsidian + aurora glows + twinkling starfield)
 
 private struct OnboardingBackground: View {
+    var intensity: Double = 1
+
     var body: some View {
         ZStack {
             Color.black
-            RadialGradient(colors: [Theme.Palette.obsidian2.opacity(0.9), .black],
-                           center: .center, startRadius: 0, endRadius: 700)
-            RadialGradient(colors: [Theme.Palette.auroraViolet.opacity(0.16), .clear],
-                           center: .init(x: 0.2, y: 0.15), startRadius: 0, endRadius: 520)
-            RadialGradient(colors: [Theme.Palette.auroraCyan.opacity(0.12), .clear],
-                           center: .init(x: 0.85, y: 0.85), startRadius: 0, endRadius: 520)
-            Starfield()
+            Group {
+                RadialGradient(colors: [Theme.Palette.obsidian2.opacity(0.9), .black],
+                               center: .center, startRadius: 0, endRadius: 700)
+                NebulaView()                       // the wabbernder Nebel
+                RadialGradient(colors: [Theme.Palette.auroraViolet.opacity(0.16), .clear],
+                               center: .init(x: 0.2, y: 0.15), startRadius: 0, endRadius: 520)
+                RadialGradient(colors: [Theme.Palette.auroraCyan.opacity(0.12), .clear],
+                               center: .init(x: 0.85, y: 0.85), startRadius: 0, endRadius: 520)
+                Starfield()
+            }
+            .opacity(intensity)
         }
         .ignoresSafeArea()
+    }
+}
+
+/// A slow, undulating nebula — a few coloured glows that drift, breathe and screen
+/// over one another behind a heavy blur, so the cloud forever churns ("wabbert").
+private struct NebulaView: View {
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            GeometryReader { geo in
+                let center = CGPoint(x: geo.size.width / 2, y: geo.size.height * 0.46)
+                ZStack {
+                    blob(Theme.Palette.auroraViolet,  center, t, speed: 0.07,  phase: 0.0, radius: 360, drift: 150)
+                    blob(Theme.Palette.auroraCyan,    center, t, speed: 0.06,  phase: 2.1, radius: 300, drift: 185)
+                    blob(Theme.Palette.auroraMagenta, center, t, speed: 0.085, phase: 4.2, radius: 280, drift: 130)
+                    blob(Color(nsColor: NSColor(hex: 0x3A66FF)), center, t, speed: 0.05, phase: 1.0, radius: 260, drift: 205)
+                }
+                .blur(radius: 80)
+                .blendMode(.screen)
+            }
+        }
+        .ignoresSafeArea()
+    }
+
+    private func blob(_ color: Color, _ base: CGPoint, _ t: Double,
+                      speed: Double, phase: Double, radius: CGFloat, drift: CGFloat) -> some View {
+        let dx = CGFloat(sin(t * speed + phase)) * drift
+        let dy = CGFloat(cos(t * speed * 0.8 + phase * 1.3)) * (drift * 0.7)
+        let breathe = 1.0 + 0.22 * sin(t * speed * 1.6 + phase)
+        return Circle()
+            .fill(RadialGradient(colors: [color.opacity(0.55), .clear],
+                                 center: .center, startRadius: 0, endRadius: radius))
+            .frame(width: radius * 2, height: radius * 2)
+            .scaleEffect(breathe)
+            .position(x: base.x + dx, y: base.y + dy)
     }
 }
 
