@@ -47,34 +47,10 @@ struct HeroView: View {
         .clipped()
     }
 
-    /// Two stacked copies of the image: a sharp one that fades out by ~75%, and
-    /// a blurred one that takes over in the transition zone and dissolves to
-    /// transparent — so the image gets progressively less opaque, blurrier and
-    /// (over the dark glass) blacker, melting perfectly into the panel.
+    /// A single sharp image whose opacity fades to transparent toward the bottom
+    /// (no blur) — it dissolves cleanly into the panel background, no divider line.
     @ViewBuilder
     private func heroLayers(_ image: NSImage) -> some View {
-        ZStack {
-            heroFill(image, blur: 0)
-                .mask(LinearGradient(
-                    stops: [
-                        .init(color: .black, location: 0.00),
-                        .init(color: .black, location: 0.44),
-                        .init(color: .black.opacity(0.0), location: 0.78),
-                    ],
-                    startPoint: .top, endPoint: .bottom))
-
-            heroFill(image, blur: 20)
-                .mask(LinearGradient(
-                    stops: [
-                        .init(color: .black.opacity(0.0), location: 0.40),
-                        .init(color: .black, location: 0.66),
-                        .init(color: .black.opacity(0.0), location: 1.00),
-                    ],
-                    startPoint: .top, endPoint: .bottom))
-        }
-    }
-
-    private func heroFill(_ image: NSImage, blur: CGFloat) -> some View {
         Image(nsImage: image)
             .resizable()
             .interpolation(.high)
@@ -83,7 +59,14 @@ struct HeroView: View {
             .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.heroHeight)
             .clipped()
             .scaleEffect(kenBurns ? 1.07 : 1.0)
-            .blur(radius: blur)
+            .mask(LinearGradient(
+                stops: [
+                    .init(color: .black, location: 0.00),
+                    .init(color: .black, location: 0.50),
+                    .init(color: .black.opacity(0.45), location: 0.76),
+                    .init(color: .black.opacity(0.0), location: 0.98),
+                ],
+                startPoint: .top, endPoint: .bottom))
     }
 
     // MARK: - Content overlay

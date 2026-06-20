@@ -13,6 +13,11 @@ struct PopoverView: View {
 
             VStack(spacing: 0) {
                 HeroView()                               // fixed 220
+                if Preferences.shared.usingDemoKey {
+                    DemoKeyBanner { withAnimation(Theme.Motion.gentle) { app.showSettings = true } }
+                        .padding(.horizontal, Theme.Metrics.space4)
+                        .padding(.top, Theme.Metrics.space3)
+                }
                 ControlDeck()                            // fixed
                     .padding(.horizontal, Theme.Metrics.space4)
                     .padding(.top, Theme.Metrics.space4)
@@ -34,15 +39,35 @@ struct PopoverView: View {
                 .transition(.opacity)
                 .zIndex(2)
             }
-            if app.showOnboarding {
-                WelcomeView()
-                    .transition(.opacity)
-                    .zIndex(3)
-            }
         }
         .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight)
         .clipShape(RoundedRectangle(cornerRadius: Theme.Metrics.radiusPanel, style: .continuous))
         .environment(\.colorScheme, .dark)
+    }
+}
+
+/// Slim hint shown while running on the shared DEMO_KEY — taps through to Settings.
+private struct DemoKeyBanner: View {
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: "key.fill").font(.system(size: 10, weight: .bold))
+                Text("Using the shared demo key — add yours for faster APOD")
+                    .font(Theme.Fonts.body(11))
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
+            }
+            .foregroundStyle(Theme.Palette.warning)
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Theme.Palette.warning.opacity(0.12)))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Theme.Palette.warning.opacity(0.3), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 }
 
