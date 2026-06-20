@@ -31,6 +31,14 @@ struct SourceStrip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            // Section divider sits *above* the heading, so it never collides with
+            // the first row of source tiles the way a grid-top overlay did.
+            Rectangle()
+                .fill(Theme.Palette.hairline.opacity(0.6))
+                .frame(height: 1)
+                .padding(.horizontal, Theme.Metrics.space4)
+                .padding(.bottom, 2)
+
             Text("Sources")
                 .microLabel()
                 .padding(.horizontal, Theme.Metrics.space5)
@@ -44,11 +52,6 @@ struct SourceStrip: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .overlay(
-                Rectangle().frame(height: 1)
-                    .foregroundStyle(Theme.Palette.hairline.opacity(0.6)),
-                alignment: .top
-            )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.top, Theme.Metrics.space1)
