@@ -15,9 +15,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appState.showOnboarding = false   // handled full-screen, not in the panel
         statusController = StatusItemController(appState: appState)
 
-        // Background prefetcher — keep the cache warm so switches feel instant.
+        // Background prefetcher — caches every source's batch so switches, shuffles
+        // and applying a wallpaper are instant.
         appState.onSourceSelected = { [weak self] in self?.prefetcher.nudgeActive() }
         appState.onBatchLoaded = { [weak self] images in self?.prefetcher.warm(images) }
+        // Each prefetched batch list is held in memory so switching to a source
+        // doesn't even wait for a network fetch.
+        prefetcher.onBatchFetched = { [weak appState] id, images in
+            Task { @MainActor in appState?.cacheBatch(images, for: id) }
+        }
         prefetcher.start()
 
         // Gentle "getting things ready" hint — only on a genuinely cold start after a

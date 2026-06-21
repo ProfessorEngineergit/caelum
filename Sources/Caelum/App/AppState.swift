@@ -38,6 +38,9 @@ final class AppState: ObservableObject {
 
     let scheduler = Scheduler()
     private var batch: [CosmicImage] = []
+    /// Last fetched batch per source, kept in memory so switching to a source
+    /// presents instantly (its images are prefetched to disk) without a network wait.
+    private var batchCache: [String: [CosmicImage]] = [:]
     private var index = 0
     private var loadToken = 0
     private var warmupTask: Task<Void, Never>?
@@ -100,7 +103,29 @@ final class AppState: ObservableObject {
         withAnimation(Theme.Motion.snappy) { activeSourceID = id }
         Preferences.shared.activeSourceID = id
         onSourceSelected?()   // nudge the prefetcher to warm this source
-        Task { await loadLatest(applyWallpaper: false) }
+
+        if let cached = batchCache[id], !cached.isEmpty {
+            // Instant: present from the batch we already fetched (its images are
+            // prefetched to disk), then quietly refresh in the background. No
+            // spinner, no download wait — the wallpaper is applyable immediately.
+            loadToken += 1
+            let token = loadToken
+            batch = cached
+            index = cached.firstIndex(where: { !$0.isVideo }) ?? 0
+            Task {
+                await present(cached[index], applyWallpaper: false, token: token)
+                await loadLatest(applyWallpaper: false, silent: true)
+            }
+        } else {
+            Task { await loadLatest(applyWallpaper: false) }
+        }
+    }
+
+    /// Hold a source's freshly fetched batch in memory (fed by the prefetcher) so a
+    /// later switch to it is instant. Doesn't touch what's currently displayed.
+    func cacheBatch(_ images: [CosmicImage], for id: String) {
+        guard !images.isEmpty else { return }
+        batchCache[id] = images
     }
 
     func refresh() { Task { await loadLatest(applyWallpaper: false) } }
@@ -136,6 +161,7 @@ final class AppState: ObservableObject {
             guard token == loadToken else { return }
             guard !images.isEmpty else { throw SourceError.empty }
             batch = images
+            batchCache[activeSourceID] = images
             onBatchLoaded?(images)
             index = images.firstIndex(where: { !$0.isVideo }) ?? 0
             let target = images[index]

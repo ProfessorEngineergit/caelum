@@ -10,7 +10,9 @@ final class ImageCache {
     static let shared = ImageCache()
 
     let directory: URL
-    private let maxFiles = 150   // headroom so background prefetch doesn't thrash the cache
+    // Headroom for caching every source's full batch at both preview and full-res
+    // (~10 sources × 12 images × 2 variants) without the prefetch evicting itself.
+    private let maxFiles = 320
     private let inFlightLock = NSLock()
     private var inFlightDownloads: [String: Task<URL, Error>] = [:]
 
