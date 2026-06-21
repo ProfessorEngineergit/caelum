@@ -59,15 +59,25 @@ final class AppState: ObservableObject {
 
     init() {
         scheduler.onDailyRefresh = { [weak self] in
-            Task { await self?.loadLatest(applyWallpaper: Preferences.shared.autoDailyRefresh) }
+            // The daily check runs in the background — never disrupt what's shown.
+            Task { await self?.loadLatest(applyWallpaper: Preferences.shared.autoDailyRefresh, silent: true) }
         }
         scheduler.onRotate = { [weak self] in
             Task { await self?.shuffle(applyWallpaper: true) }
         }
     }
 
-    /// Begins background scheduling; the initial daily check triggers the first load.
-    func start() { scheduler.start() }
+    /// Begins background scheduling and guarantees the panel has content on launch.
+    /// The scheduler only triggers a load when the daily auto-refresh is actually
+    /// due; on a same-day relaunch (or with auto-refresh off) it wouldn't fire, so
+    /// we kick off an initial load here in that case.
+    func start() {
+        let schedulerWillLoad = Preferences.shared.autoDailyRefresh && Preferences.shared.fetchNeededToday
+        scheduler.start()
+        if !schedulerWillLoad {
+            Task { await loadLatest(applyWallpaper: false) }
+        }
+    }
 
     /// Populate fixed state for an offscreen snapshot render (docs/marketing).
     func prepareSnapshot(image: CosmicImage, hero: NSImage?, accent: Color) {
@@ -96,24 +106,29 @@ final class AppState: ObservableObject {
     func refresh() { Task { await loadLatest(applyWallpaper: false) } }
     func shuffleNext() { Task { await shuffle(applyWallpaper: false) } }
 
-    func loadLatest(applyWallpaper: Bool) async {
+    /// Fetch and present the source's latest image.
+    /// - `silent`: a background refresh (the scheduled daily check). When content
+    ///   is already on screen it never shows a spinner, never disrupts the current
+    ///   image, and only swaps in genuinely new content — seamlessly. User-initiated
+    ///   loads (selecting a source, tapping refresh) always pass `silent: false` so
+    ///   the panel responds visibly.
+    func loadLatest(applyWallpaper: Bool, silent: Bool = false) async {
         loadToken += 1
         let token = loadToken
+        let isColdStart = heroImage == nil          // captured before await
         let isAPOD = activeSourceID == "apod"
-        let hasPreviousContent = heroImage != nil   // captured before await
 
-        if isAPOD && hasPreviousContent {
-            // Silent background refresh — never disrupt the currently displayed image.
+        if silent && !isColdStart {
+            // Background refresh with content already shown — stay completely quiet.
             withAnimation(Theme.Motion.gentle) { errorText = nil }
-        } else {
-            // Normal load (or cold APOD start). For the cold APOD case we set
-            // isAPODInitializing so HeroView suppresses the full-screen spinner —
-            // the panel opens immediately with just a quiet banner below the hero.
+        } else if isAPOD && isColdStart {
+            // Very first APOD load: show the non-blocking "downloading…" banner
+            // instead of the full-screen spinner so the panel is usable immediately.
             withAnimation(Theme.Motion.gentle) {
-                phase = .loading
-                errorText = nil
-                if isAPOD { isAPODInitializing = true }
+                phase = .loading; errorText = nil; isAPODInitializing = true
             }
+        } else {
+            withAnimation(Theme.Motion.gentle) { phase = .loading; errorText = nil }
         }
 
         do {
@@ -125,8 +140,8 @@ final class AppState: ObservableObject {
             index = images.firstIndex(where: { !$0.isVideo }) ?? 0
             let target = images[index]
 
-            if isAPOD && hasPreviousContent && target.id == current?.id {
-                // Same APOD date as what's already on screen — silently do nothing.
+            if silent && !isColdStart && target.id == current?.id {
+                // Nothing new since last time — leave the displayed image untouched.
             } else {
                 await present(target, applyWallpaper: applyWallpaper, token: token)
             }
@@ -134,9 +149,9 @@ final class AppState: ObservableObject {
         } catch {
             guard token == loadToken else { return }
             withAnimation(Theme.Motion.gentle) { isAPODInitializing = false }
-            if isAPOD && hasPreviousContent {
-                // Background APOD refresh failed — keep the current image, log quietly.
-                NSLog("Caelum: APOD background refresh silently failed: %@", String(describing: error))
+            if silent && !isColdStart {
+                // Background refresh failed — keep the current image, fail quietly.
+                NSLog("Caelum: background refresh failed quietly: %@", String(describing: error))
             } else {
                 NSLog("Caelum: loadLatest ERROR %@", String(describing: error))
                 withAnimation(Theme.Motion.gentle) {
@@ -293,10 +308,6 @@ final class AppState: ObservableObject {
     }
 
     func setWallpaper() { Task { await applyWallpaperNow() } }
-
-    /// Apply wallpaper without playing the chime — used when the caller drives
-    /// chime timing externally (e.g. the Apply-button ring animation).
-    func setWallpaperSilently() { Task { await applyWallpaperNow(playChime: false) } }
 
     func completeOnboarding(apiKey: String) {
         let key = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)

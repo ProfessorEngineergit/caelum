@@ -44,7 +44,7 @@ struct ControlDeck: View {
                     Label("Preparing wallpaper…", systemImage: "arrow.down.circle.fill")
                 } else if !app.isCurrentWallpaperReady {
                     Label("Wallpaper unavailable", systemImage: "exclamationmark.triangle.fill")
-                } else if isApplied && !isRingAnimating {
+                } else if isApplied {
                     Label("On Your Desktop", systemImage: "checkmark.circle.fill")
                 } else {
                     Label("Set as Wallpaper", systemImage: "photo.fill.on.rectangle.fill")
@@ -56,30 +56,38 @@ struct ControlDeck: View {
         }
     }
 
+    /// How long the ring takes to travel the full border before the wallpaper lands.
+    private let ringDuration: Double = 0.85
+
     @ViewBuilder private var ringOverlay: some View {
         if isRingAnimating {
             RoundedRectangle(cornerRadius: Theme.Metrics.radiusButton, style: .continuous)
                 .trim(from: 0, to: ringProgress)
-                .stroke(app.accent,
+                .stroke(Theme.Palette.textPrimary,
                         style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                .animation(.easeInOut(duration: 0.9), value: ringProgress)
+                .padding(1.25)   // keep the stroke fully inside the pill edge
+                .allowsHitTesting(false)
         }
     }
 
+    /// The line sweeps around the button border; the instant it closes the loop,
+    /// the wallpaper appears on the desktop and the chime rings — the same moment
+    /// for every image (the file is already cached, so the set is instant). This is
+    /// deterministic, not a guess at each image's variable download delay.
     private func startRingAnimation() {
         isRingAnimating = true
         ringProgress = 0
-        // Apply wallpaper immediately (fast, ~200 ms); chime fires when ring completes.
-        app.setWallpaperSilently()
-        // Ring sweeps to completion over ~900 ms.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            withAnimation(.easeInOut(duration: 0.9)) { ringProgress = 1 }
+        // Let the overlay mount at 0 this runloop, then animate the sweep next tick
+        // (animating in the same pass the view is inserted can skip the sweep).
+        DispatchQueue.main.async {
+            withAnimation(.easeInOut(duration: ringDuration)) { ringProgress = 1 }
         }
-        // After ring is full: chime, then fade ring out.
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 980_000_000)   // 980 ms — ring done
+            try? await Task.sleep(nanoseconds: UInt64(ringDuration * 1_000_000_000))
+            // Ring is full → reveal on the desktop, then the tone.
+            await app.applyWallpaperNow(playChime: false)
             if Preferences.shared.chimeOnUpdate { WallpaperChime.shared.play() }
-            try? await Task.sleep(nanoseconds: 160_000_000)   // brief hold, then reset
+            try? await Task.sleep(nanoseconds: 150_000_000)   // brief hold, then reset
             withAnimation(Theme.Motion.snappy) {
                 isRingAnimating = false
                 ringProgress = 0

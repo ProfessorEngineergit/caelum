@@ -52,10 +52,18 @@ final class Prefetcher {
     // MARK: - Internals
 
     private func prefetchCycle() async {
-        // The active source gets full-resolution warmth (instant shuffle / re-open).
-        // Every other source only gets lightweight previews — downloading full-res
-        // for all nine at once saturates the link and starves the foreground load.
-        await prefetch(source: SourceRegistry.active, count: 8, fullRes: true)
+        // First pass — make EVERY source instantly clickable. The active source
+        // gets depth (several full-res images → instant shuffle); every other
+        // source gets its *latest* image at full resolution, so switching to it
+        // shows a crisp wallpaper with no download wait. This is the "download
+        // everything on first start" behaviour.
+        await prefetch(source: SourceRegistry.active, count: 6, fullRes: true)
+        for source in SourceRegistry.all where source.id != SourceRegistry.active.id {
+            if Task.isCancelled { return }
+            await prefetch(source: source, count: 1, fullRes: true)
+        }
+        // Second pass — shuffle depth for the rest, previews only so we don't
+        // saturate the link with full-res for images that may never be viewed.
         for source in SourceRegistry.all where source.id != SourceRegistry.active.id {
             if Task.isCancelled { return }
             await prefetch(source: source, count: 4, fullRes: false)
