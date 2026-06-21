@@ -6,6 +6,7 @@ import AppKit
 /// big type carry you to "Enter Caelum". Owns no audio; calls `onChime` on each
 /// transition so the controller can play it.
 struct OnboardingView: View {
+    @ObservedObject var app: AppState
     let onComplete: (String) -> Void
     var onChime: (Bool) -> Void = { _ in }
     var onDrone: () -> Void = {}
@@ -104,10 +105,55 @@ struct OnboardingView: View {
             }
             .transition(.opacity)
         default:
-            messageStep(
-                eyebrow: "YOU'RE ALL SET",
-                title: "Welcome to Caelum.",
-                body: "Click the orbit icon in your menu bar anytime. The first image is already on its way to your desktop.")
+            VStack(spacing: 30) {
+                if setupDone {
+                    messageStep(
+                        eyebrow: "YOU'RE ALL SET",
+                        title: "Welcome to Caelum.",
+                        body: "Click the orbit icon in your menu bar anytime. Your library is cached, so every source switches instantly.")
+                } else {
+                    messageStep(
+                        eyebrow: "PREPARING YOUR LIBRARY",
+                        title: "Filling your library\nwith the cosmos.",
+                        body: "Caching a preview of every image from every source, so switching and applying a wallpaper is instant. This happens just once.")
+                }
+                setupProgressBar
+            }
+            .transition(.opacity)
+        }
+    }
+
+    private var setupDone: Bool { app.setupProgress >= 1 }
+
+    /// The first-run caching progress bar shown on the final onboarding step.
+    private var setupProgressBar: some View {
+        VStack(spacing: 12) {
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Theme.Palette.obsidian2.opacity(0.7))
+                    .frame(height: 8)
+                GeometryReader { geo in
+                    Capsule()
+                        .fill(Theme.Gradients.auroraHorizontal)
+                        .frame(width: max(8, geo.size.width * app.setupProgress))
+                        .shadow(color: Theme.Palette.auroraViolet.opacity(0.6), radius: 8)
+                }
+                .frame(height: 8)
+            }
+            .frame(width: 420)
+            .animation(.easeInOut(duration: 0.4), value: app.setupProgress)
+
+            HStack(spacing: 6) {
+                if setupDone {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Theme.Palette.auroraCyan)
+                    Text("Library ready")
+                } else {
+                    Text("\(Int(app.setupProgress * 100))% · caching in the background")
+                }
+            }
+            .font(.system(size: 12, weight: .medium, design: .monospaced))
+            .foregroundStyle(Theme.Palette.textTertiary)
         }
     }
 

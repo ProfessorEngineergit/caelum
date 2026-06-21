@@ -20,6 +20,10 @@ final class AppState: ObservableObject {
     @Published private(set) var actualResolution: ResolutionHint?
     /// Gentle first-run hint shown while the cache warms (only after install/update).
     @Published private(set) var isWarmingUp = false
+    /// 0…1 progress of the first-run "cache everything" pass — drives the onboarding
+    /// "preparing your library" step and the warm-up banner. Fed by the prefetcher.
+    @Published private(set) var setupProgress: Double = 0
+    private var setupComplete = false
     /// True only during the very first APOD fetch in this process — no image yet,
     /// but we want to show a non-blocking banner rather than the full-screen spinner.
     @Published private(set) var isAPODInitializing = false
@@ -126,6 +130,20 @@ final class AppState: ObservableObject {
     func cacheBatch(_ images: [CosmicImage], for id: String) {
         guard !images.isEmpty else { return }
         batchCache[id] = images
+    }
+
+    /// Report first-run caching progress (0…1) from the prefetcher. Monotonic and
+    /// latched: once the initial library is cached it stops, so the later refresh
+    /// cycles (which start from 0 again) never drag the progress bar backwards.
+    func reportSetupProgress(_ p: Double) {
+        guard !setupComplete else { return }
+        let clamped = min(1, max(0, p))
+        guard clamped > setupProgress else { return }
+        withAnimation(Theme.Motion.gentle) { setupProgress = clamped }
+        if clamped >= 1 {
+            setupComplete = true
+            markWarmupComplete()
+        }
     }
 
     func refresh() { Task { await loadLatest(applyWallpaper: false) } }
@@ -350,12 +368,11 @@ final class AppState: ObservableObject {
     func beginWarmup() {
         withAnimation(Theme.Motion.gentle) { isWarmingUp = true }
         warmupTask?.cancel()
+        // The banner is normally dismissed by reportSetupProgress() when caching
+        // reaches 100%. This is just a safety net so it can't linger if the
+        // prefetcher stalls (e.g. the network drops mid-setup).
         warmupTask = Task { [weak self] in
-            let deadline = Date().addingTimeInterval(75)
-            while !Task.isCancelled {
-                if ImageCache.shared.cachedFiles().count >= 8 || Date() > deadline { break }
-                try? await Task.sleep(nanoseconds: 2_500_000_000)
-            }
+            try? await Task.sleep(nanoseconds: 240 * 1_000_000_000)
             self?.markWarmupComplete()
         }
     }

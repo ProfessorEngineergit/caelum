@@ -14,9 +14,13 @@ private final class OnboardingWindow: NSWindow {
 final class OnboardingController {
     private var window: NSWindow?
     private let audio = OnboardingAudio()
+    private let appState: AppState
     private let onFinish: (String) -> Void
 
-    init(onFinish: @escaping (String) -> Void) { self.onFinish = onFinish }
+    init(appState: AppState, onFinish: @escaping (String) -> Void) {
+        self.appState = appState
+        self.onFinish = onFinish
+    }
 
     var isShowing: Bool { window != nil }
 
@@ -33,6 +37,7 @@ final class OnboardingController {
         window.isReleasedWhenClosed = false
 
         let root = OnboardingView(
+            app: appState,
             onComplete: { [weak self] key in self?.finish(key) },
             onChime: { [weak self] soft in self?.audio.chime(soft: soft) },
             onDrone: { [weak self] in self?.audio.drone() })

@@ -24,6 +24,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         prefetcher.onBatchFetched = { [weak appState] id, images in
             Task { @MainActor in appState?.cacheBatch(images, for: id) }
         }
+        // First-run caching progress → drives the "preparing your library" UI.
+        prefetcher.onSetupProgress = { [weak appState] p in
+            Task { @MainActor in appState?.reportSetupProgress(p) }
+        }
         prefetcher.start()
 
         // Gentle "getting things ready" hint — only on a genuinely cold start after a
@@ -39,7 +43,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // First run → cinematic full-screen onboarding (over everything).
         // The wallpaper loads behind it so it's ready when the user enters.
         if !Preferences.shared.hasCompletedOnboarding {
-            let onboarding = OnboardingController(onFinish: { [weak self] apiKey in
+            let onboarding = OnboardingController(appState: appState,
+                                                  onFinish: { [weak self] apiKey in
                 self?.appState.completeOnboarding(apiKey: apiKey)
             })
             self.onboarding = onboarding

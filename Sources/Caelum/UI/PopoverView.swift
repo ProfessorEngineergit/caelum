@@ -14,7 +14,7 @@ struct PopoverView: View {
             VStack(spacing: 0) {
                 HeroView()                               // fixed 220
                 if app.isWarmingUp {
-                    WarmingBanner()
+                    WarmingBanner(progress: app.setupProgress)
                         .padding(.horizontal, Theme.Metrics.space4)
                         .padding(.top, Theme.Metrics.space3)
                         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -64,13 +64,26 @@ struct PopoverView: View {
 /// Slim, info-styled hint shown on a cold first run while the cache warms; fades
 /// itself out once things are ready (see AppState.beginWarmup).
 private struct WarmingBanner: View {
+    var progress: Double = 0
+
     var body: some View {
-        HStack(spacing: 8) {
-            OrbitalLoader(tint: Theme.Palette.auroraCyan, size: 13)
-            Text("Getting things ready — the first few images may be a little slow")
-                .font(Theme.Fonts.body(11))
-                .lineLimit(1).minimumScaleFactor(0.75)
-            Spacer(minLength: 0)
+        VStack(spacing: 7) {
+            HStack(spacing: 8) {
+                OrbitalLoader(tint: Theme.Palette.auroraCyan, size: 13)
+                Text("Caching your library — \(Int(progress * 100))%")
+                    .font(Theme.Fonts.body(11))
+                    .lineLimit(1).minimumScaleFactor(0.75)
+                Spacer(minLength: 0)
+            }
+            ZStack(alignment: .leading) {
+                Capsule().fill(Theme.Palette.auroraCyan.opacity(0.18)).frame(height: 4)
+                GeometryReader { geo in
+                    Capsule().fill(Theme.Palette.auroraCyan)
+                        .frame(width: max(4, geo.size.width * progress))
+                }
+                .frame(height: 4)
+            }
+            .animation(.easeInOut(duration: 0.4), value: progress)
         }
         .foregroundStyle(Theme.Palette.textSecondary)
         .padding(.horizontal, 12).padding(.vertical, 8)
