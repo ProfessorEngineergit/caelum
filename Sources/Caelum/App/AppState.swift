@@ -20,6 +20,9 @@ final class AppState: ObservableObject {
     @Published private(set) var actualResolution: ResolutionHint?
     /// Gentle first-run hint shown while the cache warms (only after install/update).
     @Published private(set) var isWarmingUp = false
+    /// True only during the very first APOD fetch in this process — no image yet,
+    /// but we want to show a non-blocking banner rather than the full-screen spinner.
+    @Published private(set) var isAPODInitializing = false
 
     @Published var activeSourceID: String = Preferences.shared.activeSourceID
     @Published var showExplanation = false
@@ -96,7 +99,23 @@ final class AppState: ObservableObject {
     func loadLatest(applyWallpaper: Bool) async {
         loadToken += 1
         let token = loadToken
-        withAnimation(Theme.Motion.gentle) { phase = .loading; errorText = nil }
+        let isAPOD = activeSourceID == "apod"
+        let hasPreviousContent = heroImage != nil   // captured before await
+
+        if isAPOD && hasPreviousContent {
+            // Silent background refresh — never disrupt the currently displayed image.
+            withAnimation(Theme.Motion.gentle) { errorText = nil }
+        } else {
+            // Normal load (or cold APOD start). For the cold APOD case we set
+            // isAPODInitializing so HeroView suppresses the full-screen spinner —
+            // the panel opens immediately with just a quiet banner below the hero.
+            withAnimation(Theme.Motion.gentle) {
+                phase = .loading
+                errorText = nil
+                if isAPOD { isAPODInitializing = true }
+            }
+        }
+
         do {
             let images = try await activeSource.fetchRecent(limit: 12)
             guard token == loadToken else { return }
@@ -104,13 +123,26 @@ final class AppState: ObservableObject {
             batch = images
             onBatchLoaded?(images)
             index = images.firstIndex(where: { !$0.isVideo }) ?? 0
-            await present(images[index], applyWallpaper: applyWallpaper, token: token)
+            let target = images[index]
+
+            if isAPOD && hasPreviousContent && target.id == current?.id {
+                // Same APOD date as what's already on screen — silently do nothing.
+            } else {
+                await present(target, applyWallpaper: applyWallpaper, token: token)
+            }
+            withAnimation(Theme.Motion.gentle) { isAPODInitializing = false }
         } catch {
             guard token == loadToken else { return }
-            NSLog("Caelum: loadLatest ERROR %@", String(describing: error))
-            withAnimation(Theme.Motion.gentle) {
-                phase = .error
-                errorText = friendly(error)
+            withAnimation(Theme.Motion.gentle) { isAPODInitializing = false }
+            if isAPOD && hasPreviousContent {
+                // Background APOD refresh failed — keep the current image, log quietly.
+                NSLog("Caelum: APOD background refresh silently failed: %@", String(describing: error))
+            } else {
+                NSLog("Caelum: loadLatest ERROR %@", String(describing: error))
+                withAnimation(Theme.Motion.gentle) {
+                    phase = .error
+                    errorText = friendly(error)
+                }
             }
         }
     }
@@ -240,17 +272,17 @@ final class AppState: ObservableObject {
         }
     }
 
-    func applyWallpaperNow() async {
+    func applyWallpaperNow(playChime: Bool = true) async {
         guard let image = current, !image.isVideo else { return }
         if let file = cachedWallpaperFile(for: image) {
             markWallpaperReady(file, for: image, fullResolution: preparedFullWallpaperFiles[image.id] == file)
-            await apply(file: file, id: image.id)
+            await apply(file: file, id: image.id, playChime: playChime)
             return
         }
         do {
             let file = try await ImageCache.shared.localPreviewURL(for: image)
             markWallpaperReady(file, for: image, fullResolution: false)
-            await apply(file: file, id: image.id)
+            await apply(file: file, id: image.id, playChime: playChime)
             if let full = try? await ImageCache.shared.localURL(for: image), full != file {
                 markWallpaperReady(full, for: image, fullResolution: true)
                 await apply(file: full, id: image.id, playChime: false)
@@ -261,6 +293,10 @@ final class AppState: ObservableObject {
     }
 
     func setWallpaper() { Task { await applyWallpaperNow() } }
+
+    /// Apply wallpaper without playing the chime — used when the caller drives
+    /// chime timing externally (e.g. the Apply-button ring animation).
+    func setWallpaperSilently() { Task { await applyWallpaperNow(playChime: false) } }
 
     func completeOnboarding(apiKey: String) {
         let key = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)

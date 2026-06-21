@@ -16,6 +16,7 @@ enum SourceRegistry {
         StaticGallerySource.solar,       // Solar System (verified planetary imagery)
         StaticGallerySource.stations,    // Spacecraft (Orion, ISS & satellites)
         StaticGallerySource.interstellar,// Interstellar (ships, planets, black holes)
+        StaticGallerySource.artistImpressions,
     ]
 
     static func source(id: String) -> ImageSource {

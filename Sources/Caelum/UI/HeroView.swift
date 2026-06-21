@@ -130,8 +130,12 @@ struct HeroView: View {
 
     @ViewBuilder
     private var loadingOverlay: some View {
-        if app.heroImage == nil {
-            // First load — full centered loader.
+        if app.isAPODInitializing {
+            // APOD cold start: the banner in PopoverView explains the wait.
+            // Don't block the hero area — just show the dark background quietly.
+            EmptyView()
+        } else if app.heroImage == nil {
+            // First load of a non-APOD source — full centred loader.
             VStack(spacing: 12) {
                 OrbitalLoader(tint: app.accent)
                 Text("Summoning the cosmos…").microLabel()

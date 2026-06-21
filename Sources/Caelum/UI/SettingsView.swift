@@ -222,7 +222,7 @@ struct SettingsView: View {
             Text("CAELUM")
                 .font(Theme.Fonts.micro(11)).tracking(4)
                 .foregroundStyle(Theme.Palette.textSecondary)
-            Text("Version 1.0.13 · MIT License")
+            Text("Version 1.0.14 · MIT License")
                 .font(Theme.Fonts.mono(10)).foregroundStyle(Theme.Palette.textTertiary)
             HStack(spacing: 14) {
                 linkButton("GitHub", "https://github.com/ProfessorEngineergit/caelum")

@@ -1,0 +1,83 @@
+[
+  {
+    "title": "Proxima b Surface",
+    "credit": "ESO / M. Kornmesser",
+    "explanation": "An artist's impression of the rocky exoplanet Proxima b orbiting the nearest star to the Sun.",
+    "image": "https://cdn.eso.org/images/large/eso1629a.jpg",
+    "thumb": "https://cdn.eso.org/images/screen/eso1629a.jpg",
+    "page": "https://www.eso.org/public/images/eso1629a/"
+  },
+  {
+    "title": "Lava World 55 Cancri e",
+    "credit": "ESA/Hubble, M. Kornmesser",
+    "explanation": "A 10K artist's concept of the super-Earth 55 Cancri e, a hot rocky planet with a partially molten surface.",
+    "image": "https://cdn.esahubble.org/archives/images/large/heic1603b.jpg",
+    "thumb": "https://cdn.esahubble.org/archives/images/screen/heic1603b.jpg",
+    "page": "https://esahubble.org/images/heic1603b/"
+  },
+  {
+    "title": "WASP-121 b",
+    "credit": "ESA/Hubble, M. Kornmesser",
+    "explanation": "A hot Jupiter artist impression showing the strongly irradiated exoplanet WASP-121 b near its host star.",
+    "image": "https://cdn.esahubble.org/archives/images/large/heic2401a.jpg",
+    "thumb": "https://cdn.esahubble.org/archives/images/screen/heic2401a.jpg",
+    "page": "https://esahubble.org/images/heic2401a/"
+  },
+  {
+    "title": "K2-18 b",
+    "credit": "ESA/Hubble, M. Kornmesser",
+    "explanation": "A distant view of exoplanet K2-18 b and its red-dwarf host star in an artist's concept.",
+    "image": "https://cdn.esahubble.org/archives/images/large/heic1916a.jpg",
+    "thumb": "https://cdn.esahubble.org/archives/images/screen/heic1916a.jpg",
+    "page": "https://esahubble.org/images/heic1916a/"
+  },
+  {
+    "title": "GJ 1132 b",
+    "credit": "NASA, ESA, and R. Hurt (IPAC/Caltech)",
+    "explanation": "A rocky exoplanet artist impression set against the Milky Way and its host star.",
+    "image": "https://cdn.esahubble.org/archives/images/large/heic2104a.jpg",
+    "thumb": "https://cdn.esahubble.org/archives/images/screen/heic2104a.jpg",
+    "page": "https://esahubble.org/images/heic2104a/"
+  },
+  {
+    "title": "Neutron Star Merger",
+    "credit": "ESO/L. Calcada/M. Kornmesser",
+    "explanation": "An artist's impression of two merging neutron stars producing a bright kilonova.",
+    "image": "https://cdn.eso.org/images/large/eso1733a.jpg",
+    "thumb": "https://cdn.eso.org/images/screen/eso1733a.jpg",
+    "page": "https://www.eso.org/public/images/eso1733a/"
+  },
+  {
+    "title": "M87 Black Hole Concept",
+    "credit": "ESO/M. Kornmesser",
+    "explanation": "An artist's impression of the supermassive black hole at the center of Messier 87 and its hot accretion flow.",
+    "image": "https://cdn.eso.org/images/large/eso1907c.jpg",
+    "thumb": "https://cdn.eso.org/images/screen/eso1907c.jpg",
+    "page": "https://www.eso.org/public/images/eso1907c/"
+  },
+  {
+    "title": "HD 131399Ab",
+    "credit": "ESO/L. Calcada",
+    "explanation": "A triple-star exoplanet artist impression with three suns visible from a distant giant world.",
+    "image": "https://cdn.esahubble.org/archives/images/large/heic1619a.jpg",
+    "thumb": "https://cdn.esahubble.org/archives/images/screen/heic1619a.jpg",
+    "page": "https://esahubble.org/images/heic1619a/"
+  },
+  {
+    "title": "Isolated Stellar-Mass Black Hole",
+    "credit": "ESA/Hubble, Digitized Sky Survey, Nick Risinger, N. Bartmann",
+    "explanation": "A Milky Way star field distorted by an isolated stellar-mass black hole in this artist's impression.",
+    "image": "https://cdn.esahubble.org/archives/images/large/heic2210a.jpg",
+    "thumb": "https://cdn.esahubble.org/archives/images/screen/heic2210a.jpg",
+    "page": "https://esahubble.org/images/heic2210a/"
+  },
+  {
+    "title": "Surface of TRAPPIST-1f",
+    "credit": "NASA/JPL-Caltech",
+    "explanation": "An exoplanet surface concept with icy terrain, orange twilight, and neighboring TRAPPIST-1 worlds in the sky.",
+    "image": "https://images-assets.nasa.gov/image/PIA21423/PIA21423~orig.jpg",
+    "thumb": "https://images-assets.nasa.gov/image/PIA21423/PIA21423~medium.jpg",
+    "page": "https://images.nasa.gov/details/PIA21423",
+    "date": "2017-06-01"
+  }
+]

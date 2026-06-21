@@ -1,7 +1,75 @@
 [
-  {"title":"Stephan's Quintet (JWST)","credit":"NASA, ESA, CSA, STScI","explanation":"JWST's first-light image of Stephan's Quintet — four of five galaxies locked in a cosmic dance 290 million light-years away.","image":"https://cdn.esawebb.org/archives/images/large/weic2208b.jpg","thumb":"https://cdn.esawebb.org/archives/images/screen/weic2208b.jpg","page":"https://esawebb.org/images/weic2208b/"},
-  {"title":"Hubble Ultra Deep Field","credit":"NASA / ESA / Hubble","explanation":"Roughly 10,000 galaxies — some only 500 million years after the Big Bang — crowd this tiny patch of sky.","image":"https://cdn.esahubble.org/archives/images/large/heic0611b.jpg","thumb":"https://cdn.esahubble.org/archives/images/screen/heic0611b.jpg","page":"https://esahubble.org/images/heic0611b/"},
-  {"title":"SMACS 0723 — Webb's First Deep Field","credit":"NASA, ESA, CSA, STScI","explanation":"The first JWST deep field: galaxy cluster SMACS 0723 with thousands of lensed background galaxies.","image":"https://cdn.esawebb.org/archives/images/large/weic2208a.jpg","thumb":"https://cdn.esawebb.org/archives/images/screen/weic2208a.jpg","page":"https://esawebb.org/images/weic2208a/"},
-  {"title":"Pandora's Cluster (JWST)","credit":"NASA, ESA, CSA, STScI","explanation":"Webb reveals Pandora's Cluster — three merging galaxy clusters whose combined gravity lenses distant background galaxies into brilliant arcs.","image":"https://cdn.esawebb.org/archives/images/large/weic2301a.jpg","thumb":"https://cdn.esawebb.org/archives/images/screen/weic2301a.jpg","page":"https://esawebb.org/images/weic2301a/"},
-  {"title":"Andromeda Galaxy (Hubble)","credit":"NASA, ESA, J. Dalcanton et al.","explanation":"The Andromeda Galaxy — the Milky Way's nearest large neighbour, 2.5 million light-years away.","image":"https://cdn.esahubble.org/archives/images/large/heic1502a.jpg","thumb":"https://cdn.esahubble.org/archives/images/screen/heic1502a.jpg","page":"https://esahubble.org/images/heic1502a/"}
+  {
+    "title": "Gargantua and the Endurance",
+    "credit": "4K Wallpapers",
+    "explanation": "A high-resolution Interstellar-inspired view of the Endurance crossing Gargantua's accretion disk.",
+    "image": "https://4kwallpapers.com/images/wallpapers/gargantua-endurance-5120x3662-25445.jpg",
+    "thumb": "https://4kwallpapers.com/images/walls/thumbs_2t/25445.jpg",
+    "page": "https://4kwallpapers.com/space/gargantua-endurance-25445.html"
+  },
+  {
+    "title": "Endurance Near Gargantua",
+    "credit": "WallpaperCat",
+    "explanation": "A 4K Interstellar frame-style composition with the Endurance silhouetted against Gargantua's bright disk.",
+    "image": "https://wallpapercat.com/w/full/c/f/2/2130632-3840x2160-desktop-4k-gargantua-interstellar-wallpaper-photo.jpg",
+    "page": "https://wallpapercat.com/gargantua-interstellar-wallpapers"
+  },
+  {
+    "title": "Gargantua Event Horizon",
+    "credit": "WallpaperCat",
+    "explanation": "A cinematic close view of Gargantua's warped light and accretion disk.",
+    "image": "https://wallpapercat.com/w/full/9/f/1/2130788-3840x1607-desktop-dual-screen-gargantua-interstellar-wallpaper.jpg",
+    "page": "https://wallpapercat.com/gargantua-interstellar-wallpapers"
+  },
+  {
+    "title": "Wormhole Approach",
+    "credit": "WallpaperCat",
+    "explanation": "A 4K wormhole view with distorted starlight and no foreground characters.",
+    "image": "https://wallpapercat.com/w/full/9/6/9/2132185-3840x2160-desktop-4k-wormhole-interstellar-wallpaper-photo.jpg",
+    "page": "https://wallpapercat.com/wormhole-interstellar-wallpapers"
+  },
+  {
+    "title": "Endurance Above a Storm World",
+    "credit": "WallpaperCat",
+    "explanation": "A wide, high-resolution spacecraft shot with the Endurance suspended over a turbulent alien world.",
+    "image": "https://wallpapercat.com/w/full/3/f/1/306211-3840x2160-desktop-4k-interstellar-background-image.jpg",
+    "page": "https://wallpapercat.com/interstellar-wallpapers"
+  },
+  {
+    "title": "Gargantua Singularity",
+    "credit": "WallpaperCat",
+    "explanation": "A stark black-hole composition centered on Gargantua's luminous ring.",
+    "image": "https://wallpapercat.com/w/full/d/e/d/2129817-3840x2160-desktop-4k-gargantua-interstellar-background.jpg",
+    "page": "https://wallpapercat.com/gargantua-interstellar-wallpapers"
+  },
+  {
+    "title": "Black Hole Satellite View",
+    "credit": "Vadim Sadovski / 4K Wallpapers",
+    "explanation": "A 5K deep-space spacecraft scene looking toward a black hole and its surrounding disk.",
+    "image": "https://4kwallpapers.com/images/wallpapers/black-hole-gargantua-interstellar-satellite-outer-space-5k-5200x3400-8249.jpg",
+    "thumb": "https://4kwallpapers.com/images/walls/thumbs_2t/8249.jpg",
+    "page": "https://4kwallpapers.com/space/black-hole-gargantua-interstellar-satellite-outer-space-5k-8249.html"
+  },
+  {
+    "title": "Gargantua Blue Lens",
+    "credit": "Sam K / 4K Wallpapers",
+    "explanation": "A 5K black-hole render with blue-white lensing and a clean wallpaper silhouette.",
+    "image": "https://4kwallpapers.com/images/wallpapers/gargantua-black-5200x3250-9621.jpg",
+    "thumb": "https://4kwallpapers.com/images/walls/thumbs_2t/9621.jpg",
+    "page": "https://4kwallpapers.com/space/gargantua-black-9621.html"
+  },
+  {
+    "title": "Gargantua Close Pass",
+    "credit": "WallpaperCat",
+    "explanation": "A clean 4K black-hole pass with a bright accretion disk and a small spacecraft silhouette.",
+    "image": "https://wallpapercat.com/w/full/5/a/0/306069-3840x2160-desktop-4k-interstellar-wallpaper.jpg",
+    "page": "https://wallpapercat.com/interstellar-wallpapers"
+  },
+  {
+    "title": "Gargantua Minimal Ring",
+    "credit": "WallpaperCat",
+    "explanation": "A stark 4K Gargantua-style black-hole ring against a deep black star field.",
+    "image": "https://wallpapercat.com/w/full/6/f/b/306081-3840x2160-desktop-4k-interstellar-wallpaper.jpg",
+    "page": "https://wallpapercat.com/interstellar-wallpapers"
+  }
 ]
