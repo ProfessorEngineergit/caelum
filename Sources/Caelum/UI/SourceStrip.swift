@@ -19,6 +19,7 @@ struct SourceStrip: View {
                 SourceCell(
                     source: source,
                     active: source.id == app.activeSourceID,
+                    hasUpdate: app.sourcesWithUpdates.contains(source.id),
                     accent: app.accent
                 ) {
                     app.selectSource(source.id)
@@ -61,6 +62,7 @@ struct SourceStrip: View {
 private struct SourceCell: View {
     let source: ImageSource
     let active: Bool
+    var hasUpdate: Bool = false
     let accent: Color
     let action: () -> Void
 
@@ -76,6 +78,12 @@ private struct SourceCell: View {
                     Image(systemName: source.symbol)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(active ? Color.black : Theme.Palette.textSecondary)
+
+                    // "New images" indicator — a softly pulsing cyan ring that
+                    // encircles the icon until the user opens this source.
+                    if hasUpdate && !active {
+                        NewContentRing()
+                    }
                 }
                 .shadow(color: active ? accent.opacity(0.55) : .clear, radius: 7, y: 2)
 
@@ -118,5 +126,33 @@ private struct SourceCell: View {
             .padding(.horizontal, 5).padding(.vertical, 1.5)
             .background(Capsule().fill(c.opacity(0.12)))
             .overlay(Capsule().strokeBorder(c.opacity(0.25), lineWidth: 0.5))
+    }
+}
+
+/// A gently pulsing cyan ring drawn around a source icon to signal that the
+/// library has new images the user hasn't opened yet.
+private struct NewContentRing: View {
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            let pulse = 0.5 + 0.5 * sin(t * 2.2)          // 0…1
+            ZStack {
+                // Encircling ring, slightly larger than the 32pt icon.
+                Circle()
+                    .strokeBorder(Theme.Palette.auroraCyan, lineWidth: 1.6)
+                    .frame(width: 40, height: 40)
+                    .shadow(color: Theme.Palette.auroraCyan.opacity(0.7), radius: 4)
+                    .opacity(0.6 + 0.4 * pulse)
+                    .scaleEffect(1 + 0.04 * pulse)
+                // Little "new" dot at the top-right of the ring.
+                Circle()
+                    .fill(Theme.Palette.auroraCyan)
+                    .frame(width: 7, height: 7)
+                    .overlay(Circle().strokeBorder(Theme.Palette.obsidian1, lineWidth: 1.2))
+                    .shadow(color: Theme.Palette.auroraCyan, radius: 3)
+                    .offset(x: 15, y: -15)
+            }
+            .allowsHitTesting(false)
+        }
     }
 }

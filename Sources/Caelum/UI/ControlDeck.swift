@@ -56,8 +56,10 @@ struct ControlDeck: View {
         }
     }
 
-    /// How long the ring takes to travel the full border before the wallpaper lands.
-    private let ringDuration: Double = 0.85
+    /// How long the ring takes to travel the full border. Matches the real time
+    /// macOS takes to actually swap the desktop image from cache (~1.7 s), so the
+    /// bar filling, the desktop change and the chime all complete together.
+    private let ringDuration: Double = 1.7
 
     @ViewBuilder private var ringOverlay: some View {
         if isRingAnimating {
@@ -70,10 +72,10 @@ struct ControlDeck: View {
         }
     }
 
-    /// The line sweeps around the button border; the instant it closes the loop,
-    /// the wallpaper appears on the desktop and the chime rings — the same moment
-    /// for every image (the file is already cached, so the set is instant). This is
-    /// deterministic, not a guess at each image's variable download delay.
+    /// The line sweeps around the button border over the same ~1.7 s the OS takes
+    /// to actually apply the wallpaper. The set runs off the main thread in
+    /// parallel, so the sweep stays smooth; when both the sweep and the set are
+    /// done, the chime rings and the button confirms "On Your Desktop" — together.
     private func startRingAnimation() {
         isRingAnimating = true
         ringProgress = 0
@@ -83,11 +85,16 @@ struct ControlDeck: View {
             withAnimation(.easeInOut(duration: ringDuration)) { ringProgress = 1 }
         }
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(ringDuration * 1_000_000_000))
-            // Ring is full → reveal on the desktop, then the tone.
-            await app.applyWallpaperNow(playChime: false)
+            let start = Date()
+            await app.applyWallpaperNow(playChime: false)   // real set, off-main
+            // Hold until the ring has visually finished its full 1.7 s sweep, so
+            // the bar, the desktop change and the chime all land at the same moment.
+            let elapsed = Date().timeIntervalSince(start)
+            if elapsed < ringDuration {
+                try? await Task.sleep(nanoseconds: UInt64((ringDuration - elapsed) * 1_000_000_000))
+            }
             if Preferences.shared.chimeOnUpdate { WallpaperChime.shared.play() }
-            try? await Task.sleep(nanoseconds: 150_000_000)   // brief hold, then reset
+            try? await Task.sleep(nanoseconds: 120_000_000)   // brief hold, then reset
             withAnimation(Theme.Motion.snappy) {
                 isRingAnimating = false
                 ringProgress = 0

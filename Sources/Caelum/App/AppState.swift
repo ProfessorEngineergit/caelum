@@ -24,6 +24,12 @@ final class AppState: ObservableObject {
     /// "preparing your library" step and the warm-up banner. Fed by the prefetcher.
     @Published private(set) var setupProgress: Double = 0
     private var setupComplete = false
+    /// Sources whose library has gained a new latest image the user hasn't viewed
+    /// yet — drives the "new" ring on the source chips. Cleared when viewed.
+    @Published private(set) var sourcesWithUpdates: Set<String> = []
+    /// The latest image id we've recorded per source — the baseline against which a
+    /// genuine "update" is detected (so the initial library doesn't badge everything).
+    private var knownLatestID: [String: String] = [:]
     /// True only during the very first APOD fetch in this process — no image yet,
     /// but we want to show a non-blocking banner rather than the full-screen spinner.
     @Published private(set) var isAPODInitializing = false
@@ -106,6 +112,7 @@ final class AppState: ObservableObject {
         guard id != activeSourceID else { return }
         withAnimation(Theme.Motion.snappy) { activeSourceID = id }
         Preferences.shared.activeSourceID = id
+        markSourceSeen(id)    // the user is now viewing it — drop its "new" ring
         onSourceSelected?()   // nudge the prefetcher to warm this source
 
         if let cached = batchCache[id], !cached.isEmpty {
@@ -126,10 +133,42 @@ final class AppState: ObservableObject {
     }
 
     /// Hold a source's freshly fetched batch in memory (fed by the prefetcher) so a
-    /// later switch to it is instant. Doesn't touch what's currently displayed.
+    /// later switch to it is instant. Doesn't touch what's currently displayed, but
+    /// flags the source's chip when its latest image has genuinely changed to one
+    /// the user hasn't seen — unless it's the source they're already looking at.
     func cacheBatch(_ images: [CosmicImage], for id: String) {
         guard !images.isEmpty else { return }
         batchCache[id] = images
+        let latest = (images.first(where: { !$0.isVideo }) ?? images[0]).id
+
+        // The source the user is currently viewing is, by definition, seen.
+        if id == activeSourceID {
+            knownLatestID[id] = latest
+            clearUpdateBadge(id)
+            return
+        }
+        if let known = knownLatestID[id] {
+            if known != latest {
+                knownLatestID[id] = latest
+                withAnimation(Theme.Motion.snappy) { _ = sourcesWithUpdates.insert(id) }
+            }
+        } else {
+            // First time we learn this source's latest image — baseline, not an update.
+            knownLatestID[id] = latest
+        }
+    }
+
+    /// Mark a source as seen at its current latest image and drop its "new" ring.
+    private func markSourceSeen(_ id: String) {
+        if let images = batchCache[id] {
+            knownLatestID[id] = (images.first(where: { !$0.isVideo }) ?? images[0]).id
+        }
+        clearUpdateBadge(id)
+    }
+
+    private func clearUpdateBadge(_ id: String) {
+        guard sourcesWithUpdates.contains(id) else { return }
+        withAnimation(Theme.Motion.snappy) { _ = sourcesWithUpdates.remove(id) }
     }
 
     /// Report first-run caching progress (0…1) from the prefetcher. Monotonic and
@@ -179,7 +218,7 @@ final class AppState: ObservableObject {
             guard token == loadToken else { return }
             guard !images.isEmpty else { throw SourceError.empty }
             batch = images
-            batchCache[activeSourceID] = images
+            cacheBatch(images, for: activeSourceID)
             onBatchLoaded?(images)
             index = images.firstIndex(where: { !$0.isVideo }) ?? 0
             let target = images[index]
@@ -318,7 +357,11 @@ final class AppState: ObservableObject {
         withAnimation(Theme.Motion.snappy) { isApplyingWallpaper = true }
         defer { withAnimation(Theme.Motion.snappy) { isApplyingWallpaper = false } }
         let shouldApplyAllScreens = Preferences.shared.setOnAllScreens
-        let didSet = WallpaperManager.applyPrimary(localFileURL: file)
+        // Setting a large image as the desktop can take ~1–2 s of real work; run it
+        // off the main actor so the UI (the Apply-button ring) stays buttery smooth.
+        let didSet = await Task.detached(priority: .userInitiated) {
+            WallpaperManager.applyPrimary(localFileURL: file)
+        }.value
         if didSet {
             appliedWallpaperFiles[id] = file
             withAnimation(Theme.Motion.bouncy) { wallpaperAppliedID = id }
