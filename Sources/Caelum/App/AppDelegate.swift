@@ -22,11 +22,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Each prefetched batch list is held in memory so switching to a source
         // doesn't even wait for a network fetch.
         prefetcher.onBatchFetched = { [weak appState] id, images in
-            Task { @MainActor in appState?.cacheBatch(images, for: id) }
+            let state = appState
+            Task { @MainActor in state?.cacheBatch(images, for: id) }
         }
         // First-run caching progress → drives the "preparing your library" UI.
         prefetcher.onSetupProgress = { [weak appState] p in
-            Task { @MainActor in appState?.reportSetupProgress(p) }
+            let state = appState
+            Task { @MainActor in state?.reportSetupProgress(p) }
         }
         prefetcher.start()
 

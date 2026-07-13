@@ -10,10 +10,12 @@ A beautifully designed macOS **menu-bar app** that quietly keeps the latest **NA
 
 [![Download](https://img.shields.io/badge/Download-for%20macOS-8B7CFF?style=for-the-badge&logo=apple)](https://github.com/ProfessorEngineergit/caelum/releases/latest)
 &nbsp;
+[![Ko-fi](https://img.shields.io/badge/Support-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/professorengineergit)
+&nbsp;
 [![Website](https://img.shields.io/badge/Website-caelum-5EE7FF?style=for-the-badge)](https://professorengineergit.github.io/caelum/)
 
 ![Platform](https://img.shields.io/badge/macOS-13%2B-06070D?logo=apple)
-![Swift](https://img.shields.io/badge/Swift-5.9-orange?logo=swift)
+![Swift](https://img.shields.io/badge/Swift-6-orange?logo=swift)
 ![License](https://img.shields.io/badge/License-MIT-green)
 [![Release](https://github.com/ProfessorEngineergit/caelum/actions/workflows/release.yml/badge.svg)](https://github.com/ProfessorEngineergit/caelum/actions/workflows/release.yml)
 
@@ -49,8 +51,10 @@ extracts the dominant colour of each image and re-tints its own accents to match
 - **Multi-display** — sets the wallpaper on every screen.
 - **Smart downloads** — huge gigapixel images (yes, APOD does this) are automatically capped to a
   sensible size for wallpaper.
-- **Private & open source** — no accounts, no tracking, no analytics. Images come straight from
-  public APIs. MIT-licensed.
+- **Instant switching** — all source libraries are pre-cached in the background so any click is
+  immediate, with no on-demand download delay.
+- **Private & open source** — no accounts, no tracking, no analytics whatsoever. Images come
+  straight from public APIs. MIT-licensed.
 
 ## ✦ The ten sources
 
@@ -65,7 +69,7 @@ extracts the dominant colour of each image and re-tints its own accents to match
 | 7 | **Bing** | Bing Photo of the Day (4K) | — |
 | 8 | **Wikimedia** | Wikimedia Commons Picture of the Day | — |
 | 9 | **NASA Image of the Day** | NASA's curated daily feed | — |
-| 10 | **Caelum Curated** | A hand-picked gallery, updated without app updates | — |
+| 10 | **Caelum Curated** | A hand-picked gallery of the finest space imagery, refreshed OTA — no app update needed | — |
 
 Everything works out of the box. The bundled NASA `DEMO_KEY` is rate-limited; drop a free personal
 key (from [api.nasa.gov](https://api.nasa.gov)) into **Settings** for higher limits.
@@ -100,7 +104,6 @@ key (from [api.nasa.gov](https://api.nasa.gov)) into **Settings** for higher lim
 | Refresh daily automatically | on | Fetch & apply the newest image each day (and on wake). |
 | Set on all displays | on | Apply to every screen. |
 | Rotate through the library | off | Cycle images every _N_ minutes. |
-| Ambient mode | on | Full-screen slideshow after _N_ minutes idle. |
 | Tint interface to the image | on | Dynamic accent colour. |
 | Chime when wallpaper updates | on | A subtle sound on update. |
 | Launch at login | off | Start Caelum automatically (`SMAppService`). |
@@ -108,13 +111,13 @@ key (from [api.nasa.gov](https://api.nasa.gov)) into **Settings** for higher lim
 
 ## ✦ How it works
 
-Caelum is a native **Swift + AppKit + SwiftUI** app, built with the **Swift Package Manager**
+Caelum is a native **Swift 6 + AppKit + SwiftUI** app, built with the **Swift Package Manager**
 (no `.xcodeproj` required).
 
 ```
 Sources/Caelum/
 ├── App/        main · AppDelegate · StatusItemController (glass panel) · AmbientController · AppState
-├── Core/       CosmicImage · ImageSource · SourceRegistry · ImageCache · WallpaperManager
+├── Core/       CosmicImage · ImageSource · SourceRegistry · ImageCache · WallpaperManager · Prefetcher
 │   ├── Net/    HTTPClient (retry/backoff) · RSSParser
 │   └── Sources/  APOD · Djangoplicity (Hubble/Webb/ESO) · EPIC · NASA Library · Bing · Wikimedia · NASA IOTD · Curated
 └── UI/         Theme (the design system) · GlassBackground · HeroView · ControlDeck · SourceStrip · ExplanationSheet · SettingsView · OrbitalLoader · AmbientView
@@ -124,6 +127,7 @@ Sources/Caelum/
 - **Ambient mode** presents borderless full-screen windows on every display and keeps the display
   awake with an `IOPMAssertion`.
 - **Idle detection** uses `CGEventSource` input timestamps.
+- **Background prefetching** caches previews for every image in every source so any click is instant, with no on-demand download.
 - **Adding a source** is one file conforming to `ImageSource` + one line in `SourceRegistry`.
 
 ### The design language — *Obsidian Glass / Aurora*
@@ -156,10 +160,60 @@ open dist/Caelum.app
 Releases are built automatically by GitHub Actions on every `v*` tag (see
 [`.github/workflows/release.yml`](.github/workflows/release.yml)).
 
+## ✦ What's coming
+
+- **OTA curated gallery packs** — new themed image collections will be pushed over-the-air without
+  requiring an app update. New packs appear automatically in your Caelum Curated source.
+- **More sources** — expanding the library with additional space agencies and observatories.
+- **Contributions welcome** — see [Contributing](#-contributing) below.
+
 ## ✦ Privacy
 
-Caelum has no servers, no account, and no analytics. It talks only to the public image APIs you
-choose, and stores images in `~/Library/Application Support/Caelum/Cache`. That's it.
+Caelum is designed to collect absolutely nothing about you. Here is the complete list of every
+network request Caelum ever makes — there are no others:
+
+| Request | When | Who receives it | Why |
+|---------|------|-----------------|-----|
+| `api.nasa.gov/planetary/apod` | Daily / on launch | NASA | Fetch APOD metadata |
+| `apod.nasa.gov` (HTML fallback) | When API fails | NASA | Scrape APOD image if the API is down |
+| `hubblesite.org/api/…` | On source load | STScI / NASA | Hubble image feed |
+| `esawebb.org/rss/…` | On source load | ESA | Webb image feed |
+| `eso.org/public/images/…` | On source load | ESO | ESO image feed |
+| `api.nasa.gov/EPIC/…` | On source load | NASA | Earth imagery |
+| `images-api.nasa.gov/…` | On source load | NASA | NASA Image Library |
+| `www.bing.com/HPImageArchive.aspx` | On source load | Microsoft | Bing Photo of the Day |
+| `commons.wikimedia.org/…` | On source load | Wikimedia Foundation | Picture of the Day |
+| `www.nasa.gov/rss/…` | On source load | NASA | NASA Image of the Day feed |
+| Image files from the above domains | On demand | Same as above | Download images for wallpaper |
+
+**That is everything.** There is no telemetry, no crash reporting, no usage analytics, no tracking
+pixels, no third-party SDKs, and no sign-in of any kind. Caelum never phones home. The app has no
+server of its own — it is a thin client that talks directly to the public APIs listed above, and
+only to those APIs.
+
+Images are cached in `~/Library/Application Support/Caelum/Cache` on your local disk. This
+directory is never read by anyone but you and Caelum.
+
+The future OTA gallery feature works the same way: Caelum will fetch a static JSON file from this
+GitHub repository's releases. The file is a plain list of image URLs — no personal data is sent or
+received. You can inspect the file here at any time.
+
+## ✦ Contributing
+
+Contributions are very welcome. The most impactful thing you can do is **add a new image source**:
+
+1. Create a file in `Sources/Caelum/Core/Sources/` conforming to `ImageSource`.
+2. Register it with one line in `SourceRegistry.swift`.
+3. Open a pull request.
+
+For bug reports and feature requests, please use [GitHub Issues](https://github.com/ProfessorEngineergit/caelum/issues).
+
+## ✦ Support
+
+Caelum is free and open source. If it brings a little wonder to your day, a small Ko-fi helps cover
+the time spent building it and keeps future development going:
+
+[![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/professorengineergit)
 
 ## ✦ Credits & License
 
