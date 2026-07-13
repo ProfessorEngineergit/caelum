@@ -76,6 +76,17 @@ key (from [api.nasa.gov](https://api.nasa.gov)) into **Settings** for higher lim
 
 ## ✦ Install
 
+### Homebrew (recommended)
+
+```sh
+brew tap ProfessorEngineergit/caelum
+brew install --cask caelum
+```
+
+Homebrew handles Gatekeeper automatically — no quarantine steps needed.
+
+### Manual
+
 1. **Download** the latest `Caelum.zip` from the [**Releases**](https://github.com/ProfessorEngineergit/caelum/releases/latest) page and unzip it into `/Applications`.
 2. **Right-click → Open.** Caelum is free and open source, so it isn't notarized by Apple. On first
    launch, right-click the app and choose **Open** to get past Gatekeeper (you only do this once).
