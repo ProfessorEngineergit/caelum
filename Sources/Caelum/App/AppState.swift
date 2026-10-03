@@ -361,16 +361,18 @@ final class AppState: ObservableObject {
         let shouldApplyAllScreens = Preferences.shared.setOnAllScreens
         // Setting a large image as the desktop can take ~1–2 s of real work; run it
         // off the main actor so the UI (the Apply-button ring) stays buttery smooth.
-        let didSet = await Task.detached(priority: .userInitiated) {
-            WallpaperManager.applyPrimary(localFileURL: file)
+        let staged = await Task.detached(priority: .userInitiated) { () -> URL? in
+            // A copy outside the pruned cache: other Spaces keep pointing at it.
+            let copy = WallpaperManager.stage(file)
+            return WallpaperManager.applyPrimary(localFileURL: copy) ? copy : nil
         }.value
-        if didSet {
+        if let staged {
             appliedWallpaperFiles[id] = file
             withAnimation(Theme.Motion.bouncy) { wallpaperAppliedID = id }
             if playChime && Preferences.shared.chimeOnUpdate { WallpaperChime.shared.play() }
             if shouldApplyAllScreens {
                 Task.detached(priority: .utility) {
-                    WallpaperManager.applySecondaryScreens(localFileURL: file)
+                    WallpaperManager.applySecondaryScreens(localFileURL: staged)
                 }
             }
         }

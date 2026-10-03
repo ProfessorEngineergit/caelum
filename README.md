@@ -132,6 +132,7 @@ to open its panel.
 |---------|---------|-------------|
 | Refresh daily automatically | on | Fetch & apply the newest image each day (and on wake). |
 | Set on all displays | on | Apply to every screen. |
+| Same wallpaper on every desktop | on | macOS keeps a wallpaper per Space; Caelum carries its image to each Space as you switch to it. |
 | Rotate through the library | off | Cycle images every _N_ minutes. |
 | Tint interface to the image | on | Dynamic accent colour. |
 | Chime when wallpaper updates | on | A subtle sound on update. |

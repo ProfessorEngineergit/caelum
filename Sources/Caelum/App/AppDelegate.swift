@@ -64,6 +64,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Kick off scheduling — the initial daily check loads the first image.
         appState.start()
 
+        // macOS keeps a wallpaper per Space — carry Caelum's to each Space as it's shown.
+        WallpaperManager.startSyncingSpaces()
+        Task.detached(priority: .utility) { WallpaperManager.syncActiveSpace() }
+
         // Look for a newer release on GitHub shortly after launch and every few hours.
         appState.updater.start()
     }
