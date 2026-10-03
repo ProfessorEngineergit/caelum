@@ -32,13 +32,16 @@
     img.src = url;
   }
 
-  fetch("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&thumbs=true")
+  fetch("https://science.nasa.gov/wp-json/wp/v2/apod-basic?per_page=1")
     .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-    .then((d) => {
-      const url = d.media_type === "image" ? (d.hdurl || d.url) : (d.thumbnail_url || FALLBACK_HERO);
-      setHero(url);
-      if (ambientImg && d.media_type === "image") ambientImg.src = d.url || url;
-      heroApod.innerHTML = `Today · <span>${escapeHtml(d.title || "Astronomy Picture of the Day")}</span>`;
+    .then((res) => {
+      const d = Array.isArray(res) ? res[0] : res;
+      if (!d || !d.hdurl) return Promise.reject("empty");
+      const isImage = (d.media_type || "image") === "image";
+      setHero(d.hdurl);
+      if (ambientImg && isImage) ambientImg.src = d.hdurl;
+      const title = String(d.title || "Astronomy Picture of the Day").replace(/<[^>]+>/g, "");
+      heroApod.innerHTML = `Today · <span>${escapeHtml(title)}</span>`;
     })
     .catch(() => {
       setHero(FALLBACK_HERO);

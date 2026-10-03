@@ -47,6 +47,8 @@ final class AppState: ObservableObject {
     var onBatchLoaded: (([CosmicImage]) -> Void)?
 
     let scheduler = Scheduler()
+    /// Checks GitHub for new Caelum releases and installs them on request.
+    let updater = UpdateManager()
     private var batch: [CosmicImage] = []
     /// Last fetched batch per source, kept in memory so switching to a source
     /// presents instantly (its images are prefetched to disk) without a network wait.
