@@ -20,6 +20,8 @@ final class Preferences {
         static let hasOnboarded     = "hasCompletedOnboarding"
         static let lastRunVersion   = "lastRunVersion"
         static let autoInstallUpdates = "autoInstallUpdates"
+        static let sameWallpaperOnAllSpaces = "sameWallpaperOnAllSpaces"
+        static let appliedWallpaperPath = "appliedWallpaperPath"
     }
 
     init() {
@@ -32,6 +34,7 @@ final class Preferences {
             Key.chimeOnUpdate:   true,
             Key.dynamicAccent:   true,
             Key.setOnAllScreens: true,
+            Key.sameWallpaperOnAllSpaces: true,
         ])
     }
 
@@ -98,6 +101,17 @@ final class Preferences {
     var setOnAllScreens: Bool {
         get { store.bool(forKey: Key.setOnAllScreens) }
         set { store.set(newValue, forKey: Key.setOnAllScreens) }
+    }
+    /// Re-apply Caelum's wallpaper when switching to another desktop (Space) — macOS
+    /// otherwise keeps each Space's own picture.
+    var sameWallpaperOnAllSpaces: Bool {
+        get { store.bool(forKey: Key.sameWallpaperOnAllSpaces) }
+        set { store.set(newValue, forKey: Key.sameWallpaperOnAllSpaces) }
+    }
+    /// The file Caelum last set as the wallpaper (staged copy), for re-applying on other Spaces.
+    var appliedWallpaperPath: String? {
+        get { store.string(forKey: Key.appliedWallpaperPath) }
+        set { store.set(newValue, forKey: Key.appliedWallpaperPath) }
     }
     /// Download and install new Caelum releases without asking. Off by default —
     /// an update is always offered in the panel, but replacing the app is opt-in.

@@ -11,6 +11,10 @@ final class SettingsModel: ObservableObject {
 
     @Published var autoDaily: Bool        { didSet { Preferences.shared.autoDailyRefresh = autoDaily } }
     @Published var setOnAllScreens: Bool  { didSet { Preferences.shared.setOnAllScreens = setOnAllScreens } }
+    @Published var sameOnAllSpaces: Bool  { didSet {
+        Preferences.shared.sameWallpaperOnAllSpaces = sameOnAllSpaces
+        if sameOnAllSpaces { Task.detached(priority: .utility) { WallpaperManager.syncActiveSpace() } }
+    } }
     @Published var rotateLibrary: Bool    { didSet { Preferences.shared.rotateLibrary = rotateLibrary; scheduler.rescheduleRotation() } }
     @Published var rotateMinutes: Int     { didSet { Preferences.shared.rotateMinutes = rotateMinutes; scheduler.rescheduleRotation() } }
     @Published var dynamicAccent: Bool    { didSet { Preferences.shared.dynamicAccent = dynamicAccent } }
@@ -23,6 +27,7 @@ final class SettingsModel: ObservableObject {
         let prefs = Preferences.shared
         autoDaily        = prefs.autoDailyRefresh
         setOnAllScreens  = prefs.setOnAllScreens
+        sameOnAllSpaces  = prefs.sameWallpaperOnAllSpaces
         rotateLibrary    = prefs.rotateLibrary
         rotateMinutes    = prefs.rotateMinutes
         dynamicAccent    = prefs.dynamicAccent
@@ -61,6 +66,7 @@ struct SettingsView: View {
             section("Wallpaper") {
                 toggle("Refresh daily automatically", $model.autoDaily)
                 toggle("Set on all displays", $model.setOnAllScreens)
+                toggle("Same wallpaper on every desktop", $model.sameOnAllSpaces)
                 toggle("Rotate through the library", $model.rotateLibrary)
                 if model.rotateLibrary {
                     stepperRow("Every", value: $model.rotateMinutes,

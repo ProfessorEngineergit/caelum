@@ -1,6 +1,6 @@
 import AVFoundation
 
-/// A tiny synthesized soundscape for the cinematic onboarding — a soft, evolving
+/// A tiny synthesized soundscape for the first-run intro — a soft, evolving
 /// ambient pad plus a glassy chime, generated on the fly (no bundled audio).
 /// Arc-style: the first thing you hear makes the moment feel special.
 @MainActor
@@ -36,8 +36,8 @@ final class OnboardingAudio {
             pad.play()
         }
         rampPad(to: 0.42, duration: 4.0)   // slow ambient swell
-        // The signature drone is fired by the view at the exact moment the nebula
-        // blooms (see OnboardingView.onDrone) — not here — so sound and image land together.
+        // The signature drone is fired on the hyperspace flash (IntroController.land)
+        // — not here — so sound and image land together.
     }
 
     func chime(soft: Bool = true) {

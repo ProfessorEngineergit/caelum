@@ -199,6 +199,9 @@ final class StatusItemController: NSObject {
                                     action: #selector(checkForUpdates), keyEquivalent: "")
         updateItem.target = self
         menu.addItem(updateItem)
+        let introItem = NSMenuItem(title: "Replay Intro", action: #selector(replayIntro), keyEquivalent: "")
+        introItem.target = self
+        menu.addItem(introItem)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Caelum",
                                 action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
@@ -214,6 +217,14 @@ final class StatusItemController: NSObject {
         appState.updater.checkNow()
         appState.showSettings = true
         if !panel.isVisible { showPanel() }
+    }
+
+    /// Set by the app delegate, which owns the intro.
+    var onReplayIntro: (() -> Void)?
+
+    @objc private func replayIntro() {
+        if panel.isVisible { hidePanel() }
+        onReplayIntro?()
     }
 
     // MARK: - Brand glyph animation (dot completes one orbit on new image)

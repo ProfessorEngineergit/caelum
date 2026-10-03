@@ -1,293 +1,332 @@
 import SwiftUI
-import AppKit
 
-/// First-run onboarding for the menu-bar panel. Keeps the setup small enough
-/// for a popover, but explicit enough that APOD's NASA key is not a mystery.
+/// The setup you land in after the intro's hyperspace jump: a chrome-less glass
+/// panel floating over the drifting stars. Four unhurried steps — hello, pick
+/// your sky, a few preferences, and the library filling up.
 struct WelcomeView: View {
-    @EnvironmentObject private var app: AppState
-    @Environment(\.isSnapshot) private var isSnapshot
-    @State private var apiKey: String = Preferences.shared.usingDemoKey ? "" : Preferences.shared.nasaAPIKey
+    @ObservedObject var app: AppState
+    @ObservedObject var model: IntroModel
+    let onChime: () -> Void
+    let onComplete: () -> Void
 
-    private let accent = Theme.Palette.auroraViolet
+    @State private var step = 0
+    @State private var autoDaily = Preferences.shared.autoDailyRefresh
+    @State private var sameOnAllSpaces = Preferences.shared.sameWallpaperOnAllSpaces
+    @State private var launchAtLogin = Preferences.shared.launchAtLogin
+    @State private var autoUpdates = Preferences.shared.autoInstallUpdates
+
+    private let lastStep = 3
+    private var shown: Bool { model.revealed && !model.leaving }
 
     var body: some View {
+        panel
+            .scaleEffect(model.leaving ? 0.95 : (model.revealed ? 1 : 0.86))
+            .opacity(shown ? 1 : 0)
+            .blur(radius: shown ? 0 : 16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .environment(\.colorScheme, .dark)
+            .allowsHitTesting(shown)
+            .onExitCommand { onComplete() }      // Esc always gets you out
+    }
+
+    // MARK: - Panel
+
+    private var panel: some View {
         VStack(spacing: 0) {
-            header
-
-            VStack(spacing: Theme.Metrics.space2) {
-                keyPanel
-
-                HStack(spacing: Theme.Metrics.space2) {
-                    MiniScreenshot(
-                        title: "Open",
-                        symbol: "cursorarrow",
-                        accent: Theme.Palette.auroraCyan,
-                        mode: .menuBar)
-                    MiniScreenshot(
-                        title: "Choose",
-                        symbol: "photo.fill",
-                        accent: Theme.Palette.auroraViolet,
-                        mode: .sourceGrid)
-                    MiniScreenshot(
-                        title: "Apply",
-                        symbol: "checkmark.circle.fill",
-                        accent: Theme.Palette.positive,
-                        mode: .wallpaper)
-                }
-
-                VStack(spacing: Theme.Metrics.space2) {
-                    WelcomeStep(
-                        number: "1",
-                        title: "Click the Caelum icon in the menu bar.",
-                        detail: "The popover opens above the desktop and keeps itself out of the Dock.")
-                    WelcomeStep(
-                        number: "2",
-                        title: "Paste a free NASA API key for APOD.",
-                        detail: "DEMO_KEY works, but a personal key avoids NASA's shared rate limit.")
-                    WelcomeStep(
-                        number: "3",
-                        title: "Pick a source; Caelum buffers the library.",
-                        detail: "When the wallpaper file is not ready yet, the action stays disabled.")
-                }
-            }
-            .padding(.horizontal, Theme.Metrics.space5)
-            .padding(.bottom, Theme.Metrics.space4)
-
-            Spacer(minLength: 0)
-            actionBar
-        }
-        .frame(width: Theme.Metrics.popoverWidth, height: Theme.Metrics.popoverHeight)
-        .background(GlassBackground(accent: accent))
-        .background(Theme.Palette.obsidian0)
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Metrics.radiusPanel, style: .continuous)
-                .strokeBorder(Theme.Palette.hairlineStrong, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: Theme.Metrics.radiusPanel, style: .continuous))
-        .environment(\.colorScheme, .dark)
-    }
-
-    private var header: some View {
-        HStack(spacing: Theme.Metrics.space3) {
             ZStack {
-                Circle()
-                    .fill(Theme.Gradients.aurora)
-                    .frame(width: 42, height: 42)
-                    .shadow(color: accent.opacity(0.45), radius: 18, y: 4)
-                Image(nsImage: BrandGlyph.statusImage(size: 22, dotProgress: 0.18))
-                    .renderingMode(.template)
-                    .foregroundStyle(Color.black)
+                stepContent
+                    .id(step)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .offset(y: 16)),
+                        removal: .opacity.combined(with: .offset(y: -16))))
             }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Welcome to Caelum")
-                    .font(Theme.Fonts.display(22))
-                    .foregroundStyle(Theme.Palette.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-                Text("A quiet menu-bar observatory for daily space wallpapers.")
-                    .font(Theme.Fonts.body(11))
-                    .foregroundStyle(Theme.Palette.textSecondary)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            footer
         }
-        .padding(.top, Theme.Metrics.space5)
-        .padding(.horizontal, Theme.Metrics.space5)
-        .padding(.bottom, Theme.Metrics.space3)
+        .padding(.horizontal, 44)
+        .padding(.top, 44)
+        .padding(.bottom, 32)
+        .frame(width: 660, height: 520)
+        .background(panelSurface)
     }
 
-    private var keyPanel: some View {
-        VStack(alignment: .leading, spacing: Theme.Metrics.space3) {
-            HStack(spacing: Theme.Metrics.space2) {
-                Image(systemName: "key.fill")
-                    .foregroundStyle(accent)
-                Text("NASA API key")
-                    .font(Theme.Fonts.title(14))
-                    .foregroundStyle(Theme.Palette.textPrimary)
-                Spacer()
-                Button {
-                    if let url = URL(string: "https://api.nasa.gov") {
-                        NSWorkspace.shared.open(url)
-                    }
-                } label: {
-                    Label("Get key", systemImage: "safari.fill")
-                        .labelStyle(.titleAndIcon)
-                        .font(Theme.Fonts.title(11))
-                        .foregroundStyle(accent)
+    private var panelSurface: some View {
+        let shape = RoundedRectangle(cornerRadius: 30, style: .continuous)
+        return ZStack {
+            shape.fill(Theme.Palette.obsidian1.opacity(0.82))
+            shape.fill(RadialGradient(colors: [Theme.Palette.auroraViolet.opacity(0.22), .clear],
+                                      center: .topTrailing, startRadius: 0, endRadius: 420))
+            shape.fill(RadialGradient(colors: [Theme.Palette.auroraCyan.opacity(0.10), .clear],
+                                      center: .bottomLeading, startRadius: 0, endRadius: 360))
+            shape.strokeBorder(LinearGradient(colors: [Color.white.opacity(0.24), Color.white.opacity(0.04)],
+                                              startPoint: .top, endPoint: .bottom), lineWidth: 1)
+        }
+        .shadow(color: Theme.Palette.auroraViolet.opacity(0.35), radius: 60, y: 20)
+        .shadow(color: .black.opacity(0.6), radius: 30, y: 16)
+    }
+
+    // MARK: - Steps
+
+    @ViewBuilder
+    private var stepContent: some View {
+        switch step {
+        case 0: hello
+        case 1: chooseSky
+        case 2: preferences
+        default: library
+        }
+    }
+
+    private var hello: some View {
+        VStack(spacing: 22) {
+            AuroraMark().frame(width: 92, height: 92)
+            Text("CAELUM")
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .tracking(10)
+                .foregroundStyle(Theme.Palette.textSecondary)
+            Text("The cosmos, every day.")
+                .font(.system(size: 38, weight: .semibold, design: .rounded))
+                .foregroundStyle(Theme.Palette.textPrimary)
+            Text("Each morning Caelum puts a new image of space on your desktop — from NASA, Hubble, Webb and ESO. Take a minute to make it yours.")
+                .font(.system(size: 15))
+                .lineSpacing(4)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Theme.Palette.textSecondary)
+                .frame(maxWidth: 440)
+        }
+    }
+
+    private var chooseSky: some View {
+        VStack(spacing: 22) {
+            heading("CHOOSE YOUR SKY", "Where should your day begin?")
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)],
+                      spacing: 10) {
+                ForEach(app.sources, id: \.id) { source in
+                    sourceTile(source)
                 }
-                .buttonStyle(.plain)
             }
-
-            if isSnapshot {
-                Text("DEMO_KEY (bundled)")
-                    .font(Theme.Fonts.mono(12))
-                    .foregroundStyle(Theme.Palette.textTertiary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(10)
-                    .glassCard(cornerRadius: 10, fill: 0.6)
-            } else {
-                TextField("Paste NASA API key or leave DEMO_KEY", text: $apiKey)
-                    .textFieldStyle(.plain)
-                    .font(Theme.Fonts.mono(12))
-                    .foregroundStyle(Theme.Palette.textPrimary)
-                    .padding(10)
-                    .glassCard(cornerRadius: 10, fill: 0.6)
-                    .onSubmit { app.completeOnboarding(apiKey: apiKey) }
-            }
-
-            Text("Used by NASA APOD only. Hubble, Webb, ESO and curated galleries buffer separately in the background.")
-                .font(Theme.Fonts.body(11))
-                .foregroundStyle(Theme.Palette.textTertiary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(Theme.Metrics.space3)
-        .glassCard(fill: 0.68)
     }
 
-    private var actionBar: some View {
-        VStack(spacing: Theme.Metrics.space2) {
-            Button {
-                app.completeOnboarding(apiKey: apiKey)
-            } label: {
-                Label(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                      ? "Start with DEMO_KEY"
-                      : "Save key & start",
-                      systemImage: apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                      ? "play.fill"
-                      : "checkmark.circle.fill")
-            }
-            .buttonStyle(AuroraPillButtonStyle())
-
-            Button {
-                app.completeOnboarding(apiKey: "")
-            } label: {
-                Text("Skip for now")
-                    .font(Theme.Fonts.title(12))
-                    .foregroundStyle(Theme.Palette.textTertiary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, Theme.Metrics.space5)
-        .padding(.top, Theme.Metrics.space2)
-        .padding(.bottom, Theme.Metrics.space4)
-        .background(
-            Rectangle()
-                .fill(Theme.Palette.obsidian0.opacity(0.58))
-                .overlay(Rectangle().frame(height: 1).foregroundStyle(Theme.Palette.hairline), alignment: .top)
-        )
-    }
-}
-
-private struct WelcomeStep: View {
-    let number: String
-    let title: String
-    let detail: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: Theme.Metrics.space3) {
-            Text(number)
-                .font(Theme.Fonts.mono(11))
-                .foregroundStyle(Color.black)
-                .frame(width: 22, height: 22)
-                .background(Circle().fill(Theme.Gradients.auroraHorizontal))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(Theme.Fonts.title(11.5))
-                    .foregroundStyle(Theme.Palette.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(detail)
-                    .font(Theme.Fonts.body(9.5))
-                    .foregroundStyle(Theme.Palette.textTertiary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(10)
-        .glassCard(cornerRadius: 12, fill: 0.42)
-    }
-}
-
-private struct MiniScreenshot: View {
-    enum Mode { case menuBar, sourceGrid, wallpaper }
-
-    let title: String
-    let symbol: String
-    let accent: Color
-    let mode: Mode
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: symbol)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(accent)
-                Text(title)
-                    .font(Theme.Fonts.micro(8.5))
-                    .tracking(0.8)
-                    .foregroundStyle(Theme.Palette.textSecondary)
+    private func sourceTile(_ source: ImageSource) -> some View {
+        let selected = app.activeSourceID == source.id
+        let tint = Color(hex: source.accentHex)
+        return Button {
+            guard !selected else { return }
+            onChime()
+            app.selectSource(source.id)
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: source.symbol)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(selected ? Color.black : tint)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(selected ? AnyShapeStyle(tint) : AnyShapeStyle(tint.opacity(0.14))))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(source.name)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.Palette.textPrimary)
+                    Text(source.subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.Palette.textTertiary)
+                }
+                .lineLimit(1)
                 Spacer(minLength: 0)
             }
-
-            ZStack {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(Theme.Palette.obsidian0.opacity(0.75))
-                preview
-                    .padding(6)
-            }
-            .frame(height: 54)
-            .overlay(
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .strokeBorder(Theme.Palette.hairline, lineWidth: 1)
-            )
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(selected ? tint.opacity(0.14) : Theme.Palette.obsidian2.opacity(0.6)))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(selected ? tint.opacity(0.7) : Theme.Palette.hairline, lineWidth: 1))
+            .contentShape(Rectangle())
         }
-        .frame(maxWidth: .infinity)
-        .padding(7)
-        .glassCard(cornerRadius: 12, fill: 0.45)
+        .buttonStyle(.plain)
+        .animation(Theme.Motion.snappy, value: selected)
     }
 
-    @ViewBuilder private var preview: some View {
-        switch mode {
-        case .menuBar:
-            VStack(spacing: 6) {
-                HStack(spacing: 5) {
-                    ForEach(0..<4, id: \.self) { _ in
-                        Circle().fill(Theme.Palette.textTertiary.opacity(0.28)).frame(width: 5, height: 5)
+    private var preferences: some View {
+        VStack(spacing: 22) {
+            heading("MAKE IT YOURS", "A few small choices.")
+            VStack(spacing: 0) {
+                preferenceRow("Refresh daily", "A new image on your desktop every morning.", $autoDaily)
+                divider
+                preferenceRow("Same wallpaper on every desktop", "Caelum follows you across all your Spaces.", $sameOnAllSpaces)
+                divider
+                preferenceRow("Launch at login", "Start quietly in the menu bar.", $launchAtLogin)
+                divider
+                preferenceRow("Install updates automatically", "New versions are always offered in the panel either way.", $autoUpdates)
+            }
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Theme.Palette.obsidian2.opacity(0.55)))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Theme.Palette.hairline, lineWidth: 1))
+            Text("No account and no API key — every source is open.")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.Palette.textTertiary)
+        }
+    }
+
+    private func preferenceRow(_ title: String, _ detail: String, _ value: Binding<Bool>) -> some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Theme.Palette.textPrimary)
+                Text(detail)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.Palette.textTertiary)
+            }
+            Spacer(minLength: 0)
+            Toggle("", isOn: value)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(Theme.Palette.auroraViolet)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+    }
+
+    private var divider: some View {
+        Rectangle().fill(Theme.Palette.hairline).frame(height: 1).padding(.leading, 16)
+    }
+
+    private var library: some View {
+        let done = app.setupProgress >= 1
+        return VStack(spacing: 26) {
+            heading(done ? "ALL SET" : "PREPARING YOUR LIBRARY",
+                    done ? "Welcome to Caelum." : "Filling your library\nwith the cosmos.")
+            Text(done
+                 ? "Your sky is on the desktop. Caelum lives in the menu bar — click the orbit whenever you like."
+                 : "A preview of every image is cached once, so switching sources and setting a wallpaper is instant.")
+                .font(.system(size: 15))
+                .lineSpacing(4)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Theme.Palette.textSecondary)
+                .frame(maxWidth: 440)
+            VStack(spacing: 10) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Theme.Palette.obsidian2.opacity(0.8))
+                        Capsule()
+                            .fill(Theme.Gradients.auroraHorizontal)
+                            .frame(width: max(8, geo.size.width * app.setupProgress))
+                            .shadow(color: Theme.Palette.auroraViolet.opacity(0.6), radius: 8)
                     }
-                    Spacer()
-                    Circle().fill(Theme.Gradients.auroraHorizontal).frame(width: 16, height: 16)
                 }
-                HStack {
-                    Spacer()
-                    Image(systemName: "cursorarrow")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Theme.Palette.textPrimary)
+                .frame(width: 380, height: 8)
+                .animation(.easeInOut(duration: 0.4), value: app.setupProgress)
+                Text(done ? "Library ready" : "\(Int(app.setupProgress * 100)) %")
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Theme.Palette.textTertiary)
+            }
+        }
+    }
+
+    private func heading(_ eyebrow: String, _ title: String) -> some View {
+        VStack(spacing: 12) {
+            Text(eyebrow)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .tracking(3)
+                .foregroundStyle(Theme.Palette.auroraViolet)
+            Text(title)
+                .font(.system(size: 30, weight: .semibold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Theme.Palette.textPrimary)
+        }
+    }
+
+    // MARK: - Footer
+
+    private var footer: some View {
+        HStack(spacing: 16) {
+            Button("Back") { go(to: step - 1) }
+                .buttonStyle(.plain)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Theme.Palette.textTertiary)
+                .opacity(step == 0 ? 0 : 1)
+                .disabled(step == 0)
+                .frame(width: 90, alignment: .leading)
+            Spacer()
+            HStack(spacing: 8) {
+                ForEach(0...lastStep, id: \.self) { i in
+                    Capsule()
+                        .fill(i == step ? AnyShapeStyle(Theme.Gradients.auroraHorizontal)
+                                        : AnyShapeStyle(Theme.Palette.textTertiary.opacity(0.4)))
+                        .frame(width: i == step ? 20 : 6, height: 6)
                 }
             }
-        case .sourceGrid:
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 5) {
-                ForEach(0..<6, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(index == 1 ? AnyShapeStyle(Theme.Gradients.auroraHorizontal) : AnyShapeStyle(Theme.Palette.obsidian3))
-                        .frame(height: 14)
-                }
-            }
-        case .wallpaper:
-            VStack(spacing: 5) {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Theme.Gradients.auroraHorizontal)
-                    .frame(height: 18)
-                HStack(spacing: 5) {
-                    Circle().fill(Theme.Palette.obsidian3).frame(width: 11, height: 11)
-                    Circle().fill(Theme.Palette.obsidian3).frame(width: 11, height: 11)
-                    Circle().fill(Theme.Palette.positive.opacity(0.85)).frame(width: 11, height: 11)
-                }
+            .animation(Theme.Motion.snappy, value: step)
+            Spacer()
+            Button(primaryTitle, action: advance)
+                .buttonStyle(AuroraPillButtonStyle())
+                .keyboardShortcut(.defaultAction)
+                .frame(width: 170)
+        }
+        .frame(height: 46)
+    }
+
+    private var primaryTitle: String {
+        switch step {
+        case 0: return "Begin"
+        case lastStep: return "Enter Caelum"
+        default: return "Continue"
+        }
+    }
+
+    private func advance() {
+        if step == 2 { savePreferences() }
+        guard step < lastStep else {
+            onComplete()
+            return
+        }
+        go(to: step + 1)
+    }
+
+    private func go(to target: Int) {
+        guard (0...lastStep).contains(target) else { return }
+        onChime()
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.85)) { step = target }
+    }
+
+    private func savePreferences() {
+        let prefs = Preferences.shared
+        prefs.autoDailyRefresh = autoDaily
+        prefs.sameWallpaperOnAllSpaces = sameOnAllSpaces
+        prefs.autoInstallUpdates = autoUpdates
+        if prefs.launchAtLogin != launchAtLogin {
+            prefs.launchAtLogin = launchAtLogin
+            LaunchAtLogin.set(launchAtLogin)
+        }
+    }
+}
+
+/// Caelum's mark for the intro: a glowing aurora sphere with an orbit and its dot.
+private struct AuroraMark: View {
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            ZStack {
+                Circle()
+                    .fill(RadialGradient(colors: [Theme.Palette.auroraViolet.opacity(0.55), .clear],
+                                         center: .center, startRadius: 0, endRadius: 70))
+                    .scaleEffect(1.5 + 0.06 * sin(t * 1.2))
+                Circle()
+                    .fill(AngularGradient(colors: [Theme.Palette.auroraCyan, Theme.Palette.auroraViolet,
+                                                   Theme.Palette.auroraMagenta, Theme.Palette.auroraCyan],
+                                          center: .center, angle: .degrees(t * 25)))
+                    .frame(width: 46, height: 46)
+                    .blur(radius: 1.5)
+                Ellipse()
+                    .strokeBorder(Color.white.opacity(0.35), lineWidth: 1)
+                    .frame(width: 88, height: 30)
+                    .rotationEffect(.degrees(-18))
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 6, height: 6)
+                    .shadow(color: Theme.Palette.auroraCyan, radius: 6)
+                    .offset(x: 44 * cos(t * 1.4), y: 15 * sin(t * 1.4))
+                    .rotationEffect(.degrees(-18))
             }
         }
     }

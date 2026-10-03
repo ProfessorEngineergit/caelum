@@ -1,0 +1,23 @@
+name: macOS CI
+
+# Compiles the Swift app on every change to it, so a compile error shows up on
+# the pull request instead of failing the release after the merge.
+on:
+  push:
+    branches: [main]
+    paths: ["Sources/**", "Tests/**", "Package.swift", ".github/workflows/macos-ci.yml"]
+  pull_request:
+    paths: ["Sources/**", "Tests/**", "Package.swift", ".github/workflows/macos-ci.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      - name: Build (release configuration, like the release workflow)
+        run: swift build -c release

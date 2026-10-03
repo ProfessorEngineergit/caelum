@@ -4,7 +4,7 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appState: AppState!
     private var statusController: StatusItemController!
-    private var onboarding: OnboardingController?
+    private var intro: IntroController?
     private let prefetcher = Prefetcher()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -50,22 +50,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             appState.beginWarmup()
         }
 
-        // First run → cinematic full-screen onboarding (over everything).
-        // The wallpaper loads behind it so it's ready when the user enters.
+        // First run → the intro: apps hide, the desktop jumps to hyperspace and
+        // lands in the setup. The wallpaper loads behind it meanwhile.
+        statusController.onReplayIntro = { [weak self] in self?.showIntro() }
         if !Preferences.shared.hasCompletedOnboarding {
-            let onboarding = OnboardingController(appState: appState,
-                                                  onFinish: { [weak self] apiKey in
-                self?.appState.completeOnboarding(apiKey: apiKey)
-            })
-            self.onboarding = onboarding
-            onboarding.present()
+            showIntro()
         }
 
         // Kick off scheduling — the initial daily check loads the first image.
         appState.start()
 
+        // macOS keeps a wallpaper per Space — carry Caelum's to each Space as it's shown.
+        WallpaperManager.startSyncingSpaces()
+        Task.detached(priority: .utility) { WallpaperManager.syncActiveSpace() }
+
         // Look for a newer release on GitHub shortly after launch and every few hours.
         appState.updater.start()
+    }
+
+    private func showIntro() {
+        guard intro == nil else { return }
+        let intro = IntroController(appState: appState, onFinish: { [weak self] in
+            self?.appState.completeOnboarding()
+            self?.intro = nil
+        })
+        self.intro = intro
+        intro.present()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
