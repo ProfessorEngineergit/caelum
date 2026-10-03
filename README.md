@@ -6,15 +6,15 @@
 
 ### The cosmos, every day, on your desktop.
 
-A beautifully designed macOS **menu-bar app** that quietly keeps the latest **NASA Astronomy Picture of the Day** as your wallpaper — with **10 stellar sources** and a cinematic **ambient mode**.
+A beautifully designed, cross-platform **desktop app** that quietly keeps the latest **NASA Astronomy Picture of the Day** as your wallpaper — with **10 stellar sources** and a cinematic **ambient mode**.
 
-[![Download](https://img.shields.io/badge/Download-for%20macOS-8B7CFF?style=for-the-badge&logo=apple)](https://github.com/ProfessorEngineergit/caelum/releases/latest)
+[![Download](https://img.shields.io/badge/Download-Latest%20Release-8B7CFF?style=for-the-badge)](https://github.com/ProfessorEngineergit/caelum/releases/latest)
 &nbsp;
 [![Ko-fi](https://img.shields.io/badge/Support-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/professorengineergit)
 &nbsp;
 [![Website](https://img.shields.io/badge/Website-caelum-5EE7FF?style=for-the-badge)](https://professorengineergit.github.io/caelum/)
 
-![Platform](https://img.shields.io/badge/macOS-13%2B-06070D?logo=apple)
+![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-06070D)
 ![Swift](https://img.shields.io/badge/Swift-6-orange?logo=swift)
 ![License](https://img.shields.io/badge/License-MIT-green)
 [![Release](https://github.com/ProfessorEngineergit/caelum/actions/workflows/release.yml/badge.svg)](https://github.com/ProfessorEngineergit/caelum/actions/workflows/release.yml)
