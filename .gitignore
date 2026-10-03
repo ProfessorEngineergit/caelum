@@ -19,3 +19,7 @@ DerivedData/
 ## Editor
 .vscode/
 .idea/
+
+## Desktop (Windows/Linux) app
+desktop/node_modules/
+desktop/dist/

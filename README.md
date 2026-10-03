@@ -73,7 +73,7 @@ extracts the dominant colour of each image and re-tints its own accents to match
 | 9 | **NASA Image of the Day** | NASA's curated daily feed | — |
 | 10 | **Caelum Curated** | A hand-picked gallery of the finest space imagery, refreshed OTA — no app update needed | — |
 
-Everything works out of the box — no API keys needed.
+Everything works out of the box — no API keys needed. The same sources power the Windows and Linux app.
 
 ## ✦ Install
 
@@ -98,6 +98,23 @@ Homebrew handles Gatekeeper automatically — no quarantine steps needed.
 3. **Find the star** — the orbit glyph appears in your menu bar. Click it, pick a source, and fly.
 
 > **Requirements:** macOS 13 (Ventura) or later.
+
+### Windows & Linux
+
+Caelum also runs on **Windows 10/11** and **Linux** (x64 and ARM64) as a tray app with the same ten
+sources, daily wallpaper refresh and in-app updates. Grab the file for your system from the
+[**Releases**](https://github.com/ProfessorEngineergit/caelum/releases/latest) page:
+
+| System | File | Notes |
+|--------|------|-------|
+| Windows | `Caelum-Setup-<version>.exe` | Installs per user, no admin needed. Not code-signed — if SmartScreen asks, choose **More info → Run anyway**. |
+| Linux | `Caelum-<version>-<arch>.AppImage` | `chmod +x` and run. Updates itself in place. |
+| Debian / Ubuntu | `caelum_<version>_<arch>.deb` | `sudo apt install ./caelum_…deb`. New versions are announced in the panel; install them the same way. |
+
+The wallpaper is set natively on Windows and on GNOME, KDE Plasma, Xfce, Cinnamon, MATE, LXQt/LXDE
+and Sway — with `feh`/`nitrogen` as a fallback for other X11 window managers. On GNOME, tray icons need
+the *AppIndicator* extension (preinstalled on Ubuntu); without it, launch Caelum from the app grid
+to open its panel.
 
 ## ✦ Usage
 
@@ -170,9 +187,28 @@ open dist/Caelum.app
 | `scripts/render-icon.swift` | Draw the brand mark (used by `make-icon.sh`). |
 
 Releases are built automatically by GitHub Actions on every `v*` tag — and whenever a commit on
-`main` bumps `CFBundleShortVersionString` in `Resources/Info.plist`, the matching `v<version>` release
-is created for you (see [`.github/workflows/release.yml`](.github/workflows/release.yml)). The tag
-must equal the bundle version; the in-app updater relies on it.
+`main` bumps the version, the matching `v<version>` release is created for you (see
+[`.github/workflows/release.yml`](.github/workflows/release.yml)). One release carries all platforms:
+`Caelum.zip` for macOS, the Windows installer and the Linux AppImage/deb, plus the `latest*.yml`
+manifests the Windows/Linux updater reads. To release, bump **both**
+`CFBundleShortVersionString` in `Resources/Info.plist` and `version` in `desktop/package.json` — the
+workflow refuses mismatched versions or a tag that differs from them, since the in-app updaters rely on it.
+
+### Windows & Linux app (`desktop/`)
+
+An Electron port of the Mac app: same sources (`src/main/sources.js`, with the curated galleries
+generated from `StaticGallerySource.swift` by `scripts/extract-galleries.py`), tray + panel UI, daily
+refresh, and updates via `electron-updater` from the same GitHub releases.
+
+```bash
+cd desktop
+npm install
+npm start              # run from source
+npm test               # unit tests (parsers, registry)
+npm run smoke          # live check: every source returns a loadable image
+npm run dist:linux     # AppImage + deb in desktop/dist
+npm run dist:win       # NSIS installer (on Windows)
+```
 
 ## ✦ What's coming
 

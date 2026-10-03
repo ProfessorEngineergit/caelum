@@ -1,23 +1,35 @@
 name: Release
 
-# Every published release is what Caelum's in-app updater offers (it reads
-# releases/latest and installs its Caelum.zip). Releases come from:
+# One release per version, carrying every platform:
+#   • macOS   — Caelum.zip (native Swift app)
+#   • Windows — Caelum-Setup-<version>.exe + latest.yml
+#   • Linux   — Caelum-<version>-<arch>.AppImage, caelum_<version>_<arch>.deb + latest-linux*.yml
+# Every published release is what the apps' in-app updaters offer (macOS reads
+# releases/latest and installs Caelum.zip; Windows/Linux use the latest*.yml files).
+#
+# Releases come from:
 #   • pushing a `v*` tag, or
-#   • pushing to main with a bumped version in Resources/Info.plist — the
-#     release (and its tag) is created automatically if it doesn't exist yet.
+#   • pushing to main with a bumped version — the release (and its tag) is
+#     created automatically if it doesn't exist yet.
+# Resources/Info.plist (CFBundleShortVersionString) and desktop/package.json
+# (version) must carry the same version; the build fails otherwise.
 on:
   push:
     tags: ["v*"]
     branches: [main]
-    paths: ["Resources/Info.plist"]
+    paths: ["Resources/Info.plist", "desktop/package.json"]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    runs-on: macos-14
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      publish: ${{ steps.version.outputs.publish }}
     steps:
       - uses: actions/checkout@v4
 
@@ -26,16 +38,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Resources/Info.plist)
+          VERSION=$(python3 -c "import plistlib; print(plistlib.load(open('Resources/Info.plist','rb'))['CFBundleShortVersionString'])")
+          DESKTOP=$(node -p "require('./desktop/package.json').version")
           TAG="v$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+          if [ "$DESKTOP" != "$VERSION" ]; then
+            echo "::error::desktop/package.json is $DESKTOP but Info.plist is $VERSION — bump both"
+            exit 1
+          fi
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            # The updater compares the tag with the bundle version — they must agree,
+            # The updaters compare the tag with the app version — they must agree,
             # or installed apps would see an "update" that never installs.
             if [ "${GITHUB_REF_NAME}" != "$TAG" ]; then
-              echo "::error::Tag ${GITHUB_REF_NAME} does not match Info.plist version $VERSION"
+              echo "::error::Tag ${GITHUB_REF_NAME} does not match version $VERSION"
               exit 1
             fi
             echo "publish=true" >> "$GITHUB_OUTPUT"
@@ -46,48 +63,122 @@ jobs:
             echo "publish=true" >> "$GITHUB_OUTPUT"
           fi
 
+  macos:
+    needs: version
+    if: needs.version.outputs.publish == 'true'
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Select Xcode (full toolchain for universal build)
-        if: steps.version.outputs.publish == 'true'
         run: |
           sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
           swift --version
           xcodebuild -version
 
       - name: Build universal Caelum.app
-        if: steps.version.outputs.publish == 'true'
         run: bash scripts/build-app.sh release --universal
 
       - name: Verify architectures
-        if: steps.version.outputs.publish == 'true'
         run: lipo -info dist/Caelum.app/Contents/MacOS/Caelum
 
       - name: Zip app
-        if: steps.version.outputs.publish == 'true'
         run: |
           cd dist
           ditto -c -k --keepParent Caelum.app Caelum.zip
           shasum -a 256 Caelum.zip
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/Caelum.zip
+          if-no-files-found: error
+
+  windows:
+    needs: version
+    if: needs.version.outputs.publish == 'true'
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Build installer (x64 + arm64)
+        run: npx electron-builder --win --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.exe.blockmap
+            desktop/dist/latest.yml
+          if-no-files-found: error
+
+  linux:
+    needs: version
+    if: needs.version.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Build AppImage + deb (x64 + arm64)
+        run: npx electron-builder --linux --x64 --arm64 --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: |
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
+            desktop/dist/latest-linux*.yml
+          if-no-files-found: error
+
+  publish:
+    needs: [version, macos, windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - run: ls -la artifacts && (cd artifacts && sha256sum *)
+
       - name: Publish release
-        if: steps.version.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
+          tag_name: ${{ needs.version.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          files: dist/Caelum.zip
+          files: artifacts/*
+          fail_on_unmatched_files: true
           generate_release_notes: true
           make_latest: true
-          name: Caelum ${{ steps.version.outputs.tag }}
+          name: Caelum ${{ needs.version.outputs.tag }}
           body: |
-            ### Caelum ${{ steps.version.outputs.tag }}
+            ### Caelum ${{ needs.version.outputs.tag }}
 
-            A macOS menu-bar app that keeps the latest NASA Astronomy Picture of the Day on your desktop.
+            The cosmos on your desktop — NASA's Astronomy Picture of the Day and nine more sources as your wallpaper.
 
             **Already using Caelum 1.0.18 or later?** The update is offered right in the panel —
             one click to install (or automatically, if enabled in Settings → Updates).
 
-            **Install:** unzip into `/Applications`, then **right-click → Open** on first launch
-            (Caelum is open source and not notarized). If macOS still refuses:
-            `xattr -dr com.apple.quarantine /Applications/Caelum.app`
-
-            Universal binary · requires macOS 13+.
+            | Platform | Download |
+            |---|---|
+            | macOS 13+ (universal) | `Caelum.zip` — unzip into `/Applications`, then **right-click → Open** on first launch (not notarized). If macOS still refuses: `xattr -dr com.apple.quarantine /Applications/Caelum.app` |
+            | Windows 10/11 (x64, ARM64) | `Caelum-Setup-${{ needs.version.outputs.version }}.exe` — not code-signed, so SmartScreen may ask: **More info → Run anyway** |
+            | Linux (x64, ARM64) | `Caelum-${{ needs.version.outputs.version }}-<arch>.AppImage` (updates itself) or `caelum_${{ needs.version.outputs.version }}_<arch>.deb` |
