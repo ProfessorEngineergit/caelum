@@ -400,9 +400,7 @@ final class AppState: ObservableObject {
 
     func setWallpaper() { Task { await applyWallpaperNow() } }
 
-    func completeOnboarding(apiKey: String) {
-        let key = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !key.isEmpty { Preferences.shared.nasaAPIKey = key }
+    func completeOnboarding() {
         Preferences.shared.hasCompletedOnboarding = true
         withAnimation(Theme.Motion.gentle) { showOnboarding = false }
     }
