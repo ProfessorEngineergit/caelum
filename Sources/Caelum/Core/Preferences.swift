@@ -118,6 +118,11 @@ final class Preferences {
         store.set(CaelumDates.ymd.string(from: Date()), forKey: Key.lastFetchedDate)
     }
 
+    /// Forgets today's fetch so the next daily check fetches and applies again.
+    func clearLastFetch() {
+        store.removeObject(forKey: Key.lastFetchedDate)
+    }
+
     /// True if the last successful fetch happened on a different calendar day than today.
     var fetchNeededToday: Bool {
         guard let last = lastFetchedDate else { return true }

@@ -1,8 +1,15 @@
 name: Release
 
+# Every published release is what Caelum's in-app updater offers (it reads
+# releases/latest and installs its Caelum.zip). Releases come from:
+#   • pushing a `v*` tag, or
+#   • pushing to main with a bumped version in Resources/Info.plist — the
+#     release (and its tag) is created automatically if it doesn't exist yet.
 on:
   push:
     tags: ["v*"]
+    branches: [main]
+    paths: ["Resources/Info.plist"]
   workflow_dispatch:
 
 permissions:
@@ -14,34 +21,70 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Determine version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Resources/Info.plist)
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            # The updater compares the tag with the bundle version — they must agree,
+            # or installed apps would see an "update" that never installs.
+            if [ "${GITHUB_REF_NAME}" != "$TAG" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} does not match Info.plist version $VERSION"
+              exit 1
+            fi
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          elif gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — nothing to publish."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Select Xcode (full toolchain for universal build)
+        if: steps.version.outputs.publish == 'true'
         run: |
           sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
           swift --version
           xcodebuild -version
 
       - name: Build universal Caelum.app
+        if: steps.version.outputs.publish == 'true'
         run: bash scripts/build-app.sh release --universal
 
       - name: Verify architectures
+        if: steps.version.outputs.publish == 'true'
         run: lipo -info dist/Caelum.app/Contents/MacOS/Caelum
 
       - name: Zip app
+        if: steps.version.outputs.publish == 'true'
         run: |
           cd dist
           ditto -c -k --keepParent Caelum.app Caelum.zip
           shasum -a 256 Caelum.zip
 
       - name: Publish release
+        if: steps.version.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           files: dist/Caelum.zip
           generate_release_notes: true
-          name: Caelum ${{ github.ref_name }}
+          make_latest: true
+          name: Caelum ${{ steps.version.outputs.tag }}
           body: |
-            ### Caelum ${{ github.ref_name }}
+            ### Caelum ${{ steps.version.outputs.tag }}
 
             A macOS menu-bar app that keeps the latest NASA Astronomy Picture of the Day on your desktop.
+
+            **Already using Caelum 1.0.18 or later?** The update is offered right in the panel —
+            one click to install (or automatically, if enabled in Settings → Updates).
 
             **Install:** unzip into `/Applications`, then **right-click → Open** on first launch
             (Caelum is open source and not notarized). If macOS still refuses:

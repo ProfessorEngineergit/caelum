@@ -169,8 +169,10 @@ open dist/Caelum.app
 | `scripts/make-icon.sh` | Render the app icon and build `AppIcon.icns`. |
 | `scripts/render-icon.swift` | Draw the brand mark (used by `make-icon.sh`). |
 
-Releases are built automatically by GitHub Actions on every `v*` tag (see
-[`.github/workflows/release.yml`](.github/workflows/release.yml)).
+Releases are built automatically by GitHub Actions on every `v*` tag — and whenever a commit on
+`main` bumps `CFBundleShortVersionString` in `Resources/Info.plist`, the matching `v<version>` release
+is created for you (see [`.github/workflows/release.yml`](.github/workflows/release.yml)). The tag
+must equal the bundle version; the in-app updater relies on it.
 
 ## ✦ What's coming
 
@@ -187,6 +189,7 @@ network request Caelum ever makes — there are no others:
 | Request | When | Who receives it | Why |
 |---------|------|-----------------|-----|
 | `science.nasa.gov/wp-json/wp/v2/apod-basic` | Daily / on launch | NASA | Fetch APOD metadata |
+| `assets.science.nasa.gov` | When an APOD image is shown | NASA | Download the APOD image (full-resolution original + preview) |
 | `api.github.com/repos/ProfessorEngineergit/caelum/releases/latest` | On launch, every ~6 h | GitHub | Check for a new Caelum version |
 | `github.com/…/releases/download/…` | Only when you install an update | GitHub | Download `Caelum.zip` |
 | `hubblesite.org/api/…` | On source load | STScI / NASA | Hubble image feed |

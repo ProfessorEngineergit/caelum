@@ -36,8 +36,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // fresh install or update (and only if the cache is actually cold), so it
         // never false-alarms on a normal relaunch. Auto-fades once warm.
         let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
-        let installedOrUpdated = Preferences.shared.lastRunVersion != currentVersion
+        let previousVersion = Preferences.shared.lastRunVersion
+        let installedOrUpdated = previousVersion != currentVersion
         Preferences.shared.lastRunVersion = currentVersion
+
+        // Up to 1.0.17 APOD read NASA's retired API, which now hands out a NASA logo
+        // as "today's picture" — and may have set it as the wallpaper. Coming from
+        // such a version, redo today's daily refresh so the real APOD replaces it.
+        if let previousVersion, AppVersion.isNewer("1.0.18", than: previousVersion) {
+            Preferences.shared.clearLastFetch()
+        }
         if installedOrUpdated, ImageCache.shared.cachedFiles().count < 6 {
             appState.beginWarmup()
         }

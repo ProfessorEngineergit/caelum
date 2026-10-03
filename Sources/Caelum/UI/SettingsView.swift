@@ -224,6 +224,9 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
             toggle("Install updates automatically", $model.autoInstallUpdates)
+                .onChange(of: model.autoInstallUpdates) { on in
+                    if on { updater.installPendingIfAutomatic() }
+                }
             Text("Caelum checks GitHub for new releases. A new version is always offered in the panel; with automatic installs on, it's downloaded, verified and applied for you.")
                 .font(Theme.Fonts.body(11))
                 .foregroundStyle(Theme.Palette.textTertiary)

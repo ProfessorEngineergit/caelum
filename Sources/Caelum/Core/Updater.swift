@@ -90,6 +90,10 @@ final class UpdateManager: ObservableObject {
 
     private var loop: Task<Void, Never>?
     private var installTask: Task<Void, Never>?
+    private var wakeObserver: NSObjectProtocol?
+
+    /// How often to look for a new release while Caelum runs.
+    private static let checkInterval: TimeInterval = 6 * 3600
 
     var currentVersion: String { AppVersion.current ?? "dev" }
 
@@ -113,7 +117,8 @@ final class UpdateManager: ObservableObject {
 
     // MARK: Checking
 
-    /// Starts the background loop: a first check shortly after launch, then every 6 hours.
+    /// Starts the background loop: a first check shortly after launch, then every
+    /// 6 hours — and on wake, when the Mac slept through a scheduled check.
     func start() {
         guard loop == nil else { return }
         Task.detached { UpdateInstaller.removeWorkDirectory() }   // leftovers from a previous update
@@ -121,7 +126,16 @@ final class UpdateManager: ObservableObject {
             try? await Task.sleep(nanoseconds: 8 * 1_000_000_000)
             while !Task.isCancelled {
                 await self?.check(userInitiated: false)
-                try? await Task.sleep(nanoseconds: 6 * 3600 * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: UInt64(Self.checkInterval * 1_000_000_000))
+            }
+        }
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                let due = self.lastChecked.map { Date().timeIntervalSince($0) > Self.checkInterval } ?? true
+                if due { await self.check(userInitiated: false) }
             }
         }
     }
@@ -160,6 +174,14 @@ final class UpdateManager: ObservableObject {
     }
 
     func dismiss() { dismissedVersion = pendingRelease?.version }
+
+    /// Called when the user turns on automatic installs: an update that is already
+    /// on offer is installed right away instead of at the next check.
+    func installPendingIfAutomatic() {
+        guard Preferences.shared.autoInstallUpdates, UpdateInstaller.canSelfInstall,
+              case .available(let release) = state else { return }
+        install(release)
+    }
 
     // MARK: Installing
 

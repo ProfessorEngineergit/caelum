@@ -13,8 +13,15 @@ import Foundation
 ///   • no API key, no quota
 ///   • `hdurl` is the image for *every* entry (a poster frame for videos);
 ///     `url` is now the article page, not the image
-///   • `explanation`, `credit` and `copyright` are HTML fragments
+///   • `hdurl` points at NASA's resizing CDN (`/dynamicimage/…?w=…&h=…`), which
+///     caps output at ~1280 px whatever `w`/`h` say. The untouched original lives
+///     at the same path under `/content/dam/` — that's the wallpaper; the resized
+///     variant serves as the quick preview. `w`/`h` do give the original's size.
+///   • `explanation`, `credit` and `copyright` are HTML fragments, and the
+///     explanation carries site notices ("APOD's email…", "Tomorrow's picture…")
 ///   • `media_type` is `image`, `video` or `iframe`
+///   • every entry also ships a full `basic_html` page — `_fields` trims the
+///     response to what we read (~4× smaller); parsing works without it too
 struct APODSource: ImageSource {
     let id = "apod"
     let name = "NASA APOD"
@@ -26,6 +33,8 @@ struct APODSource: ImageSource {
     private static let endpoint = "https://science.nasa.gov/wp-json/wp/v2/apod-basic"
     /// The route serves at most this many entries per page.
     private static let maxPerPage = 25
+    /// The fields `DTO` reads — everything else (notably `basic_html`) is skipped.
+    private static let fields = "date,title,explanation,credit,copyright,media_type,url,hdurl,permalink"
 
     func fetchRecent(limit: Int) async throws -> [CosmicImage] {
         let count = min(max(limit, 1), Self.maxPerPage)
@@ -45,7 +54,8 @@ struct APODSource: ImageSource {
 
     private func fetchList(count: Int) async throws -> [CosmicImage] {
         var components = URLComponents(string: Self.endpoint)!
-        components.queryItems = [URLQueryItem(name: "per_page", value: String(count))]
+        components.queryItems = [URLQueryItem(name: "per_page", value: String(count)),
+                                 URLQueryItem(name: "_fields", value: Self.fields)]
         guard let url = components.url else { throw SourceError.badURL }
         return Self.parse(try await HTTPClient.data(from: url))
     }
@@ -59,7 +69,7 @@ struct APODSource: ImageSource {
             for day in days {
                 group.addTask {
                     // A missing day (404 — e.g. today's picture isn't out yet) is normal.
-                    guard let url = URL(string: Self.endpoint + "/" + Self.yyMMdd(day)),
+                    guard let url = URL(string: Self.endpoint + "/" + Self.yyMMdd(day) + "?_fields=" + Self.fields),
                           let data = try? await HTTPClient.data(from: url) else { return [] }
                     return Self.parse(data)
                 }
@@ -128,9 +138,15 @@ struct APODSource: ImageSource {
         // `hdurl` is the image (or a video's poster frame). `url` is the article page.
         guard let raw = dto.hdurl?.trimmingCharacters(in: .whitespacesAndNewlines),
               raw.lowercased().hasPrefix("http"),
-              let imageURL = URL(string: raw) else { return nil }
+              let hdURL = URL(string: raw) else { return nil }
 
         let isImage = (dto.mediaType ?? "image").lowercased() == "image"
+        // Full-resolution original for the wallpaper; the CDN's resized copy as the
+        // preview (and as ImageCache's fallback should the original ever fail).
+        let imageURL = originalURL(for: hdURL) ?? hdURL
+        let resolution: ResolutionHint = isImage
+            ? (originalSize(of: hdURL).map { ResolutionHint.classify(width: $0.width, height: $0.height) } ?? .hd)
+            : .sd
         let date = dto.date.flatMap { CaelumDates.ymd.date(from: String($0.prefix(10))) }
 
         let title = dto.title?.plainText ?? ""
@@ -145,18 +161,54 @@ struct APODSource: ImageSource {
             sourceID: "apod",
             pageURL: pageURL(permalink: dto.permalink, article: dto.url, date: date),
             imageURL: imageURL,
-            thumbURL: imageURL,
+            thumbURL: hdURL,
             isVideo: !isImage,
-            resolution: isImage ? .uhd : .sd)
+            resolution: resolution)
+    }
+
+    // MARK: - Image URLs
+
+    /// `https://assets.science.nasa.gov/dynamicimage/assets/science/…/x.jpg?w=…`
+    ///   → `https://assets.science.nasa.gov/content/dam/science/…/x.jpg`
+    /// `nil` when the URL isn't a resizing-CDN URL (then `hdurl` is used as is).
+    static func originalURL(for hdURL: URL) -> URL? {
+        let marker = "/dynamicimage/assets/"
+        guard var components = URLComponents(url: hdURL, resolvingAgainstBaseURL: false),
+              components.percentEncodedPath.hasPrefix(marker) else { return nil }
+        components.percentEncodedPath = "/content/dam/"
+            + components.percentEncodedPath.dropFirst(marker.count)
+        components.query = nil
+        return components.url
+    }
+
+    /// The original's pixel size from the CDN URL's `w`/`h` (NASA writes `0` when unknown).
+    static func originalSize(of hdURL: URL) -> (width: Int, height: Int)? {
+        let items = URLComponents(url: hdURL, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        func value(_ name: String) -> Int? {
+            items.first { $0.name == name }?.value.flatMap(Int.init).flatMap { $0 > 0 ? $0 : nil }
+        }
+        guard let w = value("w"), let h = value("h") else { return nil }
+        return (w, h)
     }
 
     // MARK: - Text cleanup (the new route returns HTML)
 
-    /// Plain text without the leading "Explanation:" label, and without the
-    /// "Tomorrow's picture: …" teaser the page appends to the body.
+    /// Plain text without the leading "Explanation:" label, and without the site
+    /// notices appended after the body ("APOD's email for image submissions has
+    /// changed…", "APOD's main NASA site is moving…", "Tomorrow's picture: …").
     static func cleanExplanation(_ html: String?) -> String? {
-        guard var text = html?.plainText, !text.isEmpty else { return nil }
-        for teaser in ["Tomorrow's picture", "Tomorrow’s picture", "Tomorrow's Picture", "Tomorrow’s Picture"] {
+        guard var body = html else { return nil }
+        // The notices follow the explanation as bold lines after a line break:
+        // "…last sentence.<br><br><strong>APOD's email…</strong>…".
+        if let notices = body.range(of: #"<br[^>]*>\s*(?:<br[^>]*>\s*)*<(?:strong|b)\b"#,
+                                    options: [.regularExpression, .caseInsensitive]) {
+            body = String(body[..<notices.lowerBound])
+        }
+        var text = body.plainText
+        guard !text.isEmpty else { return nil }
+        // Belt and braces, should a notice ever arrive without the bold markup.
+        for teaser in ["APOD's email", "APOD’s email", "APOD's main NASA site", "APOD’s main NASA site",
+                       "Tomorrow's picture", "Tomorrow’s picture", "Tomorrow's Picture", "Tomorrow’s Picture"] {
             if let range = text.range(of: teaser) {
                 text = String(text[..<range.lowerBound])
             }
