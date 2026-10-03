@@ -12,9 +12,7 @@ struct OnboardingView: View {
     var onDrone: () -> Void = {}
 
     @State private var step = 0
-    @State private var apiKey = ""
     @State private var revealed = false
-    @FocusState private var keyFocused: Bool
 
     private let lastStep = 4
 
@@ -47,7 +45,7 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
         .environment(\.colorScheme, .dark)
-        .onExitCommand { onComplete(apiKey) }   // Esc always escapes the takeover
+        .onExitCommand { onComplete("") }   // Esc always escapes the takeover
         .onAppear {
             // Hold on pure black for a beat — "man sieht nichts" — then the nebula
             // blooms in and the boom lands at the very same instant.
@@ -96,14 +94,11 @@ struct OnboardingView: View {
             }
             .transition(.opacity)
         case 3:
-            VStack(spacing: 22) {
-                messageStep(
-                    eyebrow: "ONE LAST THING",
-                    title: "Add your free NASA key\nfor the fastest APOD.",
-                    body: "APOD runs on NASA's API. The bundled DEMO_KEY is shared and rate-limited — a personal key (free, 30 seconds) makes it fast and reliable.")
-                keyField
-            }
-            .transition(.opacity)
+            messageStep(
+                eyebrow: "ALWAYS CURRENT",
+                title: "Caelum keeps itself\nup to date.",
+                body: "When a new version is released, the panel tells you — one click to install. Prefer hands-off? Turn on automatic installs in Settings.")
+                .transition(.opacity)
         default:
             VStack(spacing: 30) {
                 if setupDone {
@@ -193,30 +188,6 @@ struct OnboardingView: View {
         }
     }
 
-    private var keyField: some View {
-        VStack(spacing: 12) {
-            TextField("Paste your NASA API key (optional)", text: $apiKey)
-                .textFieldStyle(.plain)
-                .font(.system(size: 15, design: .monospaced))
-                .foregroundStyle(Theme.Palette.textPrimary)
-                .multilineTextAlignment(.center)
-                .focused($keyFocused)
-                .padding(.vertical, 14).padding(.horizontal, 18)
-                .frame(maxWidth: 420)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Theme.Palette.obsidian2.opacity(0.7)))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(keyFocused ? Theme.Palette.auroraViolet.opacity(0.7) : Theme.Palette.hairline, lineWidth: 1))
-                .onSubmit { advance() }
-            Button { NSWorkspace.shared.open(URL(string: "https://api.nasa.gov")!) } label: {
-                Label("Get a free key at api.nasa.gov", systemImage: "arrow.up.forward.app")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Theme.Palette.auroraCyan)
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
     // MARK: - Footer (dots + continue)
 
     private var footer: some View {
@@ -239,15 +210,6 @@ struct OnboardingView: View {
             .buttonStyle(AuroraPillButtonStyle())
             .keyboardShortcut(.defaultAction)
             .opacity(step == 0 ? 0 : 1)
-
-            if step == 3 {
-                Button { apiKey = ""; advance() } label: {
-                    Text("Skip — use the shared key")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.Palette.textTertiary)
-                }
-                .buttonStyle(.plain)
-            }
         }
         .padding(.bottom, 64)
         .animation(Theme.Motion.gentle, value: step)
@@ -256,21 +218,18 @@ struct OnboardingView: View {
     private var primaryLabel: String {
         switch step {
         case 1, 2: return "Continue"
-        case 3: return apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Continue" : "Save key & continue"
+        case 3: return "Continue"
         default: return "Enter Caelum"
         }
     }
 
     private func advance() {
         if step >= lastStep {
-            onComplete(apiKey)
+            onComplete("")
             return
         }
         onChime(true)
         withAnimation(.easeInOut(duration: 0.55)) { step += 1 }
-        if step == 3 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { keyFocused = true }
-        }
     }
 }
 

@@ -108,6 +108,26 @@ extension String {
         let entities = ["&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"",
                         "&#39;": "'", "&nbsp;": " ", "&mdash;": "—", "&ndash;": "–"]
         for (k, v) in entities { s = s.replacingOccurrences(of: k, with: v) }
-        return s.trimmingCharacters(in: .whitespacesAndNewlines)
+        return s.decodingNumericEntities.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Decodes numeric character references (`&#8217;`, `&#x2019;`) — WordPress-backed
+    /// feeds (e.g. NASA's APOD route) emit these for curly quotes and dashes.
+    var decodingNumericEntities: String {
+        guard contains("&#"),
+              let re = try? NSRegularExpression(pattern: "&#([xX][0-9a-fA-F]+|[0-9]+);") else { return self }
+        var result = self
+        let matches = re.matches(in: self, range: NSRange(startIndex..., in: self))
+        for m in matches.reversed() {   // back to front so earlier ranges stay valid
+            guard let whole = Range(m.range, in: result),
+                  let codeRange = Range(m.range(at: 1), in: result) else { continue }
+            let code = String(result[codeRange])
+            let value = code.lowercased().hasPrefix("x")
+                ? UInt32(code.dropFirst(), radix: 16)
+                : UInt32(code, radix: 10)
+            guard let value, let scalar = Unicode.Scalar(value) else { continue }
+            result.replaceSubrange(whole, with: String(Character(scalar)))
+        }
+        return result
     }
 }

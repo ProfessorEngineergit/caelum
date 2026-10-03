@@ -25,11 +25,7 @@ struct PopoverView: View {
                         .padding(.top, Theme.Metrics.space3)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                if Preferences.shared.usingDemoKey {
-                    DemoKeyBanner { withAnimation(Theme.Motion.bouncy) { app.showSettings = true } }
-                        .padding(.horizontal, Theme.Metrics.space4)
-                        .padding(.top, Theme.Metrics.space3)
-                }
+                UpdateBanner(updater: app.updater)       // only when a new release is out
                 ControlDeck()                            // fixed
                     .padding(.horizontal, Theme.Metrics.space4)
                     .padding(.top, Theme.Metrics.space4)
@@ -46,6 +42,7 @@ struct PopoverView: View {
             if app.showSettings {
                 SettingsView(
                     scheduler: app.scheduler,
+                    updater: app.updater,
                     onDismiss: { withAnimation(Theme.Motion.bouncy) { app.showSettings = false } }
                 )
                 .transition(.asymmetric(
@@ -113,31 +110,6 @@ private struct APODLoadingBanner: View {
             .fill(Theme.Palette.auroraCyan.opacity(0.10)))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
             .strokeBorder(Theme.Palette.auroraCyan.opacity(0.22), lineWidth: 1))
-    }
-}
-
-/// Slim hint shown while running on the shared DEMO_KEY — taps through to Settings.
-private struct DemoKeyBanner: View {
-    let action: () -> Void
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: "key.fill").font(.system(size: 10, weight: .bold))
-                Text("Using the shared demo key — add yours for faster APOD")
-                    .font(Theme.Fonts.body(11))
-                    .lineLimit(1).minimumScaleFactor(0.8)
-                Spacer(minLength: 4)
-                Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
-            }
-            .foregroundStyle(Theme.Palette.warning)
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Theme.Palette.warning.opacity(0.12)))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Theme.Palette.warning.opacity(0.3), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
     }
 }
 

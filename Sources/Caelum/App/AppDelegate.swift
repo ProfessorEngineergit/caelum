@@ -55,6 +55,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Kick off scheduling — the initial daily check loads the first image.
         appState.start()
+
+        // Look for a newer release on GitHub shortly after launch and every few hours.
+        appState.updater.start()
     }
 
     func applicationWillTerminate(_ notification: Notification) {

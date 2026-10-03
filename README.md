@@ -40,8 +40,10 @@ extracts the dominant colour of each image and re-tints its own accents to match
 
 ## ✦ Features
 
-- **Always the latest APOD** — fetched daily and set as your wallpaper, automatically. Robust even
-  when NASA's API is down (Caelum transparently falls back to the APOD website).
+- **Always the latest APOD** — fetched daily and set as your wallpaper, automatically. Uses NASA's
+  new keyless APOD endpoint on science.nasa.gov, with a per-day fallback if the list route misbehaves.
+- **Updates itself, if you want** — Caelum checks GitHub Releases, announces new versions right in the
+  panel with a one-click install, and can optionally install them automatically (Settings → Updates).
 - **10 stellar sources** — APOD is the star, joined by ESA/Hubble, James Webb, ESO, NASA EPIC,
   the NASA Image Library, Bing, Wikimedia, NASA Image of the Day, and a hand-curated gallery.
 - **Cinematic ambient mode** — a full-screen, multi-display ken-burns slideshow on idle. Your own
@@ -60,7 +62,7 @@ extracts the dominant colour of each image and re-tints its own accents to match
 
 | # | Source | What you get | API key |
 |---|--------|--------------|---------|
-| ⭐ | **NASA APOD** | The Astronomy Picture of the Day | bundled `DEMO_KEY` (optional personal key) |
+| ⭐ | **NASA APOD** | The Astronomy Picture of the Day | — |
 | 2 | **ESA/Hubble** | Hubble Picture of the Week | — |
 | 3 | **James Webb** | ESA/Webb image releases | — |
 | 4 | **ESO** | European Southern Observatory Picture of the Week | — |
@@ -71,8 +73,7 @@ extracts the dominant colour of each image and re-tints its own accents to match
 | 9 | **NASA Image of the Day** | NASA's curated daily feed | — |
 | 10 | **Caelum Curated** | A hand-picked gallery of the finest space imagery, refreshed OTA — no app update needed | — |
 
-Everything works out of the box. The bundled NASA `DEMO_KEY` is rate-limited; drop a free personal
-key (from [api.nasa.gov](https://api.nasa.gov)) into **Settings** for higher limits.
+Everything works out of the box — no API keys needed.
 
 ## ✦ Install
 
@@ -118,7 +119,7 @@ Homebrew handles Gatekeeper automatically — no quarantine steps needed.
 | Tint interface to the image | on | Dynamic accent colour. |
 | Chime when wallpaper updates | on | A subtle sound on update. |
 | Launch at login | off | Start Caelum automatically (`SMAppService`). |
-| NASA API key | `DEMO_KEY` | Your personal key for higher rate limits. |
+| Install updates automatically | off | Download, verify and apply new releases without asking. |
 
 ## ✦ How it works
 
@@ -185,8 +186,9 @@ network request Caelum ever makes — there are no others:
 
 | Request | When | Who receives it | Why |
 |---------|------|-----------------|-----|
-| `api.nasa.gov/planetary/apod` | Daily / on launch | NASA | Fetch APOD metadata |
-| `apod.nasa.gov` (HTML fallback) | When API fails | NASA | Scrape APOD image if the API is down |
+| `science.nasa.gov/wp-json/wp/v2/apod-basic` | Daily / on launch | NASA | Fetch APOD metadata |
+| `api.github.com/repos/ProfessorEngineergit/caelum/releases/latest` | On launch, every ~6 h | GitHub | Check for a new Caelum version |
+| `github.com/…/releases/download/…` | Only when you install an update | GitHub | Download `Caelum.zip` |
 | `hubblesite.org/api/…` | On source load | STScI / NASA | Hubble image feed |
 | `esawebb.org/rss/…` | On source load | ESA | Webb image feed |
 | `eso.org/public/images/…` | On source load | ESO | ESO image feed |
