@@ -1,0 +1,813 @@
+[
+ {
+  "id": "deep",
+  "name": "Deep Space",
+  "subtitle": "Nebulae & galaxies",
+  "accent": "#B8C0FF",
+  "assets": [
+   {
+    "identifier": "weic2205a",
+    "title": "Cosmic Cliffs of Carina",
+    "credit": "NASA, ESA, CSA, STScI",
+    "explanation": "Webb's infrared view of the star-forming edge of NGC 3324 in the Carina Nebula.",
+    "imageURL": "https://cdn.esawebb.org/archives/images/large/weic2205a.jpg",
+    "thumbURL": "https://cdn.esawebb.org/archives/images/screen/weic2205a.jpg",
+    "pageURL": "https://esawebb.org/images/weic2205a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "heic1509a",
+    "title": "Pillars of Creation",
+    "credit": "NASA, ESA, Hubble Heritage Team",
+    "explanation": "Hubble's high-resolution visible-light portrait of the Pillars of Creation in the Eagle Nebula.",
+    "imageURL": "https://cdn.esahubble.org/archives/images/large/heic1509a.jpg",
+    "thumbURL": "https://cdn.esahubble.org/archives/images/screen/heic1509a.jpg",
+    "pageURL": "https://esahubble.org/images/heic1509a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "heic0611b",
+    "title": "Hubble Ultra Deep Field",
+    "credit": "NASA / ESA / Hubble",
+    "explanation": "Thousands of galaxies fill one of Hubble's deepest views of the universe.",
+    "imageURL": "https://cdn.esahubble.org/archives/images/large/heic0611b.jpg",
+    "thumbURL": "https://cdn.esahubble.org/archives/images/screen/heic0611b.jpg",
+    "pageURL": "https://esahubble.org/images/heic0611b/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "weic2609c",
+    "title": "A Little Red Dot",
+    "credit": "ESA/Webb, NASA & CSA",
+    "explanation": "Webb looks across cosmic time toward Abell 2744 and very distant early-universe objects.",
+    "imageURL": "https://cdn.esawebb.org/archives/images/large/weic2609c.jpg",
+    "thumbURL": "https://cdn.esawebb.org/archives/images/screen/weic2609c.jpg",
+    "pageURL": "https://esawebb.org/images/weic2609c/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "weic2212a",
+    "title": "Tarantula Nebula",
+    "credit": "NASA, ESA, CSA, STScI",
+    "explanation": "Webb's near-infrared view of star-forming region 30 Doradus.",
+    "imageURL": "https://cdn.esawebb.org/archives/images/large/weic2212a.jpg",
+    "thumbURL": "https://cdn.esawebb.org/archives/images/screen/weic2212a.jpg",
+    "pageURL": "https://esawebb.org/images/weic2212a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "weic2303a",
+    "title": "Rho Ophiuchi Cloud Complex",
+    "credit": "NASA, ESA, CSA, STScI",
+    "explanation": "Webb's multicolored view of a nearby star-forming region with dust and nebulosity.",
+    "imageURL": "https://cdn.esawebb.org/archives/images/large/weic2303a.jpg",
+    "thumbURL": "https://cdn.esawebb.org/archives/images/screen/weic2303a.jpg",
+    "pageURL": "https://esawebb.org/images/weic2303a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "heic0601a",
+    "title": "Orion Nebula",
+    "credit": "NASA, ESA, Hubble Heritage Team",
+    "explanation": "Hubble's expansive mosaic of the Orion Nebula reveals stellar nursery details.",
+    "imageURL": "https://cdn.esahubble.org/archives/images/large/heic0601a.jpg",
+    "thumbURL": "https://cdn.esahubble.org/archives/images/screen/heic0601a.jpg",
+    "pageURL": "https://esahubble.org/images/heic0601a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "heic0506a",
+    "title": "Whirlpool Galaxy",
+    "credit": "NASA, ESA, Hubble Heritage Team",
+    "explanation": "Hubble's stunning face-on spiral galaxy with sharp dust lanes and golden star-forming regions.",
+    "imageURL": "https://cdn.esahubble.org/archives/images/large/heic0506a.jpg",
+    "thumbURL": "https://cdn.esahubble.org/archives/images/screen/heic0506a.jpg",
+    "pageURL": "https://esahubble.org/images/heic0506a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "eso1303a",
+    "title": "Blue Star in a Dark Nebula",
+    "credit": "ESO/Digitized Sky Survey 2",
+    "explanation": "A brilliant blue-white star HD 97300 ignites a glowing reflection nebula against dense dark clouds in the Chamaeleon star-forming region.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso1303a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso1303a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1303a/",
+    "resolution": "4K",
+    "date": "2013-03-27"
+   },
+   {
+    "identifier": "eso1605a",
+    "title": "IC 4592 — The Blue Horsehead Nebula",
+    "credit": "ESO/Digitized Sky Survey 2",
+    "explanation": "The hot blue star Nu Scorpii paints a vast reflection nebula in the constellation Scorpius, surrounding the ghostly Blue Horsehead cloud at 9.8K resolution.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso1605a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso1605a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1605a/",
+    "resolution": "4K",
+    "date": "2016-02-10"
+   },
+   {
+    "identifier": "eso1701a",
+    "title": "Rho Ophiuchi Star-Forming Tendrils",
+    "credit": "ESO/S. Guisard",
+    "explanation": "A dramatic wide-field view of the Rho Ophiuchi molecular cloud — one of the nearest stellar nurseries — with orange dust filaments and blue reflection nebulae.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso1701a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso1701a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1701a/",
+    "resolution": "4K",
+    "date": "2017-01-11"
+   },
+   {
+    "identifier": "eso1740a",
+    "title": "The Lagoon Nebula in Infrared",
+    "credit": "ESO/VISTA/J. Emerson",
+    "explanation": "VISTA's 17K infrared panorama of the Lagoon Nebula NGC 6523 strips away the dust to reveal thousands of young stars embedded in glowing pink gas.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso1740a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso1740a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1740a/",
+    "resolution": "4K",
+    "date": "2017-10-25"
+   },
+   {
+    "identifier": "eso1913a",
+    "title": "Seagull Nebula over the Southern Milky Way",
+    "credit": "ESO/F. Kamphues",
+    "explanation": "A sweeping 20K mosaic of the Seagull Nebula IC 2177 in Monoceros, with wings of ionised hydrogen blazing pink and orange across a star-rich Milky Way field.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso1913a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso1913a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1913a/",
+    "resolution": "4K",
+    "date": "2019-04-24"
+   },
+   {
+    "identifier": "eso1526a",
+    "title": "Star Cluster NGC 1850 in the LMC",
+    "credit": "ESO",
+    "explanation": "A young double star cluster blazes at the heart of the Large Magellanic Cloud, surrounded by wisps of nebulosity and older surrounding stars.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso1526a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso1526a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1526a/",
+    "resolution": "4K",
+    "date": "2015-09-23"
+   },
+   {
+    "identifier": "weic2316a",
+    "title": "Rho Ophiuchi — Webb's Star-Birth Portrait",
+    "credit": "NASA, ESA, CSA, STScI, K. Pontoppidan (STScI)",
+    "explanation": "Webb's first-anniversary image: the nearest stellar nursery in exquisite 12K infrared detail, with jets of pink hydrogen slicing dark filaments and young sun-like stars.",
+    "imageURL": "https://cdn.esawebb.org/archives/images/large/weic2316a.jpg",
+    "thumbURL": "https://cdn.esawebb.org/archives/images/screen/weic2316a.jpg",
+    "pageURL": "https://esawebb.org/images/weic2316a/",
+    "resolution": "4K",
+    "date": "2023-07-12"
+   },
+   {
+    "identifier": "eso2209a",
+    "title": "Heart of the Tarantula — 30 Doradus",
+    "credit": "ESO/M.-R. Cioni/VISTA Magellanic Cloud survey",
+    "explanation": "A multiwavelength composite of the Tarantula Nebula 30 Doradus, blending optical and infrared data to reveal the most luminous star-forming region in the Local Group.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso2209a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso2209a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso2209a/",
+    "resolution": "4K",
+    "date": "2022-09-07"
+   }
+  ]
+ },
+ {
+  "id": "earth",
+  "name": "Earth from Space",
+  "subtitle": "Orbit & lunar views",
+  "accent": "#5EF2B0",
+  "assets": [
+   {
+    "identifier": "iss071e456772",
+    "title": "Moonlit Pacific from the ISS",
+    "credit": "NASA",
+    "explanation": "Moon glint, airglow and stars photographed from the International Space Station above the Pacific Ocean.",
+    "imageURL": "https://images-assets.nasa.gov/image/iss071e456772/iss071e456772~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/iss071e456772/iss071e456772~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/iss071e456772",
+    "date": "2024-07-18",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "iss058e005282",
+    "title": "Aurora from the Station",
+    "credit": "NASA",
+    "explanation": "Earth's limb and aurora beneath the International Space Station's solar arrays.",
+    "imageURL": "https://images-assets.nasa.gov/image/iss058e005282/iss058e005282~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/iss058e005282/iss058e005282~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/iss058e005282",
+    "date": "2019-01-19",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "iss074e0319988",
+    "title": "Orbital Star Trails",
+    "credit": "NASA/JAXA",
+    "explanation": "A long-duration exposure from the ISS turns city lights and stars into streaks above Earth.",
+    "imageURL": "https://images-assets.nasa.gov/image/iss074e0319988/iss074e0319988~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/iss074e0319988/iss074e0319988~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/iss074e0319988",
+    "date": "2026-02-19",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "art002e009288",
+    "title": "Earthset from Orion",
+    "credit": "NASA",
+    "explanation": "Earth drops behind the Moon as photographed from the Orion spacecraft.",
+    "imageURL": "https://images-assets.nasa.gov/image/art002e009288/art002e009288~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/art002e009288/art002e009288~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/art002e009288",
+    "date": "2026-04-01",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "PIA18033",
+    "title": "Blue Marble 2012",
+    "credit": "NASA",
+    "explanation": "A detailed full-disk composite of Earth showing oceans, continents, and atmosphere.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA18033/PIA18033~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA18033/PIA18033~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA18033",
+    "date": "2012-06-01",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "GSFC_20171208_Archive_e001591",
+    "title": "Black Marble",
+    "credit": "NASA/NOAA",
+    "explanation": "A global night-time composite showing city lights, auroras, and natural luminescence.",
+    "imageURL": "https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001591/GSFC_20171208_Archive_e001591~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001591/GSFC_20171208_Archive_e001591~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/GSFC_20171208_Archive_e001591",
+    "date": "2017-12-08",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "art002e009280b",
+    "title": "Artemis Era Earthrise",
+    "credit": "NASA",
+    "explanation": "A crescent Earth framed through the window of the Orion spacecraft.",
+    "imageURL": "https://images-assets.nasa.gov/image/art002e009280b/art002e009280b~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/art002e009280b/art002e009280b~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/art002e009280b",
+    "date": "2026-04-01",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "iss029e012564",
+    "title": "Aurora and City Lights",
+    "credit": "NASA",
+    "explanation": "Aurora borealis and night-side city lights illuminate Earth from the ISS vantage point.",
+    "imageURL": "https://images-assets.nasa.gov/image/iss029e012564/iss029e012564~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/iss029e012564/iss029e012564~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/iss029e012564",
+    "date": "2012-09-01",
+    "resolution": "4K"
+   }
+  ]
+ },
+ {
+  "id": "solar",
+  "name": "Solar System",
+  "subtitle": "Planets & moons",
+  "accent": "#FFD166",
+  "assets": [
+   {
+    "identifier": "PIA01384",
+    "title": "Jupiter's Great Red Spot",
+    "credit": "NASA/JPL",
+    "explanation": "Voyager 1's high-resolution color view of Jupiter and the Great Red Spot.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA01384/PIA01384~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA01384/PIA01384~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA01384",
+    "date": null,
+    "resolution": "4K"
+   },
+   {
+    "identifier": "PIA19952",
+    "title": "The Rich Colors of Pluto",
+    "credit": "NASA/JHUAPL/SwRI",
+    "explanation": "New Horizons' enhanced-color portrait of Pluto from its 2015 flyby.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA19952/PIA19952~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA19952/PIA19952~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA19952",
+    "date": "2015-07-14",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "PIA17172",
+    "title": "The Day the Earth Smiled",
+    "credit": "NASA/JPL-Caltech/SSI",
+    "explanation": "A 9,000-pixel Cassini mosaic of Saturn backlit by the Sun, with Earth as a faint dot.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA17172/PIA17172~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA17172/PIA17172~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA17172",
+    "date": null,
+    "resolution": "4K"
+   },
+   {
+    "identifier": "PIA21617",
+    "title": "Saturn Noodle Mosaic",
+    "credit": "NASA/JPL-Caltech/SSI",
+    "explanation": "Cassini's Grand Finale mosaic reveals Saturn's north polar vortex, hexagon and cloud bands.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA21617/PIA21617~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA21617/PIA21617~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA21617",
+    "date": null,
+    "resolution": "4K"
+   },
+   {
+    "identifier": "PIA21967",
+    "title": "95 Minutes Over Jupiter",
+    "credit": "NASA/JPL-Caltech/SwRI/MSSS",
+    "explanation": "A dramatic 16K-wide JunoCam sequence captures Jupiter's cloud patterns and colors.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA21967/PIA21967~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA21967/PIA21967~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA21967",
+    "date": "2018-06-01",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "PIA22939",
+    "title": "Juno Captures Brown Barge",
+    "credit": "NASA/JPL-Caltech/SwRI/MSSS",
+    "explanation": "A 6K Juno observation of a prominent brown feature in Jupiter's atmosphere.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA22939/PIA22939~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA22939/PIA22939~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA22939",
+    "date": "2019-07-01",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "PIA26595",
+    "title": "Turbulence in Jupiter's Atmosphere",
+    "credit": "NASA/JPL-Caltech/SwRI/MSSS",
+    "explanation": "A recent 6.8K Juno image of dramatic cloud formations in Jupiter's upper atmosphere.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA26595/PIA26595~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA26595/PIA26595~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA26595",
+    "date": "2023-03-01",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "PIA20727",
+    "title": "Pluto's Twilight Zone",
+    "credit": "NASA/JHUAPL/SwRI",
+    "explanation": "New Horizons captures Pluto's crescent with atmospheric haze and subtle color contrasts.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA20727/PIA20727~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA20727/PIA20727~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA20727",
+    "date": "2015-07-14",
+    "resolution": "4K"
+   }
+  ]
+ },
+ {
+  "id": "stations",
+  "name": "Spacecraft",
+  "subtitle": "Orion, ISS & satellites",
+  "accent": "#FF8A5E",
+  "assets": [
+   {
+    "identifier": "iss074e0301636",
+    "title": "CubeSats Deploy from the ISS",
+    "credit": "NASA",
+    "explanation": "A trio of CubeSats deploys into Earth orbit from the International Space Station.",
+    "imageURL": "https://images-assets.nasa.gov/image/iss074e0301636/iss074e0301636~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/iss074e0301636/iss074e0301636~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/iss074e0301636",
+    "date": "2026-02-03",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "art001e000269",
+    "title": "Orion Approaches the Moon",
+    "credit": "NASA",
+    "explanation": "The Orion spacecraft approaches the Moon during Artemis I's outbound powered flyby.",
+    "imageURL": "https://images-assets.nasa.gov/image/art001e000269/art001e000269~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/art001e000269/art001e000269~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/art001e000269",
+    "date": "2022-11-21",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "art001e001713",
+    "title": "Orion Between Earth and Moon",
+    "credit": "NASA",
+    "explanation": "Orion's solar array wing cuts between Earth and Moon during Artemis I.",
+    "imageURL": "https://images-assets.nasa.gov/image/art001e001713/art001e001713~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/art001e001713/art001e001713~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/art001e001713",
+    "date": "2022-12-02",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "art001e002186",
+    "title": "Orion Looks Back",
+    "credit": "NASA",
+    "explanation": "The Orion spacecraft looks back at the Moon late in the Artemis I mission.",
+    "imageURL": "https://images-assets.nasa.gov/image/art001e002186/art001e002186~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/art001e002186/art001e002186~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/art001e002186",
+    "date": "2022-12-08",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "iss048e042025",
+    "title": "Dragon CRS-9 Approaches the ISS",
+    "credit": "NASA",
+    "explanation": "The SpaceX Dragon cargo spacecraft approaches the International Space Station for docking.",
+    "imageURL": "https://images-assets.nasa.gov/image/iss048e042025/iss048e042025~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/iss048e042025/iss048e042025~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/iss048e042025",
+    "date": "2016-07-03",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "iss073e0850593",
+    "title": "Moonlit ISS Solar Arrays",
+    "credit": "NASA",
+    "explanation": "ISS hardware glows with an unusual violet hue under moonlight in Earth orbit.",
+    "imageURL": "https://images-assets.nasa.gov/image/iss073e0850593/iss073e0850593~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/iss073e0850593/iss073e0850593~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/iss073e0850593",
+    "date": "2024-01-15",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "PIA17462",
+    "title": "Voyager Enters Interstellar Space",
+    "credit": "NASA/JPL",
+    "explanation": "An 8K NASA/JPL concept depicting the historic Voyager probe leaving our solar system.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA17462/PIA17462~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA17462/PIA17462~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA17462",
+    "date": "2012-09-01",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "PIA21635",
+    "title": "Perseverance Rover on Mars",
+    "credit": "NASA/JPL-Caltech",
+    "explanation": "A photorealistic concept rendering of the Mars 2020 Perseverance rover at work on the Martian surface.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA21635/PIA21635~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA21635/PIA21635~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA21635",
+    "date": "2017-07-01",
+    "resolution": "4K"
+   }
+  ]
+ },
+ {
+  "id": "interstellar",
+  "name": "Sci-Fi",
+  "subtitle": "Interstellar & beyond",
+  "accent": "#8B7CFF",
+  "assets": [
+   {
+    "identifier": "fiction-gargantua-endurance",
+    "title": "Gargantua and the Endurance",
+    "credit": "4K Wallpapers",
+    "explanation": "A high-resolution Interstellar-inspired view of the Endurance crossing Gargantua's accretion disk.",
+    "imageURL": "https://4kwallpapers.com/images/wallpapers/gargantua-endurance-5120x3662-25445.jpg",
+    "thumbURL": "https://4kwallpapers.com/images/walls/thumbs_2t/25445.jpg",
+    "pageURL": "https://4kwallpapers.com/space/gargantua-endurance-25445.html",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "fiction-endurance-gargantua-flyby",
+    "title": "Endurance Near Gargantua",
+    "credit": "WallpaperCat",
+    "explanation": "A 4K Interstellar frame-style composition with the Endurance silhouetted against Gargantua's bright disk.",
+    "imageURL": "https://wallpapercat.com/w/full/c/f/2/2130632-3840x2160-desktop-4k-gargantua-interstellar-wallpaper-photo.jpg",
+    "pageURL": "https://wallpapercat.com/gargantua-interstellar-wallpapers",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "fiction-gargantua-event-horizon",
+    "title": "Gargantua Event Horizon",
+    "credit": "WallpaperCat",
+    "explanation": "A cinematic close view of Gargantua's warped light and accretion disk.",
+    "imageURL": "https://wallpapercat.com/w/full/9/f/1/2130788-3840x1607-desktop-dual-screen-gargantua-interstellar-wallpaper.jpg",
+    "pageURL": "https://wallpapercat.com/gargantua-interstellar-wallpapers",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "fiction-wormhole-approach",
+    "title": "Wormhole Approach",
+    "credit": "WallpaperCat",
+    "explanation": "A 4K wormhole view with distorted starlight and no foreground characters.",
+    "imageURL": "https://wallpapercat.com/w/full/9/6/9/2132185-3840x2160-desktop-4k-wormhole-interstellar-wallpaper-photo.jpg",
+    "pageURL": "https://wallpapercat.com/wormhole-interstellar-wallpapers",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "fiction-endurance-storm-world",
+    "title": "Endurance Above a Storm World",
+    "credit": "WallpaperCat",
+    "explanation": "A wide, high-resolution spacecraft shot with the Endurance suspended over a turbulent alien world.",
+    "imageURL": "https://wallpapercat.com/w/full/3/f/1/306211-3840x2160-desktop-4k-interstellar-background-image.jpg",
+    "pageURL": "https://wallpapercat.com/interstellar-wallpapers",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "fiction-gargantua-singularity",
+    "title": "Gargantua Singularity",
+    "credit": "WallpaperCat",
+    "explanation": "A stark black-hole composition centered on Gargantua's luminous ring.",
+    "imageURL": "https://wallpapercat.com/w/full/d/e/d/2129817-3840x2160-desktop-4k-gargantua-interstellar-background.jpg",
+    "pageURL": "https://wallpapercat.com/gargantua-interstellar-wallpapers",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "fiction-black-hole-satellite",
+    "title": "Black Hole Satellite View",
+    "credit": "Vadim Sadovski / 4K Wallpapers",
+    "explanation": "A 5K deep-space spacecraft scene looking toward a black hole and its surrounding disk.",
+    "imageURL": "https://4kwallpapers.com/images/wallpapers/black-hole-gargantua-interstellar-satellite-outer-space-5k-5200x3400-8249.jpg",
+    "thumbURL": "https://4kwallpapers.com/images/walls/thumbs_2t/8249.jpg",
+    "pageURL": "https://4kwallpapers.com/space/black-hole-gargantua-interstellar-satellite-outer-space-5k-8249.html",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "fiction-gargantua-blue-lens",
+    "title": "Gargantua Blue Lens",
+    "credit": "Sam K / 4K Wallpapers",
+    "explanation": "A 5K black-hole render with blue-white lensing and a clean wallpaper silhouette.",
+    "imageURL": "https://4kwallpapers.com/images/wallpapers/gargantua-black-5200x3250-9621.jpg",
+    "thumbURL": "https://4kwallpapers.com/images/walls/thumbs_2t/9621.jpg",
+    "pageURL": "https://4kwallpapers.com/space/gargantua-black-9621.html",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "fiction-gargantua-close-pass",
+    "title": "Gargantua Close Pass",
+    "credit": "WallpaperCat",
+    "explanation": "A clean 4K black-hole pass with a bright accretion disk and a small spacecraft silhouette.",
+    "imageURL": "https://wallpapercat.com/w/full/5/a/0/306069-3840x2160-desktop-4k-interstellar-wallpaper.jpg",
+    "pageURL": "https://wallpapercat.com/interstellar-wallpapers",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "fiction-gargantua-minimal-ring",
+    "title": "Gargantua Minimal Ring",
+    "credit": "WallpaperCat",
+    "explanation": "A stark 4K Gargantua-style black-hole ring against a deep black star field.",
+    "imageURL": "https://wallpapercat.com/w/full/6/f/b/306081-3840x2160-desktop-4k-interstellar-wallpaper.jpg",
+    "pageURL": "https://wallpapercat.com/interstellar-wallpapers",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "eso1907a",
+    "title": "First Photograph of a Black Hole",
+    "credit": "Event Horizon Telescope Collaboration/ESO",
+    "explanation": "Humanity's first direct image of a black hole: the 6.5-billion-solar-mass giant at the centre of galaxy M87, captured at 7.4K resolution by the Event Horizon Telescope.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso1907a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso1907a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1907a/",
+    "resolution": "4K",
+    "date": "2019-04-10"
+   },
+   {
+    "identifier": "eso1735a",
+    "title": "Dust Rings of Proxima Centauri",
+    "credit": "ESO/M. Kornmesser",
+    "explanation": "An 8K artist's impression of the debris disk surrounding Proxima Centauri — our nearest stellar neighbour — a vast dust ring that may hide further undiscovered worlds.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso1735a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso1735a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1735a/",
+    "resolution": "4K",
+    "date": "2017-11-03"
+   },
+   {
+    "identifier": "eso2007a",
+    "title": "The Closest Black Hole to Earth",
+    "credit": "ESO/L. Calçada",
+    "explanation": "Artist's impression of HR 6819 — a triple system just 1,000 light-years away harbouring a dormant black hole, with the orbital paths of its two companion stars traced in colour.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso2007a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso2007a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso2007a/",
+    "resolution": "4K",
+    "date": "2020-05-06"
+   },
+   {
+    "identifier": "eso2210a",
+    "title": "A Dormant Black Hole Unmasked",
+    "credit": "ESO/L. Calçada",
+    "explanation": "An artist's view of the first dormant stellar black hole confirmed outside the Milky Way — a dark void orbiting tight against a blazing blue giant in the Large Magellanic Cloud.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso2210a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso2210a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso2210a/",
+    "resolution": "4K",
+    "date": "2022-11-10"
+   },
+   {
+    "identifier": "eso2213a",
+    "title": "Ultra-Hot Jupiter on a Close Orbit",
+    "credit": "ESO/M. Kornmesser",
+    "explanation": "An artist's impression of an ultra-hot Jupiter exoplanet locked in a scorching close orbit — temperatures above 3,000 K strip the planet's atmosphere away into space.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso2213a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso2213a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso2213a/",
+    "resolution": "4K",
+    "date": "2022-09-12"
+   },
+   {
+    "identifier": "eso0915a",
+    "title": "Super-Earths of Gliese 667C",
+    "credit": "ESO/L. Calçada",
+    "explanation": "A barren rocky super-Earth looms in the foreground while a smaller ocean world hangs in the distance — both orbiting the red dwarf Gliese 667C in this cinematic artist's impression.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso0915a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso0915a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso0915a/",
+    "resolution": "4K",
+    "date": "2009-06-15"
+   }
+  ]
+ },
+ {
+  "id": "artist-impressions",
+  "name": "Artist Impressions",
+  "subtitle": "Scientific concepts",
+  "accent": "#FF6AD5",
+  "assets": [
+   {
+    "identifier": "artists-proxima-b",
+    "title": "Proxima b Surface",
+    "credit": "ESO / M. Kornmesser",
+    "explanation": "An artist's impression of the rocky exoplanet Proxima b orbiting the nearest star to the Sun.",
+    "imageURL": "https://cdn.eso.org/images/large/eso1629a.jpg",
+    "thumbURL": "https://cdn.eso.org/images/screen/eso1629a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1629a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "artists-55-cancri-e",
+    "title": "Lava World 55 Cancri e",
+    "credit": "ESA/Hubble, M. Kornmesser",
+    "explanation": "A 10K artist's concept of the super-Earth 55 Cancri e, a hot rocky planet with a partially molten surface.",
+    "imageURL": "https://cdn.esahubble.org/archives/images/large/heic1603b.jpg",
+    "thumbURL": "https://cdn.esahubble.org/archives/images/screen/heic1603b.jpg",
+    "pageURL": "https://esahubble.org/images/heic1603b/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "artists-wasp-121b",
+    "title": "WASP-121 b",
+    "credit": "ESA/Hubble, M. Kornmesser",
+    "explanation": "A hot Jupiter artist impression showing the strongly irradiated exoplanet WASP-121 b near its host star.",
+    "imageURL": "https://cdn.esahubble.org/archives/images/large/heic2401a.jpg",
+    "thumbURL": "https://cdn.esahubble.org/archives/images/screen/heic2401a.jpg",
+    "pageURL": "https://esahubble.org/images/heic2401a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "artists-k2-18b",
+    "title": "K2-18 b",
+    "credit": "ESA/Hubble, M. Kornmesser",
+    "explanation": "A distant view of exoplanet K2-18 b and its red-dwarf host star in an artist's concept.",
+    "imageURL": "https://cdn.esahubble.org/archives/images/large/heic1916a.jpg",
+    "thumbURL": "https://cdn.esahubble.org/archives/images/screen/heic1916a.jpg",
+    "pageURL": "https://esahubble.org/images/heic1916a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "artists-gj-1132b",
+    "title": "GJ 1132 b",
+    "credit": "NASA, ESA, and R. Hurt (IPAC/Caltech)",
+    "explanation": "A rocky exoplanet artist impression set against the Milky Way and its host star.",
+    "imageURL": "https://cdn.esahubble.org/archives/images/large/heic2104a.jpg",
+    "thumbURL": "https://cdn.esahubble.org/archives/images/screen/heic2104a.jpg",
+    "pageURL": "https://esahubble.org/images/heic2104a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "artists-neutron-star-merger",
+    "title": "Neutron Star Merger",
+    "credit": "ESO/L. Calcada/M. Kornmesser",
+    "explanation": "An artist's impression of two merging neutron stars producing a bright kilonova.",
+    "imageURL": "https://cdn.eso.org/images/large/eso1733a.jpg",
+    "thumbURL": "https://cdn.eso.org/images/screen/eso1733a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1733a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "artists-m87-black-hole",
+    "title": "M87 Black Hole Concept",
+    "credit": "ESO/M. Kornmesser",
+    "explanation": "An artist's impression of the supermassive black hole at the center of Messier 87 and its hot accretion flow.",
+    "imageURL": "https://cdn.eso.org/images/large/eso1907c.jpg",
+    "thumbURL": "https://cdn.eso.org/images/screen/eso1907c.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1907c/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "artists-hd-131399ab",
+    "title": "HD 131399Ab",
+    "credit": "ESO/L. Calcada",
+    "explanation": "A triple-star exoplanet artist impression with three suns visible from a distant giant world.",
+    "imageURL": "https://cdn.esahubble.org/archives/images/large/heic1619a.jpg",
+    "thumbURL": "https://cdn.esahubble.org/archives/images/screen/heic1619a.jpg",
+    "pageURL": "https://esahubble.org/images/heic1619a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "artists-isolated-black-hole",
+    "title": "Isolated Stellar-Mass Black Hole",
+    "credit": "ESA/Hubble, Digitized Sky Survey, Nick Risinger, N. Bartmann",
+    "explanation": "A Milky Way star field distorted by an isolated stellar-mass black hole in this artist's impression.",
+    "imageURL": "https://cdn.esahubble.org/archives/images/large/heic2210a.jpg",
+    "thumbURL": "https://cdn.esahubble.org/archives/images/screen/heic2210a.jpg",
+    "pageURL": "https://esahubble.org/images/heic2210a/",
+    "resolution": "4K",
+    "date": null
+   },
+   {
+    "identifier": "PIA21423",
+    "title": "Surface of TRAPPIST-1f",
+    "credit": "NASA/JPL-Caltech",
+    "explanation": "An exoplanet surface concept with icy terrain, orange twilight, and neighboring TRAPPIST-1 worlds in the sky.",
+    "imageURL": "https://images-assets.nasa.gov/image/PIA21423/PIA21423~orig.jpg",
+    "thumbURL": "https://images-assets.nasa.gov/image/PIA21423/PIA21423~medium.jpg",
+    "pageURL": "https://images.nasa.gov/details/PIA21423",
+    "date": "2017-06-01",
+    "resolution": "4K"
+   },
+   {
+    "identifier": "eso1733a-ai",
+    "title": "Kilonova — Two Neutron Stars Collide",
+    "credit": "ESO/L. Calçada/M. Kornmesser",
+    "explanation": "An artist's impression of gravitational-wave event GW170817 — two neutron stars spiralling to a cataclysmic merger, forging gold and heavy elements in a brilliant blue-white kilonova flash.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso1733a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso1733a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso1733a/",
+    "resolution": "4K",
+    "date": "2017-10-16"
+   },
+   {
+    "identifier": "eso2007a-ai",
+    "title": "Black Hole in a Triple Star System",
+    "credit": "ESO/L. Calçada",
+    "explanation": "An artist's impression of HR 6819: a dormant black hole caught silently orbiting within a triple star system — the closest known black hole to Earth.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso2007a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso2007a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso2007a/",
+    "resolution": "4K",
+    "date": "2020-05-06"
+   },
+   {
+    "identifier": "eso2213a-ai",
+    "title": "Ultra-Hot Jupiter on a Close Orbit",
+    "credit": "ESO/M. Kornmesser",
+    "explanation": "A photorealistic artist impression of a gas giant on an extreme close orbit, its atmosphere blazing at over 3,000 K and being slowly stripped away by the host star's radiation.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso2213a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso2213a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso2213a/",
+    "resolution": "4K",
+    "date": "2022-09-12"
+   },
+   {
+    "identifier": "eso0915a-ai",
+    "title": "Super-Earths of Gliese 667C",
+    "credit": "ESO/L. Calçada",
+    "explanation": "An artist's impression of the Gliese 667C planetary system: a barren rocky super-Earth in the foreground, a habitable ocean world in the distance, under the glow of a red dwarf sun.",
+    "imageURL": "https://www.eso.org/public/archives/images/large/eso0915a.jpg",
+    "thumbURL": "https://www.eso.org/public/archives/images/screen/eso0915a.jpg",
+    "pageURL": "https://www.eso.org/public/images/eso0915a/",
+    "resolution": "4K",
+    "date": "2009-06-15"
+   }
+  ]
+ }
+]

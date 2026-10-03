@@ -195,12 +195,25 @@ final class StatusItemController: NSObject {
 
     private func showContextMenu() {
         let menu = NSMenu()
+        let updateItem = NSMenuItem(title: "Check for Updates…",
+                                    action: #selector(checkForUpdates), keyEquivalent: "")
+        updateItem.target = self
+        menu.addItem(updateItem)
+        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Caelum",
                                 action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         if let button = statusItem.button {
             menu.popUp(positioning: nil,
                        at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
         }
+    }
+
+    /// Right-click → "Check for Updates…": run a check and open Settings → Updates
+    /// in the panel, which shows the outcome ("You're up to date", an install button…).
+    @objc private func checkForUpdates() {
+        appState.updater.checkNow()
+        appState.showSettings = true
+        if !panel.isVisible { showPanel() }
     }
 
     // MARK: - Brand glyph animation (dot completes one orbit on new image)

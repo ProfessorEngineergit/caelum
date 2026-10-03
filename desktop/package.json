@@ -1,0 +1,104 @@
+{
+  "name": "caelum",
+  "productName": "Caelum",
+  "version": "1.0.18",
+  "description": "The cosmos on your desktop — NASA's Astronomy Picture of the Day and more as your wallpaper.",
+  "homepage": "https://github.com/ProfessorEngineergit/caelum",
+  "license": "MIT",
+  "author": {
+    "name": "Caelum",
+    "email": "caelum@users.noreply.github.com"
+  },
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "smoke": "node src/main/smoke.js",
+    "icons": "node scripts/make-icons.js",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:linux": "electron-builder --linux --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.0"
+  },
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.professorengineer.caelum",
+    "productName": "Caelum",
+    "copyright": "MIT License",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "ProfessorEngineergit",
+        "repo": "caelum",
+        "releaseType": "release"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "Caelum-Setup-${version}.${ext}",
+      "shortcutName": "Caelum",
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Utility",
+      "synopsis": "NASA's Astronomy Picture of the Day as your wallpaper",
+      "executableName": "caelum",
+      "maintainer": "Caelum <caelum@users.noreply.github.com>",
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "Caelum"
+        }
+      },
+      "syncDesktopName": true
+    },
+    "appImage": {
+      "artifactName": "Caelum-${version}-${arch}.${ext}"
+    },
+    "deb": {
+      "artifactName": "caelum_${version}_${arch}.${ext}"
+    }
+  },
+  "desktopName": "caelum.desktop"
+}

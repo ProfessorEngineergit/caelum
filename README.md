@@ -40,8 +40,10 @@ extracts the dominant colour of each image and re-tints its own accents to match
 
 ## ✦ Features
 
-- **Always the latest APOD** — fetched daily and set as your wallpaper, automatically. Robust even
-  when NASA's API is down (Caelum transparently falls back to the APOD website).
+- **Always the latest APOD** — fetched daily and set as your wallpaper, automatically. Uses NASA's
+  new keyless APOD endpoint on science.nasa.gov, with a per-day fallback if the list route misbehaves.
+- **Updates itself, if you want** — Caelum checks GitHub Releases, announces new versions right in the
+  panel with a one-click install, and can optionally install them automatically (Settings → Updates).
 - **10 stellar sources** — APOD is the star, joined by ESA/Hubble, James Webb, ESO, NASA EPIC,
   the NASA Image Library, Bing, Wikimedia, NASA Image of the Day, and a hand-curated gallery.
 - **Cinematic ambient mode** — a full-screen, multi-display ken-burns slideshow on idle. Your own
@@ -60,7 +62,7 @@ extracts the dominant colour of each image and re-tints its own accents to match
 
 | # | Source | What you get | API key |
 |---|--------|--------------|---------|
-| ⭐ | **NASA APOD** | The Astronomy Picture of the Day | bundled `DEMO_KEY` (optional personal key) |
+| ⭐ | **NASA APOD** | The Astronomy Picture of the Day | — |
 | 2 | **ESA/Hubble** | Hubble Picture of the Week | — |
 | 3 | **James Webb** | ESA/Webb image releases | — |
 | 4 | **ESO** | European Southern Observatory Picture of the Week | — |
@@ -71,8 +73,7 @@ extracts the dominant colour of each image and re-tints its own accents to match
 | 9 | **NASA Image of the Day** | NASA's curated daily feed | — |
 | 10 | **Caelum Curated** | A hand-picked gallery of the finest space imagery, refreshed OTA — no app update needed | — |
 
-Everything works out of the box. The bundled NASA `DEMO_KEY` is rate-limited; drop a free personal
-key (from [api.nasa.gov](https://api.nasa.gov)) into **Settings** for higher limits.
+Everything works out of the box — no API keys needed. The same sources power the Windows and Linux app.
 
 ## ✦ Install
 
@@ -98,6 +99,23 @@ Homebrew handles Gatekeeper automatically — no quarantine steps needed.
 
 > **Requirements:** macOS 13 (Ventura) or later.
 
+### Windows & Linux
+
+Caelum also runs on **Windows 10/11** and **Linux** (x64 and ARM64) as a tray app with the same ten
+sources, daily wallpaper refresh and in-app updates. Grab the file for your system from the
+[**Releases**](https://github.com/ProfessorEngineergit/caelum/releases/latest) page:
+
+| System | File | Notes |
+|--------|------|-------|
+| Windows | `Caelum-Setup-<version>.exe` | Installs per user, no admin needed. Not code-signed — if SmartScreen asks, choose **More info → Run anyway**. |
+| Linux | `Caelum-<version>-<arch>.AppImage` | `chmod +x` and run. Updates itself in place. |
+| Debian / Ubuntu | `caelum_<version>_<arch>.deb` | `sudo apt install ./caelum_…deb`. New versions are announced in the panel; install them the same way. |
+
+The wallpaper is set natively on Windows and on GNOME, KDE Plasma, Xfce, Cinnamon, MATE, LXQt/LXDE
+and Sway — with `feh`/`nitrogen` as a fallback for other X11 window managers. On GNOME, tray icons need
+the *AppIndicator* extension (preinstalled on Ubuntu); without it, launch Caelum from the app grid
+to open its panel.
+
 ## ✦ Usage
 
 - **Click** the menu-bar glyph to open the panel.
@@ -118,7 +136,7 @@ Homebrew handles Gatekeeper automatically — no quarantine steps needed.
 | Tint interface to the image | on | Dynamic accent colour. |
 | Chime when wallpaper updates | on | A subtle sound on update. |
 | Launch at login | off | Start Caelum automatically (`SMAppService`). |
-| NASA API key | `DEMO_KEY` | Your personal key for higher rate limits. |
+| Install updates automatically | off | Download, verify and apply new releases without asking. |
 
 ## ✦ How it works
 
@@ -168,8 +186,29 @@ open dist/Caelum.app
 | `scripts/make-icon.sh` | Render the app icon and build `AppIcon.icns`. |
 | `scripts/render-icon.swift` | Draw the brand mark (used by `make-icon.sh`). |
 
-Releases are built automatically by GitHub Actions on every `v*` tag (see
-[`.github/workflows/release.yml`](.github/workflows/release.yml)).
+Releases are built automatically by GitHub Actions on every `v*` tag — and whenever a commit on
+`main` bumps the version, the matching `v<version>` release is created for you (see
+[`.github/workflows/release.yml`](.github/workflows/release.yml)). One release carries all platforms:
+`Caelum.zip` for macOS, the Windows installer and the Linux AppImage/deb, plus the `latest*.yml`
+manifests the Windows/Linux updater reads. To release, bump **both**
+`CFBundleShortVersionString` in `Resources/Info.plist` and `version` in `desktop/package.json` — the
+workflow refuses mismatched versions or a tag that differs from them, since the in-app updaters rely on it.
+
+### Windows & Linux app (`desktop/`)
+
+An Electron port of the Mac app: same sources (`src/main/sources.js`, with the curated galleries
+generated from `StaticGallerySource.swift` by `scripts/extract-galleries.py`), tray + panel UI, daily
+refresh, and updates via `electron-updater` from the same GitHub releases.
+
+```bash
+cd desktop
+npm install
+npm start              # run from source
+npm test               # unit tests (parsers, registry)
+npm run smoke          # live check: every source returns a loadable image
+npm run dist:linux     # AppImage + deb in desktop/dist
+npm run dist:win       # NSIS installer (on Windows)
+```
 
 ## ✦ What's coming
 
@@ -185,8 +224,10 @@ network request Caelum ever makes — there are no others:
 
 | Request | When | Who receives it | Why |
 |---------|------|-----------------|-----|
-| `api.nasa.gov/planetary/apod` | Daily / on launch | NASA | Fetch APOD metadata |
-| `apod.nasa.gov` (HTML fallback) | When API fails | NASA | Scrape APOD image if the API is down |
+| `science.nasa.gov/wp-json/wp/v2/apod-basic` | Daily / on launch | NASA | Fetch APOD metadata |
+| `assets.science.nasa.gov` | When an APOD image is shown | NASA | Download the APOD image (full-resolution original + preview) |
+| `api.github.com/repos/ProfessorEngineergit/caelum/releases/latest` | On launch, every ~6 h | GitHub | Check for a new Caelum version |
+| `github.com/…/releases/download/…` | Only when you install an update | GitHub | Download `Caelum.zip` |
 | `hubblesite.org/api/…` | On source load | STScI / NASA | Hubble image feed |
 | `esawebb.org/rss/…` | On source load | ESA | Webb image feed |
 | `eso.org/public/images/…` | On source load | ESO | ESO image feed |

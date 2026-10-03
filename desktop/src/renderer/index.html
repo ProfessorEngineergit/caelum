@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' file: https: data:; font-src 'self'">
+  <title>Caelum</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="panel">
+    <div id="update-banner" class="banner" hidden></div>
+
+    <section class="hero" id="hero">
+      <img id="hero-img" alt="">
+      <div class="hero-loading" id="hero-loading"><div class="orbit"></div></div>
+      <div class="hero-scrim"></div>
+      <div class="hero-meta">
+        <div class="hero-eyebrow"><span id="source-name">NASA APOD</span><span id="hero-date"></span><span id="hero-res" class="badge"></span></div>
+        <h1 id="hero-title">Loading the cosmos…</h1>
+        <p id="hero-credit"></p>
+      </div>
+      <button class="hero-nav prev" id="prev" title="Previous image" aria-label="Previous image">‹</button>
+      <button class="hero-nav next" id="next" title="Next image" aria-label="Next image">›</button>
+    </section>
+
+    <p id="error" class="error" hidden></p>
+
+    <div class="deck">
+      <button id="apply" class="primary">Set as wallpaper</button>
+      <button id="shuffle" class="icon" title="Shuffle" aria-label="Shuffle">⤮</button>
+      <button id="refresh" class="icon" title="Refresh" aria-label="Refresh">↻</button>
+    </div>
+
+    <details id="about-image">
+      <summary>About this image</summary>
+      <p id="hero-explanation"></p>
+      <button id="open-page" class="link">Open source page ↗</button>
+    </details>
+
+    <div class="section-label">Sources</div>
+    <div id="sources" class="sources"></div>
+
+    <footer>
+      <button id="open-settings" class="icon small" title="Settings" aria-label="Settings">⚙</button>
+      <span class="wordmark">CAELUM</span>
+      <button id="quit" class="icon small" title="Quit Caelum" aria-label="Quit Caelum">⏻</button>
+    </footer>
+  </main>
+
+  <section id="settings" hidden>
+    <header>
+      <button id="close-settings" class="link">‹ Back</button>
+      <h2>Settings</h2>
+    </header>
+    <div class="settings-body">
+      <div class="group">
+        <div class="group-title">Wallpaper</div>
+        <label class="toggle"><span>Refresh daily automatically</span><input type="checkbox" data-setting="autoDailyRefresh"></label>
+        <label class="toggle"><span>Rotate through the library</span><input type="checkbox" data-setting="rotateLibrary"></label>
+        <label class="row" id="rotate-row"><span>Every</span>
+          <select data-setting="rotateMinutes">
+            <option value="15">15 min</option><option value="30">30 min</option><option value="60">1 hour</option>
+            <option value="180">3 hours</option><option value="360">6 hours</option><option value="720">12 hours</option>
+          </select>
+        </label>
+      </div>
+      <div class="group">
+        <div class="group-title">Startup</div>
+        <label class="toggle"><span>Launch Caelum at login</span><input type="checkbox" data-setting="launchAtLogin"></label>
+      </div>
+      <div class="group">
+        <div class="group-title">Updates</div>
+        <div class="update-row"><span id="update-version"></span><span id="update-status" class="muted"></span></div>
+        <button id="update-action" class="primary"></button>
+        <label class="toggle"><span>Install updates automatically</span><input type="checkbox" data-setting="autoInstallUpdates"></label>
+        <p class="muted small">Caelum checks GitHub for new releases. A new version is always offered in the panel; with automatic installs on, it's downloaded, verified and applied for you.</p>
+      </div>
+      <div class="about">
+        <div class="wordmark">CAELUM</div>
+        <div class="muted small" id="about-version"></div>
+        <button class="link" data-url="https://github.com/ProfessorEngineergit/caelum">GitHub</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

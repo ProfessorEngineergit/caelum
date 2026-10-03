@@ -1,0 +1,31 @@
+name: Desktop CI
+
+# Fast checks for the Windows/Linux app on every change to it.
+on:
+  push:
+    paths: ["desktop/**", ".github/workflows/desktop-ci.yml"]
+  pull_request:
+    paths: ["desktop/**", ".github/workflows/desktop-ci.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Galleries are in sync with the macOS app
+        run: |
+          python3 scripts/extract-galleries.py
+          git diff --exit-code -- src/main/galleries.json

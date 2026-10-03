@@ -16,7 +16,7 @@ final class SettingsModel: ObservableObject {
     @Published var dynamicAccent: Bool    { didSet { Preferences.shared.dynamicAccent = dynamicAccent } }
     @Published var chime: Bool            { didSet { Preferences.shared.chimeOnUpdate = chime } }
     @Published var launchAtLogin: Bool    { didSet { Preferences.shared.launchAtLogin = launchAtLogin; LaunchAtLogin.set(launchAtLogin) } }
-    @Published var nasaKey: String        { didSet { Preferences.shared.nasaAPIKey = nasaKey } }
+    @Published var autoInstallUpdates: Bool { didSet { Preferences.shared.autoInstallUpdates = autoInstallUpdates } }
 
     init(scheduler: Scheduler) {
         self.scheduler = scheduler
@@ -28,7 +28,7 @@ final class SettingsModel: ObservableObject {
         dynamicAccent    = prefs.dynamicAccent
         chime            = prefs.chimeOnUpdate
         launchAtLogin    = prefs.launchAtLogin
-        nasaKey          = prefs.usingDemoKey ? "" : prefs.nasaAPIKey
+        autoInstallUpdates = prefs.autoInstallUpdates
     }
 }
 
@@ -41,13 +41,16 @@ final class SettingsModel: ObservableObject {
 struct SettingsView: View {
     let onDismiss: () -> Void
     @StateObject private var model: SettingsModel
+    /// Safe to observe: it publishes only on update-state changes (rare), unlike AppState.
+    @ObservedObject private var updater: UpdateManager
     @Environment(\.isSnapshot) private var isSnapshot
 
     // Static accent — does not change on image updates, no re-renders.
     private let accent = Theme.Palette.auroraViolet
 
-    init(scheduler: Scheduler, onDismiss: @escaping () -> Void) {
+    init(scheduler: Scheduler, updater: UpdateManager, onDismiss: @escaping () -> Void) {
         _model = StateObject(wrappedValue: SettingsModel(scheduler: scheduler))
+        _updater = ObservedObject(wrappedValue: updater)
         self.onDismiss = onDismiss
     }
 
@@ -71,30 +74,7 @@ struct SettingsView: View {
             section("Startup") {
                 toggle("Launch Caelum at login", $model.launchAtLogin)
             }
-            section("NASA API key") {
-                VStack(alignment: .leading, spacing: 8) {
-                    if isSnapshot {
-                        Text(model.nasaKey.isEmpty ? "DEMO_KEY (bundled)" : "************")
-                            .font(Theme.Fonts.mono(12))
-                            .foregroundStyle(Theme.Palette.textTertiary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(10)
-                            .glassCard(cornerRadius: 10, fill: 0.6)
-                    } else {
-                        TextField("DEMO_KEY (bundled)", text: $model.nasaKey)
-                            .textFieldStyle(.plain)
-                            .font(Theme.Fonts.mono(12))
-                            .foregroundStyle(Theme.Palette.textPrimary)
-                            .padding(10)
-                            .glassCard(cornerRadius: 10, fill: 0.6)
-                    }
-                    Text("APOD uses NASA's API key. The bundled DEMO_KEY is rate-limited — a free personal key lifts the limits.")
-                        .font(Theme.Fonts.body(11))
-                        .foregroundStyle(Theme.Palette.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    linkButton("Get a free key →", "https://api.nasa.gov")
-                }
-            }
+            section("Updates") { updatesContent }
             aboutSection
         }
         .frame(maxWidth: .infinity)
@@ -217,12 +197,81 @@ struct SettingsView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Updates
+
+    @ViewBuilder private var updatesContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.Metrics.space3) {
+                Text("Caelum \(updater.currentVersion)")
+                    .font(Theme.Fonts.body(13))
+                    .foregroundStyle(Theme.Palette.textPrimary)
+                Spacer(minLength: Theme.Metrics.space3)
+                Text(updateStatus)
+                    .font(Theme.Fonts.body(11))
+                    .foregroundStyle(updateStatusIsError ? Theme.Palette.warning : Theme.Palette.textTertiary)
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let action = updateAction {
+                Button(action: action.run) {
+                    Text(action.title)
+                        .font(Theme.Fonts.title(12))
+                        .foregroundStyle(Color.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Capsule().fill(Theme.Gradients.auroraHorizontal))
+                }
+                .buttonStyle(.plain)
+            }
+            toggle("Install updates automatically", $model.autoInstallUpdates)
+                .onChange(of: model.autoInstallUpdates) { on in
+                    if on { updater.installPendingIfAutomatic() }
+                }
+            Text("Caelum checks GitHub for new releases. A new version is always offered in the panel; with automatic installs on, it's downloaded, verified and applied for you.")
+                .font(Theme.Fonts.body(11))
+                .foregroundStyle(Theme.Palette.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var updateStatusIsError: Bool {
+        if case .failed = updater.state { return true }
+        return false
+    }
+
+    private var updateStatus: String {
+        switch updater.state {
+        case .idle:                  return "Not checked yet"
+        case .checking:              return "Checking…"
+        case .upToDate:              return "You're up to date"
+        case .available(let r):      return "Version \(r.version) is available"
+        case .downloading(let r):    return "Downloading \(r.version)…"
+        case .installing:            return "Installing…"
+        case .failed(let message, _): return message
+        }
+    }
+
+    private var updateAction: (title: String, run: () -> Void)? {
+        switch updater.state {
+        case .idle, .upToDate:
+            return ("Check for updates", { updater.checkNow() })
+        case .available(let r):
+            return (UpdateInstaller.canSelfInstall ? "Install \(r.version) & restart" : "Download \(r.version)",
+                    { updater.install(r) })
+        case .failed(_, let r):
+            if let r { return ("Try again", { updater.install(r) }) }
+            return ("Check again", { updater.checkNow() })
+        case .checking, .downloading, .installing:
+            return nil
+        }
+    }
+
     private var aboutSection: some View {
         VStack(spacing: 6) {
             Text("CAELUM")
                 .font(Theme.Fonts.micro(11)).tracking(4)
                 .foregroundStyle(Theme.Palette.textSecondary)
-            Text("Version 1.0.17 · MIT License")
+            Text("Version \(updater.currentVersion) · MIT License")
                 .font(Theme.Fonts.mono(10)).foregroundStyle(Theme.Palette.textTertiary)
             HStack(spacing: 14) {
                 linkButton("GitHub", "https://github.com/ProfessorEngineergit/caelum")

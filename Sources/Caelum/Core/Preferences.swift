@@ -19,6 +19,7 @@ final class Preferences {
         static let lastFetchedDate  = "lastFetchedDate"
         static let hasOnboarded     = "hasCompletedOnboarding"
         static let lastRunVersion   = "lastRunVersion"
+        static let autoInstallUpdates = "autoInstallUpdates"
     }
 
     init() {
@@ -35,6 +36,8 @@ final class Preferences {
     }
 
     /// NASA key — bundled `DEMO_KEY` unless the user supplies their own free key.
+    /// APOD no longer needs it (NASA's new endpoint is keyless); kept for sources
+    /// that may need a key again.
     var nasaAPIKey: String {
         get {
             guard let raw = store.string(forKey: Key.nasaAPIKey) else { return "DEMO_KEY" }
@@ -96,6 +99,12 @@ final class Preferences {
         get { store.bool(forKey: Key.setOnAllScreens) }
         set { store.set(newValue, forKey: Key.setOnAllScreens) }
     }
+    /// Download and install new Caelum releases without asking. Off by default —
+    /// an update is always offered in the panel, but replacing the app is opt-in.
+    var autoInstallUpdates: Bool {
+        get { store.bool(forKey: Key.autoInstallUpdates) }
+        set { store.set(newValue, forKey: Key.autoInstallUpdates) }
+    }
 
     // MARK: - Daily watchdog
 
@@ -107,6 +116,11 @@ final class Preferences {
 
     func recordFetch() {
         store.set(CaelumDates.ymd.string(from: Date()), forKey: Key.lastFetchedDate)
+    }
+
+    /// Forgets today's fetch so the next daily check fetches and applies again.
+    func clearLastFetch() {
+        store.removeObject(forKey: Key.lastFetchedDate)
     }
 
     /// True if the last successful fetch happened on a different calendar day than today.
