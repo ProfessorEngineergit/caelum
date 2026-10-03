@@ -132,12 +132,17 @@ final class UpdateManager: ObservableObject {
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
-                guard let self else { return }
-                let due = self.lastChecked.map { Date().timeIntervalSince($0) > Self.checkInterval } ?? true
-                if due { await self.check(userInitiated: false) }
-            }
+            // Copy the weak reference into a constant: Swift 5.10 rejects capturing
+            // the closure's `self` variable in the concurrently-executing Task.
+            let manager = self
+            Task { @MainActor in await manager?.checkIfOverdue() }
         }
+    }
+
+    /// After wake: check only if the Mac slept through a scheduled check.
+    private func checkIfOverdue() async {
+        let due = lastChecked.map { Date().timeIntervalSince($0) > Self.checkInterval } ?? true
+        if due { await check(userInitiated: false) }
     }
 
     func checkNow() { Task { await check(userInitiated: true) } }

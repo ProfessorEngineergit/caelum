@@ -185,7 +185,9 @@ struct APODSource: ImageSource {
     static func originalSize(of hdURL: URL) -> (width: Int, height: Int)? {
         let items = URLComponents(url: hdURL, resolvingAgainstBaseURL: false)?.queryItems ?? []
         func value(_ name: String) -> Int? {
-            items.first { $0.name == name }?.value.flatMap(Int.init).flatMap { $0 > 0 ? $0 : nil }
+            guard let raw = items.first(where: { $0.name == name })?.value,
+                  let number = Int(raw), number > 0 else { return nil }
+            return number
         }
         guard let w = value("w"), let h = value("h") else { return nil }
         return (w, h)
