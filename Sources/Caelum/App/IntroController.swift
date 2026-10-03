@@ -123,12 +123,17 @@ final class IntroController {
         withAnimation(.easeIn(duration: 0.35)) { model.leaving = true }
         Task { [weak self] in
             try? await Task.sleep(nanoseconds: 300_000_000)
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.9
-                window.animator().alphaValue = 0
-            }
+            Self.fadeOut(window)
             try? await Task.sleep(nanoseconds: 950_000_000)
             self?.close()
+        }
+    }
+
+    /// Synchronous on purpose: inside a Task, Swift would pick the async overload.
+    private static func fadeOut(_ window: NSWindow) {
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.9
+            window.animator().alphaValue = 0
         }
     }
 
