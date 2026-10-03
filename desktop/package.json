@@ -1,7 +1,7 @@
 {
   "name": "caelum",
   "productName": "Caelum",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "The cosmos on your desktop — NASA's Astronomy Picture of the Day and more as your wallpaper.",
   "homepage": "https://github.com/ProfessorEngineergit/caelum",
   "license": "MIT",
@@ -98,7 +98,16 @@
     },
     "deb": {
       "artifactName": "caelum_${version}_${arch}.${ext}"
-    }
+    },
+    "extraResources": [
+      {
+        "from": "../Resources/Sounds",
+        "to": "sounds",
+        "filter": [
+          "*.m4a"
+        ]
+      }
+    ]
   },
   "desktopName": "caelum.desktop"
 }

@@ -50,11 +50,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             appState.beginWarmup()
         }
 
-        // First run → the intro: apps hide, the desktop jumps to hyperspace and
-        // lands in the setup. The wallpaper loads behind it meanwhile.
+        // First run (or a new intro) → the intro: apps hide, the desktop jumps to
+        // hyperspace and lands in the setup; the wallpaper loads behind it.
+        // After an update → the same jump lands on the update screen.
         statusController.onReplayIntro = { [weak self] in self?.showIntro() }
-        if !Preferences.shared.hasCompletedOnboarding {
+        statusController.onWhatsNew = { [weak self] in
+            guard let current = currentVersion.map(AppVersion.normalized) else { return }
+            // The release before this one: same major.minor, patch − 1.
+            var parts = AppVersion.parts(current)
+            if let last = parts.indices.last, parts[last] > 0 { parts[last] -= 1 }
+            self?.showIntro(update: (from: parts.map(String.init).joined(separator: "."), to: current))
+        }
+        if !Preferences.shared.hasCompletedOnboarding
+            || Preferences.shared.introSeen < IntroController.introVersion {
             showIntro()
+        } else if let previousVersion, let currentVersion, previousVersion != currentVersion {
+            showIntro(update: (from: AppVersion.normalized(previousVersion), to: AppVersion.normalized(currentVersion)))
         }
 
         // Kick off scheduling — the initial daily check loads the first image.
@@ -68,10 +79,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appState.updater.start()
     }
 
-    private func showIntro() {
+    private func showIntro(update: (from: String, to: String)? = nil) {
         guard intro == nil else { return }
-        let intro = IntroController(appState: appState, onFinish: { [weak self] in
-            self?.appState.completeOnboarding()
+        let intro = IntroController(appState: appState, mode: update == nil ? .intro : .update,
+                                    update: update, onFinish: { [weak self] in
+            if update == nil {
+                self?.appState.completeOnboarding()
+                Preferences.shared.introSeen = IntroController.introVersion
+            }
             self?.intro = nil
         })
         self.intro = intro

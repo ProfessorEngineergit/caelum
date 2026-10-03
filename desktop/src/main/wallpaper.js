@@ -134,11 +134,13 @@ async function setMac(file) {
   await run("osascript", ["-e", 'on run argv\ntell application "System Events" to tell every desktop to set picture to (item 1 of argv)\nend run', file]);
 }
 
+/** Sets `file` as the wallpaper; returns the staged copy the desktop now shows. */
 async function setWallpaper(file, stagingDirectory) {
   const staged = stage(file, stagingDirectory);
-  if (process.platform === "win32") return setWindows(staged);
-  if (process.platform === "darwin") return setMac(staged);
-  return setLinux(staged);
+  if (process.platform === "win32") await setWindows(staged);
+  else if (process.platform === "darwin") await setMac(staged);
+  else await setLinux(staged);
+  return staged;
 }
 
 module.exports = { setWallpaper };
