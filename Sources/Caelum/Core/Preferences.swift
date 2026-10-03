@@ -22,6 +22,7 @@ final class Preferences {
         static let autoInstallUpdates = "autoInstallUpdates"
         static let sameWallpaperOnAllSpaces = "sameWallpaperOnAllSpaces"
         static let appliedWallpaperPath = "appliedWallpaperPath"
+        static let introSeen = "introSeen"
     }
 
     init() {
@@ -144,6 +145,12 @@ final class Preferences {
     }
 
     // MARK: - Onboarding
+
+    /// The intro version last shown (`IntroController.introVersion`); 0 = never.
+    var introSeen: Int {
+        get { store.integer(forKey: Key.introSeen) }
+        set { store.set(newValue, forKey: Key.introSeen) }
+    }
 
     var hasCompletedOnboarding: Bool {
         get { store.bool(forKey: Key.hasOnboarded) }

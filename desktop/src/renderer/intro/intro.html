@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' file: data:; media-src 'self' file:">
+  <title>Caelum</title>
+  <link rel="stylesheet" href="intro.css">
+</head>
+<body>
+  <canvas id="warp"></canvas>
+  <div id="cards"></div>
+  <div id="spark"></div>
+  <div id="words" aria-hidden="true"></div>
+
+  <main id="panel" aria-live="polite">
+    <button id="close" class="close" title="Close setup" aria-label="Close setup">✕</button>
+
+    <section class="step" data-step="0">
+      <div class="mark"><span class="orb"></span><span class="ring"></span><span class="dot"></span></div>
+      <div class="wordmark reveal-letters">CAELUM</div>
+      <h1 class="reveal-words">The cosmos, every day.</h1>
+      <p class="lead reveal-fade">Each morning Caelum puts a new image of space on your desktop — from NASA, Hubble, Webb and ESO. Take a minute to make it yours.</p>
+    </section>
+
+    <section class="step" data-step="1" hidden>
+      <div class="eyebrow">CHOOSE YOUR SKY</div>
+      <h2 class="reveal-words">Where should your day begin?</h2>
+      <div id="sources" class="sources"></div>
+    </section>
+
+    <section class="step" data-step="2" hidden>
+      <div class="eyebrow">MAKE IT YOURS</div>
+      <h2 class="reveal-words">A few small choices.</h2>
+      <div class="prefs">
+        <label class="pref"><span><b>Refresh daily</b><small>A new image on your desktop every morning.</small></span><input type="checkbox" data-setting="autoDailyRefresh"></label>
+        <label class="pref"><span><b>Launch at login</b><small>Start quietly in the tray.</small></span><input type="checkbox" data-setting="launchAtLogin"></label>
+        <label class="pref"><span><b>Install updates automatically</b><small>New versions are always offered in the panel either way.</small></span><input type="checkbox" data-setting="autoInstallUpdates"></label>
+      </div>
+      <p class="hint">No account and no API key — every source is open.</p>
+    </section>
+
+    <section class="step" data-step="3" hidden>
+      <div class="eyebrow">YOUR FIRST SKY</div>
+      <h2 class="reveal-words">Ready for lift-off.</h2>
+      <div class="preview"><img id="preview-img" alt=""><div class="preview-meta"><span id="preview-source"></span><b id="preview-title">Loading…</b></div></div>
+    </section>
+
+    <section class="step" data-step="update" hidden>
+      <div class="eyebrow">CAELUM HAS BEEN UPDATED</div>
+      <div class="versions"><span id="old-version" class="old"></span><span class="arrow">→</span><span id="new-version" class="new"></span></div>
+      <ol id="changes" class="changes"></ol>
+    </section>
+
+    <footer>
+      <button id="back" class="ghost">Back</button>
+      <div id="dots" class="dots"></div>
+      <button id="next" class="primary">Begin</button>
+    </footer>
+  </main>
+
+  <script src="warp-shader.js"></script>
+  <script src="intro.js"></script>
+</body>
+</html>

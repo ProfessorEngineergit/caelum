@@ -20,7 +20,7 @@ final class StatusItemController: NSObject {
     private var clickMonitor: Any?
     private var glyphTimer: Timer?
 
-    /// Transparent margin around the content so the soft drop shadow has room.
+    /// Transparent margin around the content (kept so the panel's position stays put).
     /// Kept tight so the window doesn't swallow clicks far around the visible card.
     private static let shadowMargin: CGFloat = 20
 
@@ -75,20 +75,12 @@ final class StatusItemController: NSObject {
                                            height: contentHeight + Self.shadowMargin * 2))
         wrapper.wantsLayer = true
 
-        // Card carries the soft, perfectly-rounded drop shadow (not clipped).
+        // No drop shadow: on a bright wallpaper it read as a grey halo around the
+        // glass. The hairline border alone separates the panel from the desktop.
         let card = NSView(frame: contentRect)
         card.wantsLayer = true
-        if let layer = card.layer {
-            layer.cornerRadius = radius
-            layer.cornerCurve = .continuous
-            layer.shadowColor = NSColor.black.cgColor
-            layer.shadowOpacity = 0.5
-            layer.shadowRadius = 13
-            layer.shadowOffset = NSSize(width: 0, height: -5)
-            layer.shadowPath = CGPath(roundedRect: card.bounds,
-                                      cornerWidth: radius, cornerHeight: radius, transform: nil)
-            layer.masksToBounds = false
-        }
+        card.layer?.cornerRadius = radius
+        card.layer?.cornerCurve = .continuous
 
         // Real frosted glass: blurs the desktop behind the panel.
         let effect = NSVisualEffectView(frame: card.bounds)
@@ -202,6 +194,9 @@ final class StatusItemController: NSObject {
         let introItem = NSMenuItem(title: "Replay Intro", action: #selector(replayIntro), keyEquivalent: "")
         introItem.target = self
         menu.addItem(introItem)
+        let newsItem = NSMenuItem(title: "What's New", action: #selector(showWhatsNew), keyEquivalent: "")
+        newsItem.target = self
+        menu.addItem(newsItem)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Caelum",
                                 action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
@@ -225,6 +220,14 @@ final class StatusItemController: NSObject {
     @objc private func replayIntro() {
         if panel.isVisible { hidePanel() }
         onReplayIntro?()
+    }
+
+    /// Set by the app delegate: the update screen for the current release.
+    var onWhatsNew: (() -> Void)?
+
+    @objc private func showWhatsNew() {
+        if panel.isVisible { hidePanel() }
+        onWhatsNew?()
     }
 
     // MARK: - Brand glyph animation (dot completes one orbit on new image)

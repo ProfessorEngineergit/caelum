@@ -14,6 +14,7 @@ const { ImageCache } = require("./cache");
 const { Settings } = require("./settings");
 const { setWallpaper } = require("./wallpaper");
 const { UpdateManager } = require("./updater");
+const intro = require("./intro");
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -145,7 +146,7 @@ async function applyWallpaper_() {
   push();
   try {
     const file = await cache.localFile(image);
-    await setWallpaper(file, path.join(app.getPath("userData"), "Wallpaper"));
+    state.wallpaperFile = await setWallpaper(file, path.join(app.getPath("userData"), "Wallpaper"));
     state.wallpaper = "applied";
     state.appliedID = image.id;
     push();
@@ -304,6 +305,12 @@ function createTray() {
     { label: "Set as Wallpaper", click: () => applyWallpaper_() },
     { type: "separator" },
     { label: "Check for Updates…", click: () => { updater.check(true); showPanel(); } },
+    { label: "Replay Intro", click: () => showIntro("intro") },
+    { label: "What's New", click: () => {
+      const v = app.getVersion().split(".").map(Number);
+      v[v.length - 1] = Math.max(0, v[v.length - 1] - 1);           // the release before this one
+      showIntro("update", { from: v.join("."), to: app.getVersion() });
+    } },
     { type: "separator" },
     { label: "Quit Caelum", click: quit },
   ]);
@@ -325,19 +332,69 @@ function openExternal(url) {
   if (/^https?:\/\//i.test(String(url))) shell.openExternal(url);
 }
 
+// MARK: - Actions (panel and intro)
+
+function selectSource(id) {
+  if (!sources.all.some((s) => s.id === id) || id === state.activeSourceID) return null;
+  state.activeSourceID = id;
+  settings.set("activeSourceID", id);
+  state.image = null;
+  state.previewURL = null;
+  return loadLatest();
+}
+
+function setSetting(key, value) {
+  const allowed = { autoDailyRefresh: "boolean", rotateLibrary: "boolean", rotateMinutes: "number",
+    launchAtLogin: "boolean", autoInstallUpdates: "boolean" };
+  if (allowed[key] !== typeof value) return;
+  if (key === "rotateMinutes") value = Math.min(720, Math.max(5, Math.round(value / 5) * 5));
+  settings.set(key, value);
+  if (key === "launchAtLogin") {
+    try { setLaunchAtLogin(value); } catch (err) { console.error("Caelum: autostart failed:", err); }
+  }
+  if (key === "rotateLibrary" || key === "rotateMinutes") rescheduleRotation();
+  if (key === "autoDailyRefresh" && value) dailyCheck();
+  if (key === "autoInstallUpdates" && value) updater.installPendingIfAutomatic();
+  push();
+}
+
+// MARK: - Intro & update screen
+
+function showIntro(mode = "intro", update = null) {
+  if (intro.isShowing()) return;
+  if (panel?.isVisible()) panel.hide();
+  const userData = app.getPath("userData");
+  intro.show({
+    settings,
+    sources: state.sources,
+    state,
+    userData,
+    cacheDir: cache.directory,
+    selectSource,
+    setSetting,
+    // The setup's last step: the newest image of the chosen source.
+    async ensurePreview() {
+      if (!state.image || state.phase !== "ready") await loadLatest();
+      const source = sources.byId(state.activeSourceID);
+      return state.image ? { previewURL: state.previewURL, title: state.image.title, sourceName: source.name } : null;
+    },
+    // "Enter Caelum": set it; the outro lands on exactly this picture.
+    async applyWallpaper() {
+      if (!state.image) await loadLatest();
+      await applyWallpaper_();
+      if (state.wallpaper === "applied") settings.set("lastFetchedDate", today());
+      return state.wallpaper === "applied" ? state.wallpaperFile : null;
+    },
+    onDone: () => {},
+  }, mode, update);
+}
+
 // MARK: - IPC
 
 function registerIPC() {
   const handlers = {
     getState: () => { state.settings = settings.publicValues(); return state; },
-    selectSource: (id) => {
-      if (!sources.all.some((s) => s.id === id) || id === state.activeSourceID) return;
-      state.activeSourceID = id;
-      settings.set("activeSourceID", id);
-      state.image = null;
-      state.previewURL = null;
-      loadLatest();
-    },
+    selectSource,
     next: () => step(1),
     previous: () => step(-1),
     shuffle: () => { shuffle(); },
@@ -345,20 +402,7 @@ function registerIPC() {
     setWallpaper: () => applyWallpaper_(),
     openPage: () => openExternal(state.image?.pageURL),
     openURL: (url) => openExternal(url),
-    setSetting: (key, value) => {
-      const allowed = { autoDailyRefresh: "boolean", rotateLibrary: "boolean", rotateMinutes: "number",
-        launchAtLogin: "boolean", autoInstallUpdates: "boolean" };
-      if (allowed[key] !== typeof value) return;
-      if (key === "rotateMinutes") value = Math.min(720, Math.max(5, Math.round(value / 5) * 5));
-      settings.set(key, value);
-      if (key === "launchAtLogin") {
-        try { setLaunchAtLogin(value); } catch (err) { console.error("Caelum: autostart failed:", err); }
-      }
-      if (key === "rotateLibrary" || key === "rotateMinutes") rescheduleRotation();
-      if (key === "autoDailyRefresh" && value) dailyCheck();
-      if (key === "autoInstallUpdates" && value) updater.installPendingIfAutomatic();
-      push();
-    },
+    setSetting,
     checkForUpdates: () => updater.check(true),
     installUpdate: () => updater.install(),
     dismissUpdate: () => updater.dismiss(),
@@ -387,7 +431,8 @@ app.whenReady().then(() => {
   cache = new ImageCache(path.join(userData, "Images"));
   state.activeSourceID = sources.byId(settings.get("activeSourceID")).id;
 
-  const firstRun = settings.get("lastRunVersion") === null;
+  const previousVersion = settings.get("lastRunVersion");
+  const firstRun = previousVersion === null;
   settings.set("lastRunVersion", app.getVersion());
 
   updater = new UpdateManager({
@@ -407,9 +452,15 @@ app.whenReady().then(() => {
   rescheduleRotation();
   updater.start();
 
-  // A tray app is easy to miss on first launch (and GNOME hides tray icons
-  // without an extension) — show the panel unless started at login.
-  if (firstRun || !process.argv.includes("--hidden")) {
+  // First launch (or a new intro): the jump and the setup. After an update:
+  // the update screen with what changed. Otherwise show the panel — a tray app
+  // is easy to miss (GNOME hides tray icons without an extension) — unless
+  // started at login.
+  if (intro.needsIntro(settings)) {
+    showIntro("intro");
+  } else if (!firstRun && previousVersion !== app.getVersion()) {
+    showIntro("update", { from: previousVersion, to: app.getVersion() });
+  } else if (!process.argv.includes("--hidden")) {
     panel.webContents.once("did-finish-load", showPanel);
   }
 });

@@ -14,6 +14,7 @@ const DEFAULTS = {
   autoInstallUpdates: false,    // updates are always offered; installing unasked is opt-in
   lastFetchedDate: null,        // "yyyy-MM-dd" (local) of the last applied daily refresh
   lastRunVersion: null,
+  introSeen: 0,                 // intro version last shown (see intro.js INTRO_VERSION)
 };
 
 class Settings {

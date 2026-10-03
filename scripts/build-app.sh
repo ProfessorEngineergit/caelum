@@ -28,6 +28,9 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Caelum"
 cp "$DIR/Resources/Info.plist" "$APP/Contents/Info.plist"
 cp "$DIR/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
+# The intro's sound design (rendered by scripts/make-sounds.py).
+mkdir -p "$APP/Contents/Resources/Sounds"
+cp "$DIR"/Resources/Sounds/*.m4a "$APP/Contents/Resources/Sounds/"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
 # Ad-hoc sign (no Developer ID required; users right-click → Open on first launch).
