@@ -68,6 +68,7 @@ function push() {
   state.settings = settings.publicValues();
   state.position = { index, count: batch.length };
   if (panel && !panel.isDestroyed()) panel.webContents.send("state", state);
+  refreshTrayMenu();
 }
 
 // MARK: - Loading
@@ -313,7 +314,9 @@ function positionPanel() {
     // the bar, else at the right where tray icons live.
     const cursor = screen.getCursorScreenPoint();
     const fromBar = cursor.y <= area.y + 2 && cursor.y >= display.bounds.y;
-    x = fromBar ? Math.round(cursor.x - width / 2) : area.x + area.width - width - 8;
+    const anchor = trayAnchor && Date.now() - trayAnchor.at < 5000 ? trayAnchor.x : null;
+    x = anchor !== null ? Math.round(anchor - width / 2)
+      : fromBar ? Math.round(cursor.x - width / 2) : area.x + area.width - width - 8;
     y = area.y + 4;
   } else {
     x = area.x + area.width - width - 12;
@@ -324,16 +327,47 @@ function positionPanel() {
   panel.setPosition(x, y, false);
 }
 
-function createTray() {
-  const icon = nativeImage.createFromPath(path.join(ASSETS, process.platform === "win32" ? "tray.png" : "tray@2x.png"));
-  tray = new Tray(process.platform === "linux" ? icon.resize({ width: 22, height: 22 }) : icon);
-  tray.setToolTip("Caelum");
-  const menu = Menu.buildFromTemplate([
-    { label: "Open Caelum", click: showPanel },
-    { label: "Next Image", click: () => step(1) },
-    { label: "Set as Wallpaper", click: () => applyWallpaper_() },
+let trayMenu = null;
+let trayMenuKey = "";
+let trayAnchor = null;     // where the user last touched the tray icon or its menu
+
+const rememberAnchor = (point) => { trayAnchor = { x: point.x, at: Date.now() }; };
+const fromMenu = (fn) => () => { rememberAnchor(screen.getCursorScreenPoint()); fn(); };
+
+function openSettings() {
+  rememberAnchor(screen.getCursorScreenPoint());
+  showPanel();
+  panel.webContents.send("open-settings");
+}
+
+/**
+ * The menu is the whole app in miniature — on GNOME a click on the icon opens
+ * it (the AppIndicator extension keeps the single click for the menu and
+ * sends a double click to the panel), on KDE/Windows it is the right-click
+ * menu. What the current picture is, wallpaper, next/previous, source, and
+ * the rest of the app's actions.
+ */
+function trayMenuTemplate() {
+  const image = state.image;
+  const source = sources.byId(state.activeSourceID);
+  const clip = (text, max) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+  const onDesktop = Boolean(image) && state.wallpaper === "applied" && state.appliedID === image.id;
+  return [
+    { label: image ? clip(`${source.name} — ${image.title}`, 46) : `${source.name} — loading…`, enabled: false },
     { type: "separator" },
-    { label: "Check for Updates…", click: () => { updater.check(true); showPanel(); } },
+    { label: onDesktop ? "✓ On your desktop" : "Set as Wallpaper",
+      enabled: Boolean(image) && !image.isVideo && !onDesktop && state.wallpaper !== "applying",
+      click: () => applyWallpaper_() },
+    { label: "Next Image", enabled: batch.length > 1, click: () => step(1) },
+    { label: "Previous Image", enabled: batch.length > 1, click: () => step(-1) },
+    { label: "Source",
+      submenu: sources.all.map((s) => ({
+        label: s.name, type: "radio", checked: s.id === state.activeSourceID, click: () => selectSource(s.id),
+      })) },
+    { type: "separator" },
+    { label: "Open Caelum…", click: fromMenu(showPanel) },
+    { label: "Settings…", click: openSettings },
+    { label: "Check for Updates…", click: () => { updater.check(true); openSettings(); } },
     { label: "Replay Intro", click: () => showIntro("intro") },
     { label: "What's New", click: () => {
       const v = app.getVersion().split(".").map(Number);
@@ -342,17 +376,30 @@ function createTray() {
     } },
     { type: "separator" },
     { label: "Quit Caelum", click: quit },
-  ]);
-  if (process.platform === "linux") {
-    // AppIndicator / StatusNotifier: a click opens the panel where the host
-    // supports it (GNOME's AppIndicator extension does); the menu stays on the
-    // other button — and is the fallback on hosts that only show menus.
-    tray.setContextMenu(menu);
-    tray.on("click", togglePanel);
-  } else {
-    tray.on("click", togglePanel);
-    tray.on("right-click", () => tray.popUpContextMenu(menu));
-  }
+  ];
+}
+
+/** Rebuilds the menu when something it shows has changed (cheap check). */
+function refreshTrayMenu() {
+  if (!tray) return;
+  const key = [state.activeSourceID, state.image?.id, state.image?.title, state.wallpaper, state.appliedID, batch.length > 1].join("|");
+  if (key === trayMenuKey && trayMenu) return;
+  trayMenuKey = key;
+  trayMenu = Menu.buildFromTemplate(trayMenuTemplate());
+  if (process.platform === "linux") tray.setContextMenu(trayMenu);
+}
+
+function createTray() {
+  const icon = nativeImage.createFromPath(path.join(ASSETS, process.platform === "win32" ? "tray.png" : "tray@2x.png"));
+  tray = new Tray(process.platform === "linux" ? icon.resize({ width: 22, height: 22 }) : icon);
+  tray.setToolTip("Caelum");
+  refreshTrayMenu();
+  // KDE & co. call this on a click; GNOME's extension only does on a double click.
+  tray.on("click", (_event, _bounds, position) => {
+    rememberAnchor(position && position.x ? position : screen.getCursorScreenPoint());
+    togglePanel();
+  });
+  if (process.platform !== "linux") tray.on("right-click", () => tray.popUpContextMenu(trayMenu));
 }
 
 function quit() {

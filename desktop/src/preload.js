@@ -21,4 +21,10 @@ api.onShown = (callback) => {
   return () => ipcRenderer.removeListener("shown", listener);
 };
 
+api.onOpenSettings = (callback) => {
+  const listener = () => callback();
+  ipcRenderer.on("open-settings", listener);
+  return () => ipcRenderer.removeListener("open-settings", listener);
+};
+
 contextBridge.exposeInMainWorld("caelum", api);
