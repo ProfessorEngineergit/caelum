@@ -1,0 +1,9 @@
+# Caelum — installed by the caelum RPM so `dnf upgrade` keeps it current.
+# Packages are the GitHub release assets; the metadata is published with each release.
+[caelum]
+name=Caelum
+baseurl=https://professorengineergit.github.io/caelum/rpm/
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+metadata_expire=6h
