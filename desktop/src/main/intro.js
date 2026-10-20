@@ -170,14 +170,31 @@ async function show(ctx, mode = "intro", update = null) {
   win.focus();
 }
 
-function finish() {
+/**
+ * Ends the intro. With `fade`, the window lets clicks through at once, fades
+ * out (Windows; Linux has no window opacity — the last frame already shows the
+ * new desktop) and closes once the outro's music has rung out.
+ */
+function finish({ fade = false } = {}) {
   const done = context?.onDone;
   if (context?.mode === "intro") context.settings.set("introSeen", INTRO_VERSION);
-  restoreAll();
-  if (win && !win.isDestroyed()) win.destroy();
-  win = null;
   context = null;
+  restoreAll();
+  const closing = win;
+  win = null;
   done?.();
+  if (!closing || closing.isDestroyed()) return;
+  if (!fade) return closing.destroy();
+  closing.setIgnoreMouseEvents(true);
+  closing.setAlwaysOnTop(false);
+  const started = Date.now();
+  const tick = setInterval(() => {
+    if (closing.isDestroyed()) return clearInterval(tick);
+    const k = Math.min(1, (Date.now() - started) / 900);
+    closing.setOpacity(1 - k * k * (3 - 2 * k));
+    if (k >= 1) clearInterval(tick);
+  }, 16);
+  setTimeout(() => { if (!closing.isDestroyed()) closing.destroy(); }, 2400);
 }
 
 function registerIPC() {
@@ -210,7 +227,7 @@ function registerIPC() {
     if (win && preview) win.webContents.send("caelum-intro:preview", preview);
   });
   handle("applyWallpaper", async () => fileURL(await context.applyWallpaper()));
-  handle("finish", () => finish());
+  handle("finish", (options) => finish({ fade: Boolean(options?.fade) }));
 }
 
 function needsIntro(settings) {

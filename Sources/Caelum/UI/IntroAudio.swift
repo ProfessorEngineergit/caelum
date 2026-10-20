@@ -71,6 +71,25 @@ final class IntroAudio {
         fadeBed(to: 0, duration: duration) { [weak self] in self?.bedPlayer.stop() }
     }
 
+    /// Fades everything out (the outro's tail), then stops the engine.
+    func fadeOut(duration: TimeInterval) {
+        guard running else { return }
+        let from = engine.mainMixerNode.outputVolume
+        let started = Date()
+        Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] timer in
+            MainActor.assumeIsolated {
+                guard let self else { timer.invalidate(); return }
+                let k = Float(min(1, Date().timeIntervalSince(started) / duration))
+                self.engine.mainMixerNode.outputVolume = from * (1 - k) * (1 - k)
+                if k >= 1 {
+                    timer.invalidate()
+                    self.engine.stop()
+                    self.running = false
+                }
+            }
+        }
+    }
+
     func stop(after delay: TimeInterval = 0) {
         guard running else { return }
         Task { [weak self] in

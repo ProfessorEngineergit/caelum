@@ -113,7 +113,7 @@ final class IntroController {
             warp.autoresizingMask = [.width, .height]
             warp.onFlash = { [weak self] in self?.land() }
             warp.onFrame = { [weak self] _, exitTime in self?.drawCards(exitTime) }
-            warp.onExitDone = { [weak self] in self?.close() }
+            warp.onExitDone = { [weak self] in self?.settle() }
             container.addSubview(warp)
             self.warp = warp
         }
@@ -217,7 +217,7 @@ final class IntroController {
             let spawn = 1.0 + Float(index) / Float(max(1, files.count - 1)) * 3.2
             return Card(layer: layer,
                         angle: (i * 2.399963).truncatingRemainder(dividingBy: .pi * 2),   // golden-angle spread
-                        radius: 420 + CGFloat((index * 97) % 5) * 90,
+                        radius: 140 + CGFloat((index * 97) % 5) * 45,   // close around the centre line
                         spawn: spawn,
                         life: 1.7 - (spawn - 1.0) * 0.22,
                         tilt: (index % 2 == 1 ? 1 : -1) * (6 + CGFloat(index % 4) * 3))
@@ -233,13 +233,14 @@ final class IntroController {
             let k = (te - card.spawn) / card.life
             guard k >= 0, k <= 1 else { card.layer.opacity = 0; continue }
             let kk = CGFloat(k)
-            let z = -3200 + 4300 * pow(kk, 1.7)
-            let x = cos(card.angle) * card.radius * (0.6 + 0.4 * kk)
-            let y = sin(card.angle) * card.radius * 0.62 * (0.6 + 0.4 * kk)
-            card.layer.opacity = Float(min(min(1, kk / 0.2), min(1, (1 - kk) / 0.12)) * 0.95)
+            // Straight out of the middle of the tunnel towards the viewer: a fixed
+            // small offset from the centre line — perspective spreads it as it nears.
+            let z = -3400 + 4150 * pow(kk, 1.6)
+            let x = cos(card.angle) * card.radius
+            let y = sin(card.angle) * card.radius * 0.7
+            card.layer.opacity = Float(min(min(1, kk / 0.2), min(1, (1 - kk) / 0.15)) * 0.95)
             var transform = CATransform3DMakeTranslation(x, -y, z)
-            transform = CATransform3DRotate(transform, card.tilt * (x > 0 ? -1 : 1) * .pi / 180, 0, 1, 0)
-            transform = CATransform3DRotate(transform, card.tilt * 0.3 * .pi / 180, 0, 0, 1)
+            transform = CATransform3DRotate(transform, card.tilt * 0.25 * .pi / 180, 0, 0, 1)
             card.layer.transform = transform
         }
         CATransaction.commit()
@@ -261,10 +262,25 @@ final class IntroController {
     }
 
     /// Synchronous on purpose: inside a Task, Swift would pick the async overload.
-    private static func fadeOut(_ window: NSWindow) {
+    private static func fadeOut(_ window: NSWindow, duration: TimeInterval = 0.7) {
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.7
+            ctx.duration = duration
             window.animator().alphaValue = 0
+        }
+    }
+
+    /// The outro has landed on the new desktop: let clicks through, fade the
+    /// window out, let the music ring out, then close.
+    private func settle() {
+        guard let window else { return }
+        window.ignoresMouseEvents = true
+        hiddenApps.forEach { _ = $0.unhide() }
+        hiddenApps = []
+        Self.fadeOut(window, duration: 0.9)
+        audio.fadeOut(duration: 2.2)
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            self?.close()
         }
     }
 

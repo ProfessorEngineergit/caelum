@@ -75,6 +75,17 @@
     }
   }
 
+  function fadeOutSounds(ms) {
+    const playing = Object.values(sounds).filter((a) => !a.paused);
+    const from = playing.map((a) => a.volume);
+    const started = performance.now();
+    const tick = setInterval(() => {
+      const k = Math.min(1, (performance.now() - started) / ms);
+      playing.forEach((a, i) => { a.volume = from[i] * (1 - k) * (1 - k); });
+      if (k >= 1) { clearInterval(tick); playing.forEach((a) => a.pause()); }
+    }, 30);
+  }
+
   function stopBed(seconds = 0.8) {
     if (!bed || !audioCtx) return;
     const t = audioCtx.currentTime;
@@ -203,7 +214,7 @@
       el.append(img);
       cardLayer.append(el);
       const angle = (i * 2.399963) % (Math.PI * 2);          // golden-angle spread around the tunnel
-      const radius = 420 + ((i * 97) % 5) * 90;
+      const radius = 140 + ((i * 97) % 5) * 45;                // close around the centre line
       // spawn times 1.0 → 4.2 s (gone before the flash), each crossing faster
       const spawn = 1.0 + (i / Math.max(1, list.length - 1)) * 3.2;
       const life = 1.7 - (spawn - 1.0) * 0.22;
@@ -215,13 +226,15 @@
     for (const c of cards) {
       const k = (te - c.spawn) / c.life;
       if (te < 0 || k < 0 || k > 1) { c.el.style.opacity = "0"; continue; }
-      const z = -3200 + 4300 * Math.pow(k, 1.7);             // from deep in the tunnel past the camera
-      const x = Math.cos(c.angle) * c.radius * (0.6 + 0.4 * k);
-      const y = Math.sin(c.angle) * c.radius * 0.62 * (0.6 + 0.4 * k);
+      // Straight out of the middle of the tunnel towards the viewer: a fixed small
+      // offset from the centre line — perspective spreads it as the card comes close.
+      const z = -3400 + 4150 * Math.pow(k, 1.6);
+      const x = Math.cos(c.angle) * c.radius;
+      const y = Math.sin(c.angle) * c.radius * 0.7;
       const fadeIn = Math.min(1, k / 0.2);
-      const fadeOut = Math.min(1, (1 - k) / 0.12);
+      const fadeOut = Math.min(1, (1 - k) / 0.15);
       c.el.style.opacity = String(Math.min(fadeIn, fadeOut) * 0.95);
-      c.el.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateY(${c.tilt * (x > 0 ? -1 : 1)}deg) rotateZ(${c.tilt * 0.3}deg)`;
+      c.el.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateZ(${c.tilt * 0.25}deg)`;
     }
   }
 
@@ -443,8 +456,10 @@
     drawWarp(t, te);
     drawCards(te);
     if (te >= EXIT_END && !finished) {
+      // Settled on the new desktop: fade out, and let the music ring out.
       finished = true;
-      if (!debug) api?.finish();
+      fadeOutSounds(2200);
+      if (!debug) api?.finish({ fade: true });
     }
     if (!debug) requestAnimationFrame(frame);
   }
