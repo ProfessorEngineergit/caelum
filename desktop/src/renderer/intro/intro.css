@@ -198,3 +198,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--violet); ou
   transition: color 0.9s, filter 0.9s, text-shadow 0.9s, opacity 1.2s;
 }
 #words span.focus { color: rgba(214, 208, 255, 0.62); filter: blur(0); text-shadow: 0 0 34px rgba(139, 124, 255, 0.7); }
+#words span.hovered { opacity: 0 !important; }
+#word-hover {
+  position: fixed; left: 0; top: 0; z-index: 5; pointer-events: none; white-space: nowrap;
+  font-weight: 750; letter-spacing: -0.03em; color: rgba(236, 232, 255, 0.96);
+  text-shadow: 0 0 36px rgba(139, 124, 255, 0.85); opacity: 0; transition: opacity .25s ease-out;
+}

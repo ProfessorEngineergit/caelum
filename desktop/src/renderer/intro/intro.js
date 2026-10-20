@@ -384,8 +384,17 @@
     });
   }
 
+  // Hovering a word brings it out sharp — even behind the glass: a copy is drawn
+  // above the panel at the same spot.
+  let pointer = null;
+  const hoverCopy = document.createElement("div");
+  hoverCopy.id = "word-hover";
+  document.body.append(hoverCopy);
+  document.addEventListener("mousemove", (e) => { pointer = { x: e.clientX, y: e.clientY }; });
+  document.addEventListener("mouseleave", () => { pointer = null; });
+
   function drawWords(t) {
-    if (!words.length) return;
+    if (!words.length) { hoverCopy.style.opacity = "0"; return; }
     const W = innerWidth, H = innerHeight;
     const appear = Math.min(1, Math.max(0, (t - 0.6) / 1.2));
     const focus = Math.floor(Math.max(0, t - 1.2) / 1.7) % words.length;
@@ -398,6 +407,25 @@
       w.el.style.opacity = String(appear);
       w.el.classList.toggle("focus", i === focus && t > 1.2);
     });
+    let hovered = null;
+    if (pointer && appear > 0.5) {
+      for (const w of words) {
+        const r = w.el.getBoundingClientRect();
+        if (pointer.x >= r.left && pointer.x <= r.right && pointer.y >= r.top + r.height * 0.15 && pointer.y <= r.bottom - r.height * 0.1) {
+          hovered = w;
+        }
+      }
+    }
+    for (const w of words) w.el.classList.toggle("hovered", w === hovered);
+    if (hovered) {
+      const r = hovered.el.getBoundingClientRect();
+      hoverCopy.textContent = hovered.el.textContent;
+      hoverCopy.style.fontSize = hovered.size + "px";
+      hoverCopy.style.transform = `translate3d(${r.left}px, ${r.top}px, 0)`;
+      hoverCopy.style.opacity = "1";
+    } else {
+      hoverCopy.style.opacity = "0";
+    }
   }
 
   // MARK: - Leaving
@@ -414,6 +442,7 @@
       { duration: 1100, delay: 200, easing: "ease-out" });
     for (const w of words) w.el.style.transition = "opacity .5s", w.el.style.opacity = "0";
     words = [];
+    hoverCopy.style.opacity = "0";
     // Set the wallpaper now; the jump lands on it. After an update we simply
     // land back on the desktop as it is.
     const landing = isUpdate() ? setup.wallpaperURL : api ? await api.applyWallpaper() : setup.landingURL;
