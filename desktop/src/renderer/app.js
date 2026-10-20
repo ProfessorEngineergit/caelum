@@ -203,6 +203,9 @@
     document.body.classList.add("drop");
   });
 
+  // "Settings…" in the tray menu.
+  api.onOpenSettings?.(() => { $("settings").hidden = false; });
+
   api.onState(render);
   api.getState().then(render);
 })();
