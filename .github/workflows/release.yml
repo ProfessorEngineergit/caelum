@@ -137,7 +137,9 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
       - run: npm test
-      - name: Build AppImage + deb (x64 + arm64)
+      - name: rpmbuild for the Fedora package
+        run: sudo apt-get update -q && sudo apt-get install -y -q rpm
+      - name: Build AppImage + deb + rpm (x64 + arm64)
         run: npx electron-builder --linux --x64 --arm64 --publish never
       - uses: actions/upload-artifact@v4
         with:
@@ -145,6 +147,7 @@ jobs:
           path: |
             desktop/dist/*.AppImage
             desktop/dist/*.deb
+            desktop/dist/*.rpm
             desktop/dist/latest-linux*.yml
           if-no-files-found: error
 
@@ -182,3 +185,25 @@ jobs:
             | macOS 13+ (universal) | `Caelum.zip` — unzip into `/Applications`, then **right-click → Open** on first launch (not notarized). If macOS still refuses: `xattr -dr com.apple.quarantine /Applications/Caelum.app` |
             | Windows 10/11 (x64, ARM64) | `Caelum-Setup-${{ needs.version.outputs.version }}.exe` — not code-signed, so SmartScreen may ask: **More info → Run anyway** |
             | Linux (x64, ARM64) | `Caelum-${{ needs.version.outputs.version }}-<arch>.AppImage` (updates itself) or `caelum_${{ needs.version.outputs.version }}_<arch>.deb` |
+            | Fedora (x64, ARM64) | `sudo dnf install https://github.com/${{ github.repository }}/releases/latest/download/caelum.x86_64.rpm` (ARM: `caelum.aarch64.rpm`) — adds the Caelum repository, so `dnf upgrade` keeps it current |
+
+      # Fedora: `dnf upgrade` follows the release. The repository metadata lives on
+      # GitHub Pages (docs/rpm); the packages themselves stay release assets.
+      - name: Update the dnf repository
+        continue-on-error: true
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p meta && cp artifacts/*.rpm meta/
+          docker run --rm -v "$PWD/meta:/meta" fedora:42 bash -c \
+            "dnf install -y -q createrepo_c >/dev/null && createrepo_c --baseurl https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/ /meta"
+          sudo chown -R "$(id -u)" meta
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}" site
+          rm -rf site/docs/rpm && mkdir -p site/docs/rpm
+          cp -r meta/repodata site/docs/rpm/
+          cp site/desktop/build/caelum.repo site/docs/caelum.repo
+          cd site
+          git add docs/rpm docs/caelum.repo
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "dnf repository for ${TAG}" && git push

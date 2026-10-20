@@ -15,6 +15,7 @@ const { Settings } = require("./settings");
 const { setWallpaper } = require("./wallpaper");
 const { UpdateManager } = require("./updater");
 const intro = require("./intro");
+const { ensureTrayHost } = require("./linux-tray");
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -45,6 +46,7 @@ const state = {
   wallpaper: "idle",        // idle | applying | applied | failed
   wallpaperError: null,
   appliedID: null,
+  trayHint: null,           // Linux: what's still needed for the top-bar icon
   settings: {},
   update: null,
   version: app.getVersion(),
@@ -385,7 +387,8 @@ function showIntro(mode = "intro", update = null) {
       if (state.wallpaper === "applied") settings.set("lastFetchedDate", today());
       return state.wallpaper === "applied" ? state.wallpaperFile : null;
     },
-    onDone: () => {},
+    // Without a tray icon the panel is the only way in — show it after the intro.
+    onDone: () => { if (state.trayHint) showPanel(); },
   }, mode, update);
 }
 
@@ -444,6 +447,8 @@ app.whenReady().then(() => {
   registerIPC();
   createPanel();
   createTray();
+  // GNOME needs the AppIndicator extension for the top-bar icon.
+  ensureTrayHost().then((hint) => { state.trayHint = hint; push(); });
 
   // Initial content, then the daily refresh (applies the wallpaper when due).
   loadLatest().then(() => dailyCheck());

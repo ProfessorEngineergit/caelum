@@ -36,14 +36,14 @@ class UpdateManager {
   }
 
   /**
-   * Windows installs (NSIS) and AppImages can replace themselves. A .deb/.rpm
-   * belongs to the package manager and a dev run has nothing to replace — those
-   * get "Download" (opens the release page) instead.
+   * Windows installs (NSIS), AppImages and the .rpm/.deb packages can update in
+   * place (the packages through dnf/apt, asking for the admin password). A dev
+   * run has nothing to replace — it gets "Download" (the release page) instead.
    */
   static canSelfInstall() {
     if (!app.isPackaged) return false;
     if (process.platform === "win32") return !process.env.PORTABLE_EXECUTABLE_DIR;
-    if (process.platform === "linux") return Boolean(process.env.APPIMAGE);
+    if (process.platform === "linux") return Boolean(process.env.APPIMAGE) || ["rpm", "deb"].includes(packageType());
     return false;
   }
 
@@ -134,6 +134,15 @@ class UpdateManager {
 
   openReleasePage() {
     shell.openExternal(RELEASES_URL);
+  }
+}
+
+/** "rpm" / "deb" for distro packages (electron-builder records it), else "". */
+function packageType() {
+  try {
+    return require("fs").readFileSync(require("path").join(process.resourcesPath, "package-type"), "utf8").trim();
+  } catch {
+    return "";
   }
 }
 

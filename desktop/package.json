@@ -79,6 +79,13 @@
             "x64",
             "arm64"
           ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "build/icon.png",
@@ -107,7 +114,18 @@
           "*.m4a"
         ]
       }
-    ]
+    ],
+    "rpm": {
+      "artifactName": "caelum.${arch}.${ext}",
+      "packageCategory": "Graphics",
+      "fpm": [
+        "--rpm-tag",
+        "Requires: (gnome-shell-extension-appindicator if gnome-shell)",
+        "--rpm-tag",
+        "Recommends: libappindicator-gtk3",
+        "build/caelum.repo=/etc/yum.repos.d/caelum.repo"
+      ]
+    }
   },
   "desktopName": "caelum.desktop"
 }

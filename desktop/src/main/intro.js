@@ -59,7 +59,7 @@ async function currentWallpaper(userData) {
     }
   } catch { /* fall through */ }
   // Fall back to the last wallpaper Caelum set.
-  return latestIn(path.join(userData, "Wallpaper"));
+  return latestIn(path.join(userData, "Wallpaper"))[0] || null;
 }
 
 function latestIn(dir, count = 1) {

@@ -83,6 +83,7 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .orbit { animation-duration: 4s; } #hero-img { transition: none; } }
 
+.notice { margin: 0; padding: 8px 10px; border-radius: 10px; background: rgba(139, 124, 255, 0.12); color: var(--text2); font-size: 12px; user-select: text; }
 .error { margin: 0; padding: 8px 10px; border-radius: 10px; background: rgba(255, 107, 129, 0.1); color: var(--danger); font-size: 12px; }
 
 /* Control deck */
