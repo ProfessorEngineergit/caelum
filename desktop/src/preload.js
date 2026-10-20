@@ -15,4 +15,10 @@ api.onState = (callback) => {
   return () => ipcRenderer.removeListener("state", listener);
 };
 
+api.onShown = (callback) => {
+  const listener = () => callback();
+  ipcRenderer.on("shown", listener);
+  return () => ipcRenderer.removeListener("shown", listener);
+};
+
 contextBridge.exposeInMainWorld("caelum", api);

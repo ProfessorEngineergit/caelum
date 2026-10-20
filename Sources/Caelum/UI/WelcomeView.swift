@@ -24,6 +24,7 @@ struct WelcomeView: View {
     @State private var autoUpdates = Preferences.shared.autoInstallUpdates
     @State private var shownChanges = 0
     @State private var landedAt = Date()
+    @State private var hoverPoint: CGPoint?
 
     private let lastStep = 3
     private var shown: Bool { model.revealed && !model.leaving }
@@ -31,7 +32,7 @@ struct WelcomeView: View {
     var body: some View {
         ZStack {
             if model.mode == .update && model.revealed {
-                DriftingWords(words: Self.keywords(in: model.changes), since: landedAt)
+                DriftingWords(words: Self.keywords(in: model.changes), since: landedAt, hover: hoverPoint)
                     .opacity(model.leaving ? 0 : 1)
                     .animation(.easeOut(duration: 0.5), value: model.leaving)
             }
@@ -40,12 +41,23 @@ struct WelcomeView: View {
                 .opacity(shown ? 1 : 0)
                 .blur(radius: shown ? 0 : 18)
                 .allowsHitTesting(shown)
+            if model.mode == .update && model.revealed && !model.leaving {
+                // the hovered word, sharp above the glass
+                DriftingWords(words: Self.keywords(in: model.changes), since: landedAt,
+                              hover: hoverPoint, layer: .hoverOnly)
+            }
             if model.leaving {
                 Spark()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(\.colorScheme, .dark)
+        .onContinuousHover(coordinateSpace: .local) { phase in
+            switch phase {
+            case .active(let point): hoverPoint = point
+            case .ended: hoverPoint = nil
+            }
+        }
         .onExitCommand { onClose() }      // Esc always gets you out
         .onChange(of: model.revealed) { revealed in
             guard revealed else { return }
@@ -523,32 +535,67 @@ private struct VersionLanding: View {
 /// Words from the release drifting behind and beside the glass — darker than the
 /// panel; every 1.7 s another one comes into focus.
 private struct DriftingWords: View {
+    /// `.background` draws every word (the hovered one hidden); `.hoverOnly`, put
+    /// above the panel, draws just the hovered word — sharp, even behind the glass.
+    enum Layer { case background, hoverOnly }
+
     let words: [String]
     let since: Date
+    var hover: CGPoint? = nil
+    var layer: Layer = .background
+
+    private struct Placement {
+        let center: CGPoint
+        let fontSize: CGFloat
+        let width: CGFloat
+    }
+
+    private static func placement(_ index: Int, _ word: String, t: Double, in size: CGSize) -> Placement {
+        let fontSize = CGFloat(34 + (index * 53) % 90)
+        let speed = CGFloat(10 + (index * 7) % 26) * (index % 2 == 1 ? 1 : -1)
+        let width = fontSize * CGFloat(word.count) * 0.6
+        let span = size.width + width
+        let x0 = CGFloat(Double(index) * 0.37).truncatingRemainder(dividingBy: 1) * span
+        let raw = (x0 + speed * CGFloat(t)).truncatingRemainder(dividingBy: span)
+        let x = raw < 0 ? raw + span : raw
+        let y = CGFloat(0.08 + (Double(index) * 0.618).truncatingRemainder(dividingBy: 0.84)) * size.height
+        return Placement(center: CGPoint(x: x - fontSize, y: y), fontSize: fontSize, width: width)
+    }
 
     var body: some View {
         TimelineView(.animation) { timeline in
             let t = timeline.date.timeIntervalSince(since)
             let focus = words.isEmpty ? -1 : Int(max(0, t - 1.2) / 1.7) % words.count
             GeometryReader { geo in
+                let places = words.indices.map { Self.placement($0, words[$0], t: t, in: geo.size) }
+                let hovered: Int? = hover.flatMap { point in
+                    places.lastIndex { place in
+                        abs(point.x - place.center.x) <= place.width / 2
+                            && abs(point.y - place.center.y) <= place.fontSize * 0.45
+                    }
+                }
                 ForEach(Array(words.enumerated()), id: \.offset) { index, word in
-                    let size = CGFloat(34 + (index * 53) % 90)
-                    let speed = CGFloat(10 + (index * 7) % 26) * (index % 2 == 1 ? 1 : -1)
-                    let span = geo.size.width + size * CGFloat(word.count) * 0.6
-                    let x0 = CGFloat(Double(index) * 0.37).truncatingRemainder(dividingBy: 1) * span
-                    let raw = (x0 + speed * CGFloat(t)).truncatingRemainder(dividingBy: span)
-                    let x = raw < 0 ? raw + span : raw
-                    let y = CGFloat(0.08 + (Double(index) * 0.618).truncatingRemainder(dividingBy: 0.84)) * geo.size.height
+                    let place = places[index]
                     let focused = index == focus && t > 1.2
-                    Text(word)
-                        .font(.system(size: size, weight: .heavy, design: .rounded))
-                        .fixedSize()
-                        .foregroundStyle(focused ? Color(red: 0.84, green: 0.82, blue: 1).opacity(0.62)
-                                                 : Color(red: 0.63, green: 0.65, blue: 0.82).opacity(0.16))
-                        .shadow(color: focused ? Theme.Palette.auroraViolet.opacity(0.7) : .clear, radius: 24)
-                        .blur(radius: focused ? 0 : 1.5)
-                        .animation(.easeInOut(duration: 0.9), value: focused)
-                        .position(x: x - size, y: y)
+                    if layer == .background {
+                        Text(word)
+                            .font(.system(size: place.fontSize, weight: .heavy, design: .rounded))
+                            .fixedSize()
+                            .foregroundStyle(focused ? Color(red: 0.84, green: 0.82, blue: 1).opacity(0.62)
+                                                     : Color(red: 0.63, green: 0.65, blue: 0.82).opacity(0.16))
+                            .shadow(color: focused ? Theme.Palette.auroraViolet.opacity(0.7) : .clear, radius: 24)
+                            .blur(radius: focused ? 0 : 1.5)
+                            .animation(.easeInOut(duration: 0.9), value: focused)
+                            .opacity(index == hovered ? 0 : 1)
+                            .position(place.center)
+                    } else if index == hovered {
+                        Text(word)
+                            .font(.system(size: place.fontSize, weight: .heavy, design: .rounded))
+                            .fixedSize()
+                            .foregroundStyle(Color(red: 0.93, green: 0.91, blue: 1).opacity(0.96))
+                            .shadow(color: Theme.Palette.auroraViolet.opacity(0.85), radius: 30)
+                            .position(place.center)
+                    }
                 }
             }
             .opacity(min(1, max(0, (t - 0.6) / 1.2)))

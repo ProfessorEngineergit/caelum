@@ -196,6 +196,13 @@
     else if (e.key === "ArrowLeft") api.previous();
   });
 
+  // Drop down from the menu bar each time the panel opens.
+  api.onShown?.(() => {
+    document.body.classList.remove("drop");
+    void document.body.offsetWidth;
+    document.body.classList.add("drop");
+  });
+
   api.onState(render);
   api.getState().then(render);
 })();

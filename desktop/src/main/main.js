@@ -17,6 +17,13 @@ const { UpdateManager } = require("./updater");
 const intro = require("./intro");
 const { ensureTrayHost } = require("./linux-tray");
 
+// Wayland doesn't let apps place their own windows, so on Fedora/GNOME the panel
+// would float wherever the compositor puts it. Through XWayland Caelum can open
+// it right under the top bar, next to its icon. (CAELUM_NATIVE_WAYLAND=1 opts out.)
+if (process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland" && !process.env.CAELUM_NATIVE_WAYLAND) {
+  app.commandLine.appendSwitch("ozone-platform", "x11");
+}
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
@@ -234,7 +241,7 @@ function createPanel() {
     resizable: false,
     maximizable: false,
     fullscreenable: false,
-    skipTaskbar: process.platform === "win32",   // Linux: keep a taskbar entry — some desktops hide tray icons
+    skipTaskbar: process.platform === "win32" || process.platform === "linux",   // a popover, not an app window
     alwaysOnTop: true,
     backgroundColor: "#07080d",
     title: "Caelum",
@@ -253,8 +260,13 @@ function createPanel() {
     return { action: "deny" };
   });
   panel.webContents.on("will-navigate", (event) => event.preventDefault());
+  // Like a menu-bar popover: clicking elsewhere closes it. (Ignore the blur some
+  // window managers send right while it opens.)
   panel.on("blur", () => {
-    if (process.platform === "win32" && !panel.webContents.isDevToolsOpened()) panel.hide();
+    if (process.platform === "darwin" || panel.webContents.isDevToolsOpened()) return;
+    if (Date.now() - panelShownAt < 400) return;
+    panelBlurHiddenAt = Date.now();
+    panel.hide();
   });
   panel.on("close", (event) => {
     if (!app.isQuitting && !app.isQuittingForUpdate) {
@@ -265,13 +277,20 @@ function createPanel() {
   panel.webContents.on("did-finish-load", push);
 }
 
+let panelShownAt = 0;
+let panelBlurHiddenAt = 0;
+
 function showPanel() {
   positionPanel();
+  panelShownAt = Date.now();
   panel.show();
   panel.focus();
+  panel.webContents.send("shown");               // the drop-down animation
 }
 
 function togglePanel() {
+  // Clicking the icon of an open panel blurs it first — that click means "close".
+  if (Date.now() - panelBlurHiddenAt < 300) return;
   if (panel.isVisible() && panel.isFocused()) panel.hide();
   else showPanel();
 }
@@ -288,6 +307,14 @@ function positionPanel() {
     x = Math.round(trayBounds.x + trayBounds.width / 2 - width / 2);
     const below = trayBounds.y < area.y + area.height / 2;
     y = below ? trayBounds.y + trayBounds.height + 6 : trayBounds.y - height - 6;
+  } else if (process.platform === "linux") {
+    // The icon sits in the top bar; its position isn't reported. Drop the panel
+    // straight down from the bar — under the pointer when the click came from
+    // the bar, else at the right where tray icons live.
+    const cursor = screen.getCursorScreenPoint();
+    const fromBar = cursor.y <= area.y + 2 && cursor.y >= display.bounds.y;
+    x = fromBar ? Math.round(cursor.x - width / 2) : area.x + area.width - width - 8;
+    y = area.y + 4;
   } else {
     x = area.x + area.width - width - 12;
     y = process.platform === "win32" ? area.y + area.height - height - 12 : area.y + 12;
@@ -317,8 +344,11 @@ function createTray() {
     { label: "Quit Caelum", click: quit },
   ]);
   if (process.platform === "linux") {
-    // Most Linux trays (AppIndicator / StatusNotifier) only support a menu.
+    // AppIndicator / StatusNotifier: a click opens the panel where the host
+    // supports it (GNOME's AppIndicator extension does); the menu stays on the
+    // other button — and is the fallback on hosts that only show menus.
     tray.setContextMenu(menu);
+    tray.on("click", togglePanel);
   } else {
     tray.on("click", togglePanel);
     tray.on("right-click", () => tray.popUpContextMenu(menu));
