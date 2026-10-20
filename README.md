@@ -109,7 +109,19 @@ sources, daily wallpaper refresh and in-app updates. Grab the file for your syst
 |--------|------|-------|
 | Windows | `Caelum-Setup-<version>.exe` | Installs per user, no admin needed. Not code-signed — if SmartScreen asks, choose **More info → Run anyway**. |
 | Linux | `Caelum-<version>-<arch>.AppImage` | `chmod +x` and run. Updates itself in place. |
-| Debian / Ubuntu | `caelum_<version>_<arch>.deb` | `sudo apt install ./caelum_…deb`. New versions are announced in the panel; install them the same way. |
+| Debian / Ubuntu | `caelum_<version>_<arch>.deb` | `sudo apt install ./caelum_…deb`. New versions are announced in the panel and install from there. |
+| Fedora | `caelum.x86_64.rpm` / `caelum.aarch64.rpm` | One command, see below. |
+
+#### Fedora
+
+```bash
+sudo dnf install https://github.com/ProfessorEngineergit/caelum/releases/latest/download/caelum.x86_64.rpm
+```
+
+(On ARM: `caelum.aarch64.rpm`.) That's all. The package adds the Caelum repository, so
+`sudo dnf upgrade` keeps it current; the panel also offers new versions. On Fedora Workstation (GNOME)
+it brings the AppIndicator extension along, which shows Caelum's icon in the top bar. Caelum switches the
+extension on itself; after the very first install, log out and back in once so GNOME loads it.
 
 The wallpaper is set natively on Windows and on GNOME, KDE Plasma, Xfce, Cinnamon, MATE, LXQt/LXDE
 and Sway — with `feh`/`nitrogen` as a fallback for other X11 window managers. On GNOME, tray icons need

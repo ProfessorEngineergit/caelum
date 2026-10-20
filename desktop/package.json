@@ -1,7 +1,7 @@
 {
   "name": "caelum",
   "productName": "Caelum",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "description": "The cosmos on your desktop — NASA's Astronomy Picture of the Day and more as your wallpaper.",
   "homepage": "https://github.com/ProfessorEngineergit/caelum",
   "license": "MIT",
@@ -79,6 +79,13 @@
             "x64",
             "arm64"
           ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "build/icon.png",
@@ -107,7 +114,18 @@
           "*.m4a"
         ]
       }
-    ]
+    ],
+    "rpm": {
+      "artifactName": "caelum.${arch}.${ext}",
+      "packageCategory": "Graphics",
+      "fpm": [
+        "--rpm-tag",
+        "Requires: (gnome-shell-extension-appindicator if gnome-shell)",
+        "--rpm-tag",
+        "Recommends: libappindicator-gtk3",
+        "build/caelum.repo=/etc/yum.repos.d/caelum.repo"
+      ]
+    }
   },
   "desktopName": "caelum.desktop"
 }

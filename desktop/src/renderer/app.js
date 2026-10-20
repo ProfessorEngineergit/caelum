@@ -48,6 +48,8 @@
     const error = state.error || (state.wallpaper === "failed" ? state.wallpaperError : null);
     $("error").hidden = !error;
     $("error").textContent = error || "";
+    $("notice").hidden = !state.trayHint;
+    $("notice").textContent = state.trayHint || "";
   }
 
   function renderDeck() {
