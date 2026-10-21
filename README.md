@@ -29,7 +29,7 @@ A cross-platform **desktop wallpaper app** for **NASA Astronomy Picture of the D
 
 ## ✦ What is Caelum?
 
-Caelum lives entirely in your **menu bar** — no Dock icon, no windows, no clutter. Every day it
+Caelum lives entirely in your **menu bar** - no Dock icon, no windows, no clutter. Every day it
 fetches the latest **Astronomy Picture of the Day** from NASA and sets it as your desktop
 wallpaper, automatically, in the background. Click the orbit glyph in your menu bar and a panel of
 frosted obsidian glass floats over your desktop, where you can switch between **ten** image
@@ -40,40 +40,40 @@ extracts the dominant colour of each image and re-tints its own accents to match
 
 ## ✦ Features
 
-- **Always the latest APOD** — fetched daily and set as your wallpaper, automatically. Uses NASA's
+- **Always the latest APOD** - fetched daily and set as your wallpaper, automatically. Uses NASA's
   new keyless APOD endpoint on science.nasa.gov, with a per-day fallback if the list route misbehaves.
-- **Updates itself, if you want** — Caelum checks GitHub Releases, announces new versions right in the
+- **Updates itself, if you want** - Caelum checks GitHub Releases, announces new versions right in the
   panel with a one-click install, and can optionally install them automatically (Settings → Updates).
-- **10 stellar sources** — APOD is the star, joined by ESA/Hubble, James Webb, ESO, NASA EPIC,
+- **10 stellar sources** - APOD is the star, joined by ESA/Hubble, James Webb, ESO, NASA EPIC,
   the NASA Image Library, Bing, Wikimedia, NASA Image of the Day, and a hand-curated gallery.
-- **Cinematic ambient mode** — a full-screen, multi-display ken-burns slideshow on idle. Your own
+- **Cinematic ambient mode** - a full-screen, multi-display ken-burns slideshow on idle. Your own
   planetarium. Move the mouse to return.
-- **Menu-bar only** — `LSUIElement`, zero Dock footprint.
-- **The UI wears the cosmos** — dynamic accent colour extracted from each image.
-- **Multi-display** — sets the wallpaper on every screen.
-- **Smart downloads** — huge gigapixel images (yes, APOD does this) are automatically capped to a
+- **Menu-bar only** - `LSUIElement`, zero Dock footprint.
+- **The UI wears the cosmos** - dynamic accent colour extracted from each image.
+- **Multi-display** - sets the wallpaper on every screen.
+- **Smart downloads** - huge gigapixel images (yes, APOD does this) are automatically capped to a
   sensible size for wallpaper.
-- **Instant switching** — all source libraries are pre-cached in the background so any click is
+- **Instant switching** - all source libraries are pre-cached in the background so any click is
   immediate, with no on-demand download delay.
-- **Private & open source** — no accounts, no tracking, no analytics whatsoever. Images come
+- **Private & open source** - no accounts, no tracking, no analytics whatsoever. Images come
   straight from public APIs. MIT-licensed.
 
 ## ✦ The ten sources
 
 | # | Source | What you get | API key |
 |---|--------|--------------|---------|
-| ⭐ | **NASA APOD** | The Astronomy Picture of the Day | — |
-| 2 | **ESA/Hubble** | Hubble Picture of the Week | — |
-| 3 | **James Webb** | ESA/Webb image releases | — |
-| 4 | **ESO** | European Southern Observatory Picture of the Week | — |
+| ⭐ | **NASA APOD** | The Astronomy Picture of the Day | - |
+| 2 | **ESA/Hubble** | Hubble Picture of the Week | - |
+| 3 | **James Webb** | ESA/Webb image releases | - |
+| 4 | **ESO** | European Southern Observatory Picture of the Week | - |
 | 5 | **NASA EPIC** | Full-disk Earth from the DSCOVR spacecraft | shares NASA key |
-| 6 | **NASA Library** | NASA Image & Video Library (rotating queries) | — |
-| 7 | **Bing** | Bing Photo of the Day (4K) | — |
-| 8 | **Wikimedia** | Wikimedia Commons Picture of the Day | — |
-| 9 | **NASA Image of the Day** | NASA's curated daily feed | — |
-| 10 | **Caelum Curated** | A hand-picked gallery of the finest space imagery, refreshed OTA — no app update needed | — |
+| 6 | **NASA Library** | NASA Image & Video Library (rotating queries) | - |
+| 7 | **Bing** | Bing Photo of the Day (4K) | - |
+| 8 | **Wikimedia** | Wikimedia Commons Picture of the Day | - |
+| 9 | **NASA Image of the Day** | NASA's curated daily feed | - |
+| 10 | **Caelum Curated** | A hand-picked gallery of the finest space imagery, refreshed OTA - no app update needed | - |
 
-Everything works out of the box — no API keys needed. The same sources power the Windows and Linux app.
+Everything works out of the box - no API keys needed. The same sources power the Windows and Linux app.
 
 ## ✦ Install
 
@@ -84,7 +84,7 @@ brew tap ProfessorEngineergit/caelum
 brew install --cask caelum
 ```
 
-Homebrew handles Gatekeeper automatically — no quarantine steps needed.
+Homebrew handles Gatekeeper automatically - no quarantine steps needed.
 
 ### Manual
 
@@ -95,7 +95,7 @@ Homebrew handles Gatekeeper automatically — no quarantine steps needed.
    ```bash
    xattr -dr com.apple.quarantine /Applications/Caelum.app
    ```
-3. **Find the star** — the orbit glyph appears in your menu bar. Click it, pick a source, and fly.
+3. **Find the star** - the orbit glyph appears in your menu bar. Click it, pick a source, and fly.
 
 > **Requirements:** macOS 13 (Ventura) or later.
 
@@ -107,7 +107,7 @@ sources, daily wallpaper refresh and in-app updates. Grab the file for your syst
 
 | System | File | Notes |
 |--------|------|-------|
-| Windows | `Caelum-Setup-<version>.exe` | Installs per user, no admin needed. Not code-signed — if SmartScreen asks, choose **More info → Run anyway**. |
+| Windows | `Caelum-Setup-<version>.exe` | Installs per user, no admin needed. Not code-signed - if SmartScreen asks, choose **More info → Run anyway**. |
 | Linux | `Caelum-<version>-<arch>.AppImage` | `chmod +x` and run. Updates itself in place. |
 | Debian / Ubuntu | `caelum_<version>_<arch>.deb` | `sudo apt install ./caelum_…deb`. New versions are announced in the panel and install from there. |
 | Fedora | `caelum.x86_64.rpm` / `caelum.aarch64.rpm` | One command, see below. |
@@ -129,7 +129,7 @@ under the bar (GNOME's extension keeps the single click for the menu; on KDE and
 click opens the panel and the right button the menu).
 
 The wallpaper is set natively on Windows and on GNOME, KDE Plasma, Xfce, Cinnamon, MATE, LXQt/LXDE
-and Sway — with `feh`/`nitrogen` as a fallback for other X11 window managers. On GNOME, tray icons need
+and Sway - with `feh`/`nitrogen` as a fallback for other X11 window managers. On GNOME, tray icons need
 the *AppIndicator* extension (preinstalled on Ubuntu); without it, launch Caelum from the app grid
 to open its panel.
 
@@ -177,7 +177,7 @@ Sources/Caelum/
 - **Background prefetching** caches previews for every image in every source so any click is instant, with no on-demand download.
 - **Adding a source** is one file conforming to `ImageSource` + one line in `SourceRegistry`.
 
-### The design language — *Obsidian Glass / Aurora*
+### The design language - *Obsidian Glass / Aurora*
 
 A precision instrument carved from black glass that carries the cosmos: layered vibrancy, a luminous
 hairline, the aurora gradient (cyan → violet → magenta) used sparingly, instrument typography with
@@ -204,12 +204,12 @@ open dist/Caelum.app
 | `scripts/make-icon.sh` | Render the app icon and build `AppIcon.icns`. |
 | `scripts/render-icon.swift` | Draw the brand mark (used by `make-icon.sh`). |
 
-Releases are built automatically by GitHub Actions on every `v*` tag — and whenever a commit on
+Releases are built automatically by GitHub Actions on every `v*` tag - and whenever a commit on
 `main` bumps the version, the matching `v<version>` release is created for you (see
 [`.github/workflows/release.yml`](.github/workflows/release.yml)). One release carries all platforms:
 `Caelum.zip` for macOS, the Windows installer and the Linux AppImage/deb, plus the `latest*.yml`
 manifests the Windows/Linux updater reads. To release, bump **both**
-`CFBundleShortVersionString` in `Resources/Info.plist` and `version` in `desktop/package.json` — the
+`CFBundleShortVersionString` in `Resources/Info.plist` and `version` in `desktop/package.json` - the
 workflow refuses mismatched versions or a tag that differs from them, since the in-app updaters rely on it.
 
 ### Windows & Linux app (`desktop/`)
@@ -230,15 +230,15 @@ npm run dist:win       # NSIS installer (on Windows)
 
 ## ✦ What's coming
 
-- **OTA curated gallery packs** — new themed image collections will be pushed over-the-air without
+- **OTA curated gallery packs** - new themed image collections will be pushed over-the-air without
   requiring an app update. New packs appear automatically in your Caelum Curated source.
-- **More sources** — expanding the library with additional space agencies and observatories.
-- **Contributions welcome** — see [Contributing](#-contributing) below.
+- **More sources** - expanding the library with additional space agencies and observatories.
+- **Contributions welcome** - see [Contributing](#-contributing) below.
 
 ## ✦ Privacy
 
 Caelum is designed to collect absolutely nothing about you. Here is the complete list of every
-network request Caelum ever makes — there are no others:
+network request Caelum ever makes - there are no others:
 
 | Request | When | Who receives it | Why |
 |---------|------|-----------------|-----|
@@ -258,14 +258,14 @@ network request Caelum ever makes — there are no others:
 
 **That is everything.** There is no telemetry, no crash reporting, no usage analytics, no tracking
 pixels, no third-party SDKs, and no sign-in of any kind. Caelum never phones home. The app has no
-server of its own — it is a thin client that talks directly to the public APIs listed above, and
+server of its own - it is a thin client that talks directly to the public APIs listed above, and
 only to those APIs.
 
 Images are cached in `~/Library/Application Support/Caelum/Cache` on your local disk. This
 directory is never read by anyone but you and Caelum.
 
 The future OTA gallery feature works the same way: Caelum will fetch a static JSON file from this
-GitHub repository's releases. The file is a plain list of image URLs — no personal data is sent or
+GitHub repository's releases. The file is a plain list of image URLs - no personal data is sent or
 received. You can inspect the file here at any time.
 
 ## ✦ Contributing
@@ -287,7 +287,7 @@ the time spent building it and keeps future development going:
 
 ## ✦ Credits & License
 
-Caelum is **MIT-licensed** — see [LICENSE](LICENSE).
+Caelum is **MIT-licensed** - see [LICENSE](LICENSE).
 
 Astronomical imagery is provided by **NASA**, **ESA**, **ESO**, the **Hubble** and **James Webb**
 Space Telescope teams, **Bing**, and **Wikimedia Commons**, and remains the property of its
@@ -299,6 +299,6 @@ affiliated with or endorsed by NASA, ESA, or ESO.
 Made for the love of the night sky.
 </div>
 
-## Development and AI assistance
+## AI assistance
 
-The default-branch history includes contributions explicitly attributed to Claude / GitHub Copilot ([example](https://github.com/ProfessorEngineergit/caelum/commit/2fb097fa70dde3677d2f48d84adff4c0a03bf035)). This documents AI involvement in those contributions; it does not establish the origin of every line or independent validation. Existing author, co-author and session records are retained.
+Some code contributions are explicitly attributed to AI tools: [generated with Claude Code](https://github.com/ProfessorEngineergit/caelum/commit/ae08bdb8d5ec862f4356d8ff94ed16b01b04b4ec). This applies to those contributions, not every file.
