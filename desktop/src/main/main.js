@@ -238,17 +238,25 @@ function setLaunchAtLogin(enabled) {
 
 // MARK: - Window & tray
 
+// Linux has no menu bar to hang a popover from (GNOME's top bar can't be reached
+// by apps), so there Caelum is an ordinary window with a title bar and a taskbar
+// entry; the tray icon, where one exists, is just a shortcut.
+const WINDOWED = process.platform === "linux";
+
 function createPanel() {
   panel = new BrowserWindow({
-    width: 384,
-    height: 640,
+    width: WINDOWED ? 420 : 384,
+    height: WINDOWED ? 720 : 640,
     show: false,
-    frame: false,
-    resizable: false,
-    maximizable: false,
+    frame: WINDOWED,
+    minWidth: WINDOWED ? 380 : undefined,
+    minHeight: WINDOWED ? 600 : undefined,
+    autoHideMenuBar: true,
+    resizable: WINDOWED,
+    maximizable: WINDOWED,
     fullscreenable: false,
-    skipTaskbar: process.platform === "win32" || process.platform === "linux",   // a popover, not an app window
-    alwaysOnTop: true,
+    skipTaskbar: process.platform === "win32",   // a popover on Windows
+    alwaysOnTop: !WINDOWED,
     backgroundColor: "#07080d",
     title: "Caelum",
     icon: path.join(ASSETS, "icon.png"),
@@ -269,12 +277,14 @@ function createPanel() {
   // Like a menu-bar popover: clicking elsewhere closes it. (Ignore the blur some
   // window managers send right while it opens.)
   panel.on("blur", () => {
-    if (process.platform === "darwin" || panel.webContents.isDevToolsOpened()) return;
+    if (process.platform === "darwin" || WINDOWED || panel.webContents.isDevToolsOpened()) return;
     if (Date.now() - panelShownAt < 400) return;
     panelBlurHiddenAt = Date.now();
     panel.hide();
   });
   panel.on("close", (event) => {
+    // Without a tray icon there'd be no way back in, so closing the window quits.
+    if (WINDOWED && state.trayHint) return quit();
     if (!app.isQuitting && !app.isQuittingForUpdate) {
       event.preventDefault();
       panel.hide();
@@ -287,7 +297,10 @@ let panelShownAt = 0;
 let panelBlurHiddenAt = 0;
 
 function showPanel() {
-  positionPanel();
+  if (WINDOWED) {
+    if (!panel.isVisible()) panel.center();
+    if (panel.isMinimized()) panel.restore();
+  } else positionPanel();
   panelShownAt = Date.now();
   panel.show();
   panel.focus();
@@ -297,7 +310,7 @@ function showPanel() {
 function togglePanel() {
   // Clicking the icon of an open panel blurs it first — that click means "close".
   if (Date.now() - panelBlurHiddenAt < 300) return;
-  if (panel.isVisible() && panel.isFocused()) panel.hide();
+  if (!WINDOWED && panel.isVisible() && panel.isFocused()) panel.hide();
   else showPanel();
 }
 
@@ -470,7 +483,7 @@ function showIntro(mode = "intro", update = null) {
       return state.wallpaper === "applied" ? state.wallpaperFile : null;
     },
     // Without a tray icon the panel is the only way in — show it after the intro.
-    onDone: () => { if (state.trayHint) showPanel(); },
+    onDone: () => { if (WINDOWED || state.trayHint) showPanel(); },
   }, mode, update);
 }
 
