@@ -123,10 +123,10 @@ sudo dnf install https://github.com/ProfessorEngineergit/caelum/releases/latest/
 it brings the AppIndicator extension along, which shows Caelum's icon in the top bar. Caelum switches the
 extension on itself; after the very first install, log out and back in once so GNOME loads it.
 
-In the top bar, a click on Caelum's icon opens its menu: the current picture, *Set as Wallpaper*,
-next/previous image, the source list, settings and updates. A **double click** opens the full panel
-under the bar (GNOME's extension keeps the single click for the menu; on KDE and most other desktops a
-click opens the panel and the right button the menu).
+On Linux Caelum is an ordinary app: start it from the app grid and it opens as a normal window
+(closing it keeps Caelum running in the tray when there is a tray icon). The icon in the top bar is
+a shortcut — a click opens its menu (current picture, *Set as Wallpaper*, next/previous, sources,
+settings, updates) and a double click raises the window.
 
 The wallpaper is set natively on Windows and on GNOME, KDE Plasma, Xfce, Cinnamon, MATE, LXQt/LXDE
 and Sway — with `feh`/`nitrogen` as a fallback for other X11 window managers. On GNOME, tray icons need
