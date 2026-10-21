@@ -17,14 +17,19 @@ const { UpdateManager } = require("./updater");
 const intro = require("./intro");
 const { ensureTrayHost } = require("./linux-tray");
 
-// Wayland doesn't let apps place their own windows, so on Fedora/GNOME the panel
-// would float wherever the compositor puts it. Through XWayland Caelum can open
-// it right under the top bar, next to its icon. (CAELUM_NATIVE_WAYLAND=1 opts out.)
-if (process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland" && !process.env.CAELUM_NATIVE_WAYLAND) {
-  app.commandLine.appendSwitch("ozone-platform", "x11");
+// Wayland doesn't let apps place their own windows, and Electron's native Wayland
+// backend never maps the panel on some GNOME setups — so on Wayland sessions Caelum
+// restarts itself once through XWayland, where the panel opens right under the top
+// bar. Chromium picks its platform before any JS runs, hence the relaunch rather
+// than a switch. (CAELUM_NATIVE_WAYLAND=1 opts out.)
+const relaunching = process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland" &&
+  !process.env.CAELUM_NATIVE_WAYLAND && !process.argv.some((a) => a.startsWith("--ozone-platform"));
+if (relaunching) {
+  app.relaunch({ args: [...process.argv.slice(1), "--ozone-platform=x11"] });
+  app.exit(0);
 }
 
-if (!app.requestSingleInstanceLock()) {
+if (!relaunching && !app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
 }
@@ -505,6 +510,7 @@ app.on("window-all-closed", (e) => e.preventDefault());   // tray app: stay aliv
 app.on("before-quit", () => { app.isQuitting = true; });
 
 app.whenReady().then(() => {
+  if (relaunching) return;
   const userData = app.getPath("userData");
   settings = new Settings(userData);
   // Not "Cache": Chromium keeps its own HTTP cache there.
