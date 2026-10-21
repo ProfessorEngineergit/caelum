@@ -6,7 +6,7 @@
 
 ### The cosmos, every day, on your desktop.
 
-A beautifully designed, cross-platform **desktop app** that quietly keeps the latest **NASA Astronomy Picture of the Day** as your wallpaper — with **10 stellar sources** and a cinematic **ambient mode**.
+A cross-platform **desktop wallpaper app** for **NASA Astronomy Picture of the Day** and nine other image sources, with image caching and an ambient mode.
 
 [![Download](https://img.shields.io/badge/Download-Latest%20Release-8B7CFF?style=for-the-badge)](https://github.com/ProfessorEngineergit/caelum/releases/latest)
 &nbsp;
@@ -298,3 +298,7 @@ affiliated with or endorsed by NASA, ESA, or ESO.
 <br/>
 Made for the love of the night sky.
 </div>
+
+## Development and AI assistance
+
+The default-branch history includes contributions explicitly attributed to Claude / GitHub Copilot ([example](https://github.com/ProfessorEngineergit/caelum/commit/2fb097fa70dde3677d2f48d84adff4c0a03bf035)). This documents AI involvement in those contributions; it does not establish the origin of every line or independent validation. Existing author, co-author and session records are retained.
