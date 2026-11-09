@@ -372,7 +372,7 @@ private fun SourceTile(source: ImageSource, polygonIndex: Int, selected: Boolean
         animationSpec = infiniteRepeatable(tween(24_000, easing = LinearEasing)),
         label = "angle",
     )
-    val shape = remember(polygonIndex) { SourceShapes[polygonIndex % SourceShapes.size].toShape() }
+    val shape = SourceShapes[polygonIndex % SourceShapes.size].toShape()
 
     Column(
         modifier = Modifier

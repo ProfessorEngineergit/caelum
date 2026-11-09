@@ -44,7 +44,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -223,7 +222,7 @@ private fun SettingRow(
     val top = if (position == Position.FIRST || position == Position.ONLY) outer else inner
     val bottom = if (position == Position.LAST || position == Position.ONLY) outer else inner
     val shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
-    val iconShape = remember(polygon) { polygon.toShape() }
+    val iconShape = polygon.toShape()
     val alpha = if (enabled) 1f else 0.5f
 
     Column(
