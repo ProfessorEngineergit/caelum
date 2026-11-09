@@ -37,7 +37,15 @@ is needed.
 The curated galleries come from `desktop/src/main/galleries.json`, which is copied in at
 build time, so all three apps share one list.
 
-## Release builds
+## Download and release builds
 
-`assembleRelease` is minified and, for now, signed with the debug key so the APK
-installs straight away. Set up a real signing config before you publish it anywhere.
+[`Caelum.apk`](https://github.com/ProfessorEngineergit/caelum/releases/latest/download/Caelum.apk)
+is built by `.github/workflows/android-apk.yml` and attached to every release (and to the latest
+release whenever the Android app changes on `main`).
+
+To make updates install over each other, add these repository secrets so the APK is signed with
+one fixed key: `ANDROID_KEYSTORE_BASE64` (`base64 -w0 your.jks`), `ANDROID_KEYSTORE_PASSWORD`,
+`ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Without them the workflow signs with a throw-away
+debug key, which changes on every build.
+
+The release build is not minified yet (not tried on a device).

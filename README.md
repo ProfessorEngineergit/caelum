@@ -112,6 +112,13 @@ sources, daily wallpaper refresh and in-app updates. Grab the file for your syst
 | Debian / Ubuntu | `caelum_<version>_<arch>.deb` | `sudo apt install ./caelum_…deb`. New versions are announced in the panel and install from there. |
 | Fedora | `caelum.x86_64.rpm` / `caelum.aarch64.rpm` | One command, see below. |
 
+### Android
+
+[**Download Caelum.apk**](https://github.com/ProfessorEngineergit/caelum/releases/latest/download/Caelum.apk)
+(Android 8 or later). Open the file on your phone and allow installing from your browser or file
+manager when Android asks. Without a fixed signing key, a newer APK can only be installed after
+uninstalling the old one.
+
 #### Fedora
 
 ```bash
@@ -232,7 +239,8 @@ npm run dist:win       # NSIS installer (on Windows)
 
 A native Kotlin + Jetpack Compose app in Material 3 Expressive: the same sources, a colour scheme
 generated from each picture, home and lock screen wallpapers, and an optional daily wallpaper.
-See [`android/README.md`](android/README.md).
+See [`android/README.md`](android/README.md). The APK is on every
+[release](https://github.com/ProfessorEngineergit/caelum/releases/latest/download/Caelum.apk).
 
 ```bash
 cd android
