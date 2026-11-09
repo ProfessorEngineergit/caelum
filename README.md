@@ -228,6 +228,18 @@ npm run dist:linux     # AppImage + deb in desktop/dist
 npm run dist:win       # NSIS installer (on Windows)
 ```
 
+### Android app (`android/`)
+
+A native Kotlin + Jetpack Compose app in Material 3 Expressive: the same sources, a colour scheme
+generated from each picture, home and lock screen wallpapers, and an optional daily wallpaper.
+See [`android/README.md`](android/README.md).
+
+```bash
+cd android
+./gradlew :core:test        # source tests (plain JVM)
+./gradlew :app:installDebug # build and install on a connected device
+```
+
 ## ✦ What's coming
 
 - **OTA curated gallery packs** - new themed image collections will be pushed over-the-air without

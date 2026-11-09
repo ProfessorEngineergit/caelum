@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Start -->
+    <string name="settings">Einstellungen</string>
+    <string name="back">Zurück</string>
+    <string name="section_sources">Quellen</string>
+    <string name="section_recent">Neu bei %1$s</string>
+    <string name="selected">Ausgewählt</string>
+    <string name="badge_video">Video</string>
+    <string name="feed_error_title">Der Kosmos ist außer Reichweite</string>
+    <string name="feed_error_body">Diese Quelle konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="retry">Erneut versuchen</string>
+    <string name="about_title">Über dieses Bild</string>
+    <string name="credit">Bild: %1$s</string>
+    <string name="open_page">Zur Quelle</string>
+    <string name="share">Teilen</string>
+
+    <!-- Hintergrund setzen -->
+    <string name="set_wallpaper">Als Hintergrund</string>
+    <string name="setting_wallpaper">Wird gesetzt…</string>
+    <string name="set_wallpaper_on">Hintergrund setzen für</string>
+    <string name="target_home">Startbildschirm</string>
+    <string name="target_lock">Sperrbildschirm</string>
+    <string name="target_both">Start- und Sperrbildschirm</string>
+    <string name="target_home_short">Start</string>
+    <string name="target_lock_short">Sperre</string>
+    <string name="target_both_short">Beide</string>
+    <string name="set_done_home">Dein Startbildschirm trägt jetzt den Kosmos.</string>
+    <string name="set_done_lock">Dein Sperrbildschirm trägt jetzt den Kosmos.</string>
+    <string name="set_done_both">Beide Bildschirme tragen jetzt den Kosmos.</string>
+    <string name="set_failed">Der Hintergrund konnte nicht gesetzt werden.</string>
+
+    <!-- Einstellungen -->
+    <string name="group_daily">Täglicher Hintergrund</string>
+    <string name="daily_title">Automatisch wechseln</string>
+    <string name="daily_subtitle">Das neueste Bild von %1$s, alle paar Stunden geprüft</string>
+    <string name="unmetered_title">Nur im WLAN</string>
+    <string name="unmetered_subtitle">Erst bei einer nicht getakteten Verbindung herunterladen</string>
+    <string name="daily_target_title">Anwenden auf</string>
+    <string name="group_appearance">Darstellung</string>
+    <string name="colors_title">Farben</string>
+    <string name="colors_cosmic">Kosmisch</string>
+    <string name="colors_system">System</string>
+    <string name="colors_cosmic_subtitle">Die Oberfläche übernimmt die Farben jedes Bildes</string>
+    <string name="colors_system_subtitle">Material-You-Farben aus deinem Hintergrund</string>
+    <string name="group_about">Über</string>
+    <string name="about_app">Caelum %1$s</string>
+    <string name="about_app_subtitle">Open Source, keine Konten, kein Tracking. Bilder © ihre Urheber.</string>
+</resources>
