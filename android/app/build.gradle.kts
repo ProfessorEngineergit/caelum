@@ -12,18 +12,35 @@ android {
         applicationId = "com.professorengineergit.caelum"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        // The release workflow passes the version shared with the other apps (-PappVersion=1.0.26).
+        val appVersion = (project.findProperty("appVersion") as String?) ?: "1.0.0"
+        versionName = appVersion
+        versionCode = appVersion.split('.').let { (major, minor, patch) ->
+            major.toInt() * 10_000 + minor.toInt() * 100 + patch.toInt()
+        }
+    }
+
+    // A fixed key makes updates install over each other. CI supplies it through these
+    // variables (repository secrets); without them the build falls back to the debug key.
+    val releaseKeystore = System.getenv("CAELUM_KEYSTORE_FILE")?.takeIf { it.isNotBlank() }
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("CAELUM_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("CAELUM_KEY_ALIAS")
+                keyPassword = System.getenv("CAELUM_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // Not minified yet: shrinking hasn't been tried on a device, and a crash from a
+            // stripped class is worse than a few extra megabytes.
+            isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signed with the debug key so `assembleRelease` gives an installable APK out
-            // of the box. Swap in a real signing config before publishing anywhere.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
