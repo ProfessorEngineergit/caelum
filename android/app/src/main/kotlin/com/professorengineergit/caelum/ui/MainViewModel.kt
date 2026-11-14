@@ -1,6 +1,7 @@
 package com.professorengineergit.caelum.ui
 
 import android.app.Application
+import android.net.ConnectivityManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.professorengineergit.caelum.container
@@ -15,7 +16,11 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -34,7 +39,8 @@ data class UiState(
     val feeds: Map<String, Feed> = emptyMap(),
     /** The picture picked in each source's carousel; the newest when absent. */
     val picked: Map<String, String> = emptyMap(),
-    val applying: Boolean = false,
+    /** The wallpaper being set right now (drives the warp animation); null when idle. */
+    val apply: ApplyState? = null,
     /** False until the stored settings have been read, so the first frame doesn't flash APOD. */
     val loaded: Boolean = false,
 ) {
@@ -42,7 +48,17 @@ data class UiState(
     val feed: Feed get() = feeds[source.id] ?: Feed.Loading
     val images: List<CosmicImage> get() = (feed as? Feed.Ready)?.images.orEmpty()
     val image: CosmicImage? get() = images.firstOrNull { it.id == picked[source.id] } ?: images.firstOrNull()
+    val applying: Boolean get() = apply?.status == ApplyStatus.RUNNING
 }
+
+enum class ApplyStatus { RUNNING, DONE, FAILED }
+
+data class ApplyState(
+    val image: CosmicImage,
+    val target: WallpaperTarget,
+    val status: ApplyStatus = ApplyStatus.RUNNING,
+    val startedAt: Long = System.currentTimeMillis(),
+)
 
 sealed interface UserMessage {
     data class WallpaperSet(val target: WallpaperTarget) : UserMessage
@@ -66,6 +82,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             settingsRepo.settings.collect { load(it.sourceId) }
         }
+        // Catch up on a night the system skipped, whenever the app is opened.
+        viewModelScope.launch {
+            if (settingsRepo.current().dailyEnabled) DailyWallpaper.runNow(getApplication())
+        }
+        // Get the picture on screen ready to be a wallpaper while the user looks at it,
+        // so "Set as wallpaper" is near-instant. Only on Wi-Fi: originals can be large.
+        viewModelScope.launch {
+            state
+                .map { it.image to it.settings.wallpaperScrolling }
+                .distinctUntilChanged()
+                .collectLatest { (image, scrolling) ->
+                    if (image == null || image.isVideo) return@collectLatest
+                    delay(1200)
+                    if (isUnmetered()) container.wallpaper.prepare(image, scrolling)
+                }
+        }
+    }
+
+    private fun isUnmetered(): Boolean {
+        val cm = getApplication<Application>().getSystemService(ConnectivityManager::class.java) ?: return false
+        return !cm.isActiveNetworkMetered
+    }
+
+    /** The user is about to choose a target: start preparing the picture regardless of network. */
+    fun prepareCurrent() {
+        val s = state.value
+        val image = s.image ?: return
+        if (!image.isVideo) container.wallpaper.prepare(image, s.settings.wallpaperScrolling)
     }
 
     fun selectSource(id: String) {
@@ -97,22 +141,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun setWallpaper(target: WallpaperTarget) {
-        val image = state.value.image ?: return
+    fun setWallpaper(target: WallpaperTarget) = setWallpaper(state.value.image, target)
+
+    fun setWallpaper(image: CosmicImage?, target: WallpaperTarget) {
+        image ?: return
         if (state.value.applying) return
-        local.update { it.copy(applying = true) }
+        local.update { it.copy(apply = ApplyState(image, target)) }
         viewModelScope.launch {
-            val message = try {
-                container.wallpaper.apply(image, target)
-                UserMessage.WallpaperSet(target)
+            val failure = try {
+                container.wallpaper.apply(image, target, state.value.settings.wallpaperScrolling)
+                null
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 UserMessage.Failed(e.message)
             }
-            local.update { it.copy(applying = false) }
-            _messages.send(message)
+            local.update { s ->
+                s.copy(apply = s.apply?.copy(status = if (failure == null) ApplyStatus.DONE else ApplyStatus.FAILED))
+            }
+            failure?.let { _messages.send(it) }
         }
+    }
+
+    /** The warp animation has played out. */
+    fun finishApply() {
+        local.update { if (it.apply?.status != ApplyStatus.RUNNING) it.copy(apply = null) else it }
     }
 
     fun setDailyEnabled(enabled: Boolean) = viewModelScope.launch {
@@ -123,4 +176,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setDailyTarget(target: WallpaperTarget) = viewModelScope.launch { settingsRepo.setDailyTarget(target) }
     fun setUnmeteredOnly(value: Boolean) = viewModelScope.launch { settingsRepo.setUnmeteredOnly(value) }
     fun setColorMode(mode: ColorMode) = viewModelScope.launch { settingsRepo.setColorMode(mode) }
+    fun setWallpaperScrolling(value: Boolean) = viewModelScope.launch { settingsRepo.setWallpaperScrolling(value) }
+    fun setHaptics(value: Boolean) = viewModelScope.launch { settingsRepo.setHaptics(value) }
+    fun setLiveMode(value: Boolean) = viewModelScope.launch { settingsRepo.setLiveMode(value) }
 }

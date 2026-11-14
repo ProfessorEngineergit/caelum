@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -32,7 +33,22 @@ data class Settings(
     val colorMode: ColorMode = ColorMode.COSMIC,
     /** The id of the image the daily job last applied, so it doesn't set it twice. */
     val lastDailyImageId: String? = null,
+    /**
+     * Whether the home wallpaper may be wider than the screen so it scrolls with the
+     * launcher pages. Off crops it to exactly the screen, so nothing can scroll —
+     * whatever the launcher (or ColorOS after a wallpaper change) is set to.
+     */
+    val wallpaperScrolling: Boolean = false,
+    val hapticsEnabled: Boolean = true,
+    /** Experimental: the start screen becomes a live home-screen preview. */
+    val liveMode: Boolean = false,
+    /** When the daily job last ran, and what came of it. */
+    val lastDailyCheck: Long? = null,
+    val lastDailyResult: DailyResult? = null,
 )
+
+/** The outcome of the daily job's latest run, shown in the settings. */
+enum class DailyResult { APPLIED, UP_TO_DATE, FAILED }
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -44,6 +60,11 @@ class SettingsRepository(private val context: Context) {
         val unmeteredOnly = booleanPreferencesKey("unmetered_only")
         val colorMode = stringPreferencesKey("color_mode")
         val lastDaily = stringPreferencesKey("last_daily_image")
+        val scrolling = booleanPreferencesKey("wallpaper_scrolling")
+        val haptics = booleanPreferencesKey("haptics")
+        val liveMode = booleanPreferencesKey("live_mode")
+        val lastCheck = longPreferencesKey("last_daily_check")
+        val lastResult = stringPreferencesKey("last_daily_result")
     }
 
     val settings: Flow<Settings> = context.dataStore.data.map { p ->
@@ -55,6 +76,11 @@ class SettingsRepository(private val context: Context) {
             unmeteredOnly = p[Keys.unmeteredOnly] ?: defaults.unmeteredOnly,
             colorMode = p[Keys.colorMode].toEnum(defaults.colorMode),
             lastDailyImageId = p[Keys.lastDaily],
+            wallpaperScrolling = p[Keys.scrolling] ?: defaults.wallpaperScrolling,
+            hapticsEnabled = p[Keys.haptics] ?: defaults.hapticsEnabled,
+            liveMode = p[Keys.liveMode] ?: defaults.liveMode,
+            lastDailyCheck = p[Keys.lastCheck],
+            lastDailyResult = p[Keys.lastResult]?.let { name -> DailyResult.entries.firstOrNull { it.name == name } },
         )
     }.distinctUntilChanged()
 
@@ -66,6 +92,13 @@ class SettingsRepository(private val context: Context) {
     suspend fun setUnmeteredOnly(value: Boolean) = edit { it[Keys.unmeteredOnly] = value }
     suspend fun setColorMode(mode: ColorMode) = edit { it[Keys.colorMode] = mode.name }
     suspend fun setLastDailyImage(id: String) = edit { it[Keys.lastDaily] = id }
+    suspend fun setWallpaperScrolling(value: Boolean) = edit { it[Keys.scrolling] = value }
+    suspend fun setHaptics(value: Boolean) = edit { it[Keys.haptics] = value }
+    suspend fun setLiveMode(value: Boolean) = edit { it[Keys.liveMode] = value }
+    suspend fun recordDailyRun(result: DailyResult, at: Long = System.currentTimeMillis()) = edit {
+        it[Keys.lastCheck] = at
+        it[Keys.lastResult] = result.name
+    }
 
     private suspend fun edit(block: (MutablePreferences) -> Unit) {
         context.dataStore.edit { block(it) }

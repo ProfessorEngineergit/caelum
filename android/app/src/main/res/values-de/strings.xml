@@ -17,6 +17,7 @@
 
     <!-- Hintergrund setzen -->
     <string name="set_wallpaper">Als Hintergrund</string>
+    <string name="set_wallpaper_short">Setzen</string>
     <string name="setting_wallpaper">Wird gesetzt…</string>
     <string name="set_wallpaper_on">Hintergrund setzen für</string>
     <string name="target_home">Startbildschirm</string>
@@ -46,4 +47,32 @@
     <string name="group_about">Über</string>
     <string name="about_app">Caelum %1$s</string>
     <string name="about_app_subtitle">Open Source, keine Konten, kein Tracking. Bilder © ihre Urheber.</string>
+
+    <!-- Hintergrund-Zuverlässigkeit -->
+    <string name="background_title">Hintergrund-Updates erlauben</string>
+    <string name="background_subtitle">Die Akku-Optimierung kann den nächtlichen Wechsel verhindern (vor allem unter ColorOS). Tippen, um sie für Caelum auszuschalten.</string>
+    <string name="background_ok_title">Hintergrund-Updates erlaubt</string>
+    <string name="background_ok_subtitle">Unter ColorOS zusätzlich \"Autostart\" auf der App-Seite erlauben, falls der Hintergrund trotzdem nicht wechselt.</string>
+    <string name="last_check_title">Letzte Prüfung</string>
+    <string name="last_check_never">Noch nicht gelaufen</string>
+    <string name="last_check_applied">%1$s · neuer Hintergrund gesetzt</string>
+    <string name="last_check_up_to_date">%1$s · schon aktuell</string>
+    <string name="last_check_failed">%1$s · fehlgeschlagen, neuer Versuch folgt</string>
+
+    <!-- Hintergrund -->
+    <string name="group_wallpaper">Hintergrund</string>
+    <string name="scrolling_title">Mit Startseiten scrollen</string>
+    <string name="scrolling_off_subtitle">Aus: exakt auf deinen Bildschirm zugeschnitten, bewegt sich nie – egal, was der Launcher einstellt</string>
+    <string name="scrolling_on_subtitle">An: breiter als der Bildschirm, gleitet beim Wischen zwischen den Seiten mit</string>
+    <string name="haptics_title">Haptik</string>
+    <string name="haptics_subtitle">Jeden Tipp, jedes Scrollen und jeden Warp-Sprung spüren</string>
+
+    <!-- Experimentell -->
+    <string name="group_experimental">Experimentell</string>
+    <string name="live_title">Live-Startbildschirm</string>
+    <string name="live_subtitle">Die Startseite wird zu deinem Homescreen: Bilder hinter deinen eigenen Apps durchwischen. Gedrückt halten zeigt deinen aktuellen Hintergrund.</string>
+    <string name="live_home">Start</string>
+    <string name="live_lock">Sperre</string>
+    <string name="live_current">Dein aktueller Hintergrund</string>
+    <string name="live_hint">Wischen zum Blättern · Tippen zum Ausblenden · Halten zum Vergleichen</string>
 </resources>

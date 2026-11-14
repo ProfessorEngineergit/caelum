@@ -19,6 +19,7 @@
 
     <!-- Setting the wallpaper -->
     <string name="set_wallpaper">Set as wallpaper</string>
+    <string name="set_wallpaper_short">Apply</string>
     <string name="setting_wallpaper">Setting wallpaper…</string>
     <string name="set_wallpaper_on">Set wallpaper on</string>
     <string name="target_home">Home screen</string>
@@ -48,4 +49,32 @@
     <string name="group_about">About</string>
     <string name="about_app">Caelum %1$s</string>
     <string name="about_app_subtitle">Open source, no accounts, no tracking. Images © their creators.</string>
+
+    <!-- Background reliability -->
+    <string name="background_title">Allow background updates</string>
+    <string name="background_subtitle">Battery optimisation can stop the nightly change (ColorOS especially). Tap to turn it off for Caelum.</string>
+    <string name="background_ok_title">Background updates allowed</string>
+    <string name="background_ok_subtitle">On ColorOS, also allow \"Auto launch\" on the app page if the wallpaper still doesn\'t change.</string>
+    <string name="last_check_title">Last check</string>
+    <string name="last_check_never">Not run yet</string>
+    <string name="last_check_applied">%1$s · new wallpaper set</string>
+    <string name="last_check_up_to_date">%1$s · already up to date</string>
+    <string name="last_check_failed">%1$s · failed, will try again</string>
+
+    <!-- Wallpaper -->
+    <string name="group_wallpaper">Wallpaper</string>
+    <string name="scrolling_title">Scroll with home pages</string>
+    <string name="scrolling_off_subtitle">Off: cropped to exactly your screen, so it never moves, whatever the launcher is set to</string>
+    <string name="scrolling_on_subtitle">On: kept wider than the screen so it glides as you swipe between pages</string>
+    <string name="haptics_title">Haptics</string>
+    <string name="haptics_subtitle">Feel every tap, scroll and warp jump</string>
+
+    <!-- Experimental -->
+    <string name="group_experimental">Experimental</string>
+    <string name="live_title">Live home preview</string>
+    <string name="live_subtitle">The start screen becomes your home screen: swipe through pictures behind your own apps. Hold to compare with your current wallpaper.</string>
+    <string name="live_home">Home</string>
+    <string name="live_lock">Lock</string>
+    <string name="live_current">Your current wallpaper</string>
+    <string name="live_hint">Swipe to browse · tap to hide · hold to compare</string>
 </resources>
