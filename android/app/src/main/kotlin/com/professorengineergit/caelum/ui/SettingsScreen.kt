@@ -30,7 +30,6 @@ import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.SwipeLeft
 import androidx.compose.material.icons.rounded.Vibration
 import androidx.compose.material.icons.rounded.Code
@@ -88,7 +87,6 @@ fun SettingsScreen(
     onColorMode: (ColorMode) -> Unit,
     onScrolling: (Boolean) -> Unit,
     onHaptics: (Boolean) -> Unit,
-    onLiveMode: (Boolean) -> Unit,
 ) {
     val settings = state.settings
     val context = LocalContext.current
@@ -103,7 +101,6 @@ fun SettingsScreen(
     val dailyEnabled = toggle(onDailyEnabled)
     val unmeteredOnly = toggle(onUnmeteredOnly)
     val scrolling = toggle(onScrolling)
-    val liveMode = toggle(onLiveMode)
     val hapticsToggle: (Boolean) -> Unit = { value ->
         if (value) {
             haptics.enabled = true
@@ -259,18 +256,6 @@ fun SettingsScreen(
                     position = Position.LAST,
                     onClick = { hapticsToggle(!settings.hapticsEnabled) },
                     trailing = { Switch(checked = settings.hapticsEnabled, onCheckedChange = hapticsToggle) },
-                )
-            }
-
-            Group(stringResource(R.string.group_experimental)) {
-                SettingRow(
-                    icon = Icons.Rounded.Science,
-                    polygon = MaterialShapes.Burst,
-                    title = stringResource(R.string.live_title),
-                    subtitle = stringResource(R.string.live_subtitle),
-                    position = Position.ONLY,
-                    onClick = { liveMode(!settings.liveMode) },
-                    trailing = { Switch(checked = settings.liveMode, onCheckedChange = liveMode) },
                 )
             }
 

@@ -10,6 +10,7 @@ import com.professorengineergit.caelum.core.ImageSource
 import com.professorengineergit.caelum.data.ColorMode
 import com.professorengineergit.caelum.data.Settings
 import com.professorengineergit.caelum.data.WallpaperTarget
+import com.professorengineergit.caelum.data.toImage
 import com.professorengineergit.caelum.work.DailyWallpaper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -82,6 +83,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             settingsRepo.settings.collect { load(it.sourceId) }
         }
+        // Every source's newest picture becomes its tile in the picker.
+        viewModelScope.launch {
+            delay(300)
+            container.sources.all.forEach { load(it.id) }
+        }
         // Catch up on a night the system skipped, whenever the app is opened.
         viewModelScope.launch {
             if (settingsRepo.current().dailyEnabled) DailyWallpaper.runNow(getApplication())
@@ -123,6 +129,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         local.update { it.copy(picked = it.picked + (image.sourceId to image.id)) }
     }
 
+    /** Steps to the next ([step] = 1) or previous (-1) picture of the current source. */
+    fun step(step: Int) {
+        val s = state.value
+        val index = s.images.indexOfFirst { it.id == s.image?.id }
+        s.images.getOrNull(index + step)?.let(::pick)
+    }
+
     fun refresh() = load(state.value.source.id, force = true)
 
     private fun load(sourceId: String, force: Boolean = false) {
@@ -149,7 +162,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         local.update { it.copy(apply = ApplyState(image, target)) }
         viewModelScope.launch {
             val failure = try {
-                container.wallpaper.apply(image, target, state.value.settings.wallpaperScrolling)
+                container.wallpaper.apply(image, target, settingsRepo.current().wallpaperScrolling)
+                settingsRepo.recordApplied(image, target)
                 null
             } catch (e: CancellationException) {
                 throw e
@@ -176,7 +190,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setDailyTarget(target: WallpaperTarget) = viewModelScope.launch { settingsRepo.setDailyTarget(target) }
     fun setUnmeteredOnly(value: Boolean) = viewModelScope.launch { settingsRepo.setUnmeteredOnly(value) }
     fun setColorMode(mode: ColorMode) = viewModelScope.launch { settingsRepo.setColorMode(mode) }
-    fun setWallpaperScrolling(value: Boolean) = viewModelScope.launch { settingsRepo.setWallpaperScrolling(value) }
+    /**
+     * Changing the crop only matters for a wallpaper set afterwards — so the current one
+     * is set again right away, with the new crop, and the change is visible at once.
+     */
+    fun setWallpaperScrolling(value: Boolean) = viewModelScope.launch {
+        settingsRepo.setWallpaperScrolling(value)
+        val last = settingsRepo.current().lastApplied ?: return@launch
+        setWallpaper(last.toImage(), last.target)
+    }
     fun setHaptics(value: Boolean) = viewModelScope.launch { settingsRepo.setHaptics(value) }
-    fun setLiveMode(value: Boolean) = viewModelScope.launch { settingsRepo.setLiveMode(value) }
+
 }

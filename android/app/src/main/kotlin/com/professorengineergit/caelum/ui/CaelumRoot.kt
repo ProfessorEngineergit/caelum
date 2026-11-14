@@ -4,6 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -38,7 +40,7 @@ import com.professorengineergit.caelum.ui.theme.CaelumTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private enum class Screen { HOME, SETTINGS }
+private enum class Screen { HOME, SETTINGS, PREVIEW }
 
 @Composable
 fun CaelumRoot(viewModel: MainViewModel, onShowSystemWallpaper: (Boolean) -> Unit = {}) {
@@ -69,12 +71,20 @@ fun CaelumRoot(viewModel: MainViewModel, onShowSystemWallpaper: (Boolean) -> Uni
             Box(Modifier.fillMaxSize()) {
                 val spatial = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
                 val effects = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
+                val grow = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
                 AnimatedContent(
                     targetState = screen,
                     transitionSpec = {
-                        val forward = targetState == Screen.SETTINGS
-                        (slideInHorizontally(spatial) { if (forward) it / 3 else -it / 3 } + fadeIn(effects))
-                            .togetherWith(slideOutHorizontally(spatial) { if (forward) -it / 3 else it / 3 } + fadeOut(effects))
+                        if (targetState == Screen.PREVIEW || initialState == Screen.PREVIEW) {
+                            // The preview grows out of the picture, and shrinks back into it.
+                            val opening = targetState == Screen.PREVIEW
+                            (fadeIn(effects) + scaleIn(grow, initialScale = if (opening) 0.92f else 1.04f))
+                                .togetherWith(fadeOut(effects) + scaleOut(grow, targetScale = if (opening) 1.04f else 0.92f))
+                        } else {
+                            val forward = targetState == Screen.SETTINGS
+                            (slideInHorizontally(spatial) { if (forward) it / 3 else -it / 3 } + fadeIn(effects))
+                                .togetherWith(slideOutHorizontally(spatial) { if (forward) -it / 3 else it / 3 } + fadeOut(effects))
+                        }
                     },
                     label = "screen",
                     modifier = Modifier
@@ -82,30 +92,30 @@ fun CaelumRoot(viewModel: MainViewModel, onShowSystemWallpaper: (Boolean) -> Uni
                         .graphicsLayer { alpha = contentAlpha },
                 ) { current ->
                     when (current) {
-                        Screen.HOME -> if (state.settings.liveMode) {
-                            LiveHomeScreen(
-                                state = state,
-                                messages = viewModel.messages,
-                                onSelectSource = viewModel::selectSource,
-                                onPick = viewModel::pick,
-                                onRetry = viewModel::refresh,
-                                onPrepare = viewModel::prepareCurrent,
-                                onSetWallpaper = viewModel::setWallpaper,
-                                onOpenSettings = openSettings,
-                                onShowSystemWallpaper = onShowSystemWallpaper,
-                            )
-                        } else {
-                            HomeScreen(
-                                state = state,
-                                messages = viewModel.messages,
-                                onSelectSource = viewModel::selectSource,
-                                onPick = viewModel::pick,
-                                onRetry = viewModel::refresh,
-                                onPrepare = viewModel::prepareCurrent,
-                                onSetWallpaper = viewModel::setWallpaper,
-                                onOpenSettings = openSettings,
-                            )
-                        }
+                        Screen.HOME -> HomeScreen(
+                            state = state,
+                            messages = viewModel.messages,
+                            onSelectSource = viewModel::selectSource,
+                            onPick = viewModel::pick,
+                            onStep = viewModel::step,
+                            onRetry = viewModel::refresh,
+                            onPrepare = viewModel::prepareCurrent,
+                            onSetWallpaper = viewModel::setWallpaper,
+                            onOpenPreview = {
+                                haptics.open()
+                                screen = Screen.PREVIEW
+                            },
+                            onOpenSettings = openSettings,
+                        )
+                        Screen.PREVIEW -> PreviewScreen(
+                            state = state,
+                            messages = viewModel.messages,
+                            onPick = viewModel::pick,
+                            onPrepare = viewModel::prepareCurrent,
+                            onSetWallpaper = viewModel::setWallpaper,
+                            onClose = { screen = Screen.HOME },
+                            onShowSystemWallpaper = onShowSystemWallpaper,
+                        )
                         Screen.SETTINGS -> SettingsScreen(
                             state = state,
                             onBack = {
@@ -118,7 +128,6 @@ fun CaelumRoot(viewModel: MainViewModel, onShowSystemWallpaper: (Boolean) -> Uni
                             onColorMode = { viewModel.setColorMode(it) },
                             onScrolling = { viewModel.setWallpaperScrolling(it) },
                             onHaptics = { viewModel.setHaptics(it) },
-                            onLiveMode = { viewModel.setLiveMode(it) },
                         )
                     }
                 }

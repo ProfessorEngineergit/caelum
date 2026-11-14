@@ -132,14 +132,15 @@ class WallpaperSetter(
 
     /**
      * Scales [src] to cover the screen. Without [scrolling] it is centre-cropped to
-     * exactly the screen, so the launcher has nothing to scroll; with it, the full
-     * width is kept (up to twice the screen) for the parallax effect.
+     * exactly the screen, so the launcher has nothing to scroll; with it, to twice
+     * the screen's width, so it glides as you swipe between home pages.
      */
     private fun fit(src: Bitmap, screenW: Int, screenH: Int, scrolling: Boolean): Bitmap {
-        val scale = max(screenW.toFloat() / src.width, screenH.toFloat() / src.height)
-        val scaledW = (src.width * scale).roundToInt()
-        val outW = if (scrolling) scaledW.coerceIn(screenW, screenW * 2) else screenW
+        // Scrolling needs a picture wider than the screen: twice its width, like a
+        // classic launcher wallpaper, cropped from the picture whatever its shape.
+        val outW = if (scrolling) screenW * 2 else screenW
         val outH = screenH
+        val scale = max(outW.toFloat() / src.width, outH.toFloat() / src.height)
         if (src.width == outW && src.height == outH) return src
 
         val visibleW = outW / scale
@@ -171,7 +172,7 @@ class WallpaperSetter(
     private suspend fun download(url: String, screenW: Int, screenH: Int): Bitmap? {
         val request = ImageRequest.Builder(context)
             .data(url)
-            .size(screenW.coerceAtMost(3840), screenH.coerceAtMost(3840))
+            .size((screenW * 2).coerceAtMost(3840), screenH.coerceAtMost(3840))
             .scale(Scale.FILL)
             .precision(Precision.INEXACT)
             .allowHardware(false)

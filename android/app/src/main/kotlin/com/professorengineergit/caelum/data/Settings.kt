@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.professorengineergit.caelum.core.CosmicImage
+import com.professorengineergit.caelum.core.Resolution
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -40,11 +42,19 @@ data class Settings(
      */
     val wallpaperScrolling: Boolean = false,
     val hapticsEnabled: Boolean = true,
-    /** Experimental: the start screen becomes a live home-screen preview. */
-    val liveMode: Boolean = false,
+    /** The picture last set by hand or by the daily job, so a changed crop can be re-applied. */
+    val lastApplied: AppliedWallpaper? = null,
     /** When the daily job last ran, and what came of it. */
     val lastDailyCheck: Long? = null,
     val lastDailyResult: DailyResult? = null,
+)
+
+data class AppliedWallpaper(
+    val id: String,
+    val sourceId: String,
+    val imageUrl: String,
+    val previewUrl: String,
+    val target: WallpaperTarget,
 )
 
 /** The outcome of the daily job's latest run, shown in the settings. */
@@ -62,7 +72,11 @@ class SettingsRepository(private val context: Context) {
         val lastDaily = stringPreferencesKey("last_daily_image")
         val scrolling = booleanPreferencesKey("wallpaper_scrolling")
         val haptics = booleanPreferencesKey("haptics")
-        val liveMode = booleanPreferencesKey("live_mode")
+        val appliedId = stringPreferencesKey("applied_id")
+        val appliedSource = stringPreferencesKey("applied_source")
+        val appliedUrl = stringPreferencesKey("applied_url")
+        val appliedPreview = stringPreferencesKey("applied_preview")
+        val appliedTarget = stringPreferencesKey("applied_target")
         val lastCheck = longPreferencesKey("last_daily_check")
         val lastResult = stringPreferencesKey("last_daily_result")
     }
@@ -78,7 +92,21 @@ class SettingsRepository(private val context: Context) {
             lastDailyImageId = p[Keys.lastDaily],
             wallpaperScrolling = p[Keys.scrolling] ?: defaults.wallpaperScrolling,
             hapticsEnabled = p[Keys.haptics] ?: defaults.hapticsEnabled,
-            liveMode = p[Keys.liveMode] ?: defaults.liveMode,
+            lastApplied = run {
+                val id = p[Keys.appliedId]
+                val url = p[Keys.appliedUrl]
+                if (id == null || url == null) {
+                    null
+                } else {
+                    AppliedWallpaper(
+                        id = id,
+                        sourceId = p[Keys.appliedSource].orEmpty(),
+                        imageUrl = url,
+                        previewUrl = p[Keys.appliedPreview] ?: url,
+                        target = p[Keys.appliedTarget].toEnum(WallpaperTarget.BOTH),
+                    )
+                }
+            },
             lastDailyCheck = p[Keys.lastCheck],
             lastDailyResult = p[Keys.lastResult]?.let { name -> DailyResult.entries.firstOrNull { it.name == name } },
         )
@@ -94,7 +122,13 @@ class SettingsRepository(private val context: Context) {
     suspend fun setLastDailyImage(id: String) = edit { it[Keys.lastDaily] = id }
     suspend fun setWallpaperScrolling(value: Boolean) = edit { it[Keys.scrolling] = value }
     suspend fun setHaptics(value: Boolean) = edit { it[Keys.haptics] = value }
-    suspend fun setLiveMode(value: Boolean) = edit { it[Keys.liveMode] = value }
+    suspend fun recordApplied(image: CosmicImage, target: WallpaperTarget) = edit {
+        it[Keys.appliedId] = image.id
+        it[Keys.appliedSource] = image.sourceId
+        it[Keys.appliedUrl] = image.imageUrl
+        it[Keys.appliedPreview] = image.previewUrl
+        it[Keys.appliedTarget] = target.name
+    }
     suspend fun recordDailyRun(result: DailyResult, at: Long = System.currentTimeMillis()) = edit {
         it[Keys.lastCheck] = at
         it[Keys.lastResult] = result.name
@@ -107,3 +141,18 @@ class SettingsRepository(private val context: Context) {
     private inline fun <reified E : Enum<E>> String?.toEnum(default: E): E =
         this?.let { name -> enumValues<E>().firstOrNull { it.name == name } } ?: default
 }
+
+/** Enough of the picture to set it again. */
+fun AppliedWallpaper.toImage() = CosmicImage(
+    id = id,
+    title = "",
+    credit = "",
+    explanation = null,
+    date = null,
+    sourceId = sourceId,
+    pageUrl = null,
+    imageUrl = imageUrl,
+    thumbUrl = previewUrl,
+    isVideo = false,
+    resolution = Resolution.HD,
+)

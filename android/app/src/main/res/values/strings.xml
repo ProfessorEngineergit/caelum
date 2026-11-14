@@ -64,17 +64,18 @@
     <!-- Wallpaper -->
     <string name="group_wallpaper">Wallpaper</string>
     <string name="scrolling_title">Scroll with home pages</string>
-    <string name="scrolling_off_subtitle">Off: cropped to exactly your screen, so it never moves, whatever the launcher is set to</string>
-    <string name="scrolling_on_subtitle">On: kept wider than the screen so it glides as you swipe between pages</string>
+    <string name="scrolling_off_subtitle">Off: cropped to exactly your screen, so it never moves, whatever the launcher is set to. Applies to your current wallpaper at once.</string>
+    <string name="scrolling_on_subtitle">On: twice as wide as the screen, so it glides as you swipe between pages (if your launcher allows it). Applies at once.</string>
     <string name="haptics_title">Haptics</string>
     <string name="haptics_subtitle">Feel every tap, scroll and warp jump</string>
 
-    <!-- Experimental -->
-    <string name="group_experimental">Experimental</string>
-    <string name="live_title">Live home preview</string>
-    <string name="live_subtitle">The start screen becomes your home screen: swipe through pictures behind your own apps. Hold to compare with your current wallpaper.</string>
+
+    <!-- Preview -->
+    <string name="preview">Preview</string>
     <string name="live_home">Home</string>
     <string name="live_lock">Lock</string>
     <string name="live_current">Your current wallpaper</string>
-    <string name="live_hint">Swipe to browse · tap to hide · hold to compare</string>
+    <string name="previous_picture">Previous picture</string>
+    <string name="next_picture">Next picture</string>
+    <string name="close">Close</string>
 </resources>

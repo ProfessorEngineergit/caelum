@@ -2,6 +2,12 @@ package com.professorengineergit.caelum.ui
 
 import android.content.Intent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -130,9 +136,11 @@ fun HomeScreen(
     messages: Flow<UserMessage>,
     onSelectSource: (String) -> Unit,
     onPick: (CosmicImage) -> Unit,
+    onStep: (Int) -> Unit,
     onRetry: () -> Unit,
     onPrepare: () -> Unit,
     onSetWallpaper: (WallpaperTarget) -> Unit,
+    onOpenPreview: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val haptics = LocalHaptics.current
@@ -145,11 +153,15 @@ fun HomeScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
             if (state.image != null) {
-                SetWallpaperButton(applying = state.applying, onClick = {
-                    haptics.open()
-                    onPrepare()
-                    showTargets = true
-                })
+                WallpaperActions(
+                    applying = state.applying,
+                    onPreview = onOpenPreview,
+                    onSet = {
+                        haptics.open()
+                        onPrepare()
+                        showTargets = true
+                    },
+                )
             }
         },
         contentWindowInsets = WindowInsets(0),
@@ -159,11 +171,12 @@ fun HomeScreen(
             contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
         ) {
             item(key = "hero") {
-                Hero(state = state, onOpenSettings = onOpenSettings)
+                Hero(state = state, onStep = onStep, onOpenSettings = onOpenSettings)
             }
             item(key = "sources") {
                 SectionTitle(stringResource(R.string.section_sources))
                 SourcePicker(
+                    state = state,
                     sources = state.sources,
                     selectedId = state.source.id,
                     onSelect = onSelectSource,
@@ -202,7 +215,8 @@ fun HomeScreen(
 // MARK: - Hero
 
 @Composable
-private fun Hero(state: UiState, onOpenSettings: () -> Unit) {
+private fun Hero(state: UiState, onStep: (Int) -> Unit, onOpenSettings: () -> Unit) {
+    val haptics = LocalHaptics.current
     val height = (LocalConfiguration.current.screenHeightDp * 0.62f).dp
     val shape = RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp)
     val haze = remember { HazeState() }
@@ -281,10 +295,33 @@ private fun Hero(state: UiState, onOpenSettings: () -> Unit) {
             }
         }
 
+        // Arrows make it obvious there are more pictures in this source.
+        val index = state.images.indexOfFirst { it.id == state.image?.id }
+        if (index >= 0 && state.images.size > 1) {
+            Row(
+                Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HeroArrow(index > 0, Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.previous_picture), haze) {
+                    haptics.select()
+                    onStep(-1)
+                }
+                Spacer(Modifier.weight(1f))
+                HeroArrow(index < state.images.lastIndex, Icons.AutoMirrored.Rounded.ArrowForward, stringResource(R.string.next_picture), haze) {
+                    haptics.select()
+                    onStep(1)
+                }
+            }
+        }
+
         state.image?.let { image ->
             Caption(
                 image = image,
                 source = state.source,
+                position = if (index >= 0 && state.images.size > 1) "${index + 1} / ${state.images.size}" else null,
                 haze = haze,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -295,12 +332,13 @@ private fun Hero(state: UiState, onOpenSettings: () -> Unit) {
 }
 
 @Composable
-private fun Caption(image: CosmicImage, source: ImageSource, haze: HazeState, modifier: Modifier = Modifier) {
+private fun Caption(image: CosmicImage, source: ImageSource, position: String?, haze: HazeState, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Badge(text = source.name, haze = haze, dot = Color(source.accent))
             image.date?.let { Badge(text = it, haze = haze) }
             Badge(text = if (image.isVideo) stringResource(R.string.badge_video) else image.resolution.label, haze = haze)
+            position?.let { Badge(text = it, haze = haze) }
         }
         Text(
             text = image.title,
@@ -352,7 +390,7 @@ private fun SectionTitle(text: String) {
 }
 
 @Composable
-private fun SourcePicker(sources: List<ImageSource>, selectedId: String, onSelect: (String) -> Unit) {
+private fun SourcePicker(state: UiState, sources: List<ImageSource>, selectedId: String, onSelect: (String) -> Unit) {
     val haptics = LocalHaptics.current
     val listState = rememberLazyListState()
     TickOnScroll(listState)
@@ -364,6 +402,7 @@ private fun SourcePicker(sources: List<ImageSource>, selectedId: String, onSelec
         itemsIndexed(sources, key = { _, source -> source.id }) { index, source ->
             SourceTile(
                 source = source,
+                cover = (state.feeds[source.id] as? Feed.Ready)?.images?.firstOrNull { !it.isVideo }?.previewUrl,
                 polygonIndex = index,
                 selected = source.id == selectedId,
                 onClick = {
@@ -375,68 +414,70 @@ private fun SourcePicker(sources: List<ImageSource>, selectedId: String, onSelec
     }
 }
 
+/** A source, shown by its newest real picture. */
 @Composable
-private fun SourceTile(source: ImageSource, polygonIndex: Int, selected: Boolean, onClick: () -> Unit) {
+private fun SourceTile(source: ImageSource, cover: String?, polygonIndex: Int, selected: Boolean, onClick: () -> Unit) {
     val accent = Color(source.accent)
     val scale by animateFloatAsState(
-        targetValue = if (selected) 1f else 0.82f,
+        targetValue = if (selected) 1f else 0.86f,
         animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
         label = "tile-scale",
     )
-    // The selected source's shape turns slowly, like a body in orbit.
-    val spin = rememberInfiniteTransition(label = "spin")
-    val angle by spin.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(24_000, easing = LinearEasing)),
-        label = "angle",
+    val ring by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+        label = "tile-ring",
     )
-    val shape = SourceShapes[polygonIndex % SourceShapes.size].toShape()
+    // Selected, the picture morphs from a rounded square into an expressive shape.
+    val shape = if (selected) SourceShapes[polygonIndex % SourceShapes.size].toShape() else RoundedCornerShape(24.dp)
 
     Column(
         modifier = Modifier
-            .width(84.dp)
+            .width(88.dp)
             .clip(MaterialTheme.shapes.medium)
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.size(72.dp), contentAlignment = Alignment.Center) {
-            // The expressive shape is now a halo, turning slowly behind the selected picture.
+        Box(
+            Modifier
+                .size(76.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                },
+            contentAlignment = Alignment.Center,
+        ) {
             Box(
                 Modifier
-                    .size(72.dp)
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        rotationZ = if (selected) angle else 0f
-                        alpha = if (selected) 1f else 0f
-                    }
+                    .fillMaxSize()
                     .clip(shape)
-                    .background(Brush.linearGradient(listOf(accent, MaterialTheme.colorScheme.primary))),
-            )
-            SourceEmblem(
-                sourceId = source.id,
-                accent = accent,
-                modifier = Modifier
-                    .size(56.dp)
-                    .graphicsLayer {
-                        val s = if (selected) 1f else scale * 1.08f
-                        scaleX = s
-                        scaleY = s
-                        alpha = if (selected) 1f else 0.78f
-                    },
-            )
+                    .background(Brush.linearGradient(listOf(accent, MaterialTheme.colorScheme.primary)))
+                    .padding((3 * ring).dp)
+                    .clip(shape)
+                    .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.5f), Obsidian))),
+            ) {
+                if (cover != null) {
+                    AsyncImage(
+                        model = cover,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { alpha = if (selected) 1f else 0.85f },
+                    )
+                }
+            }
             if (selected) {
                 Box(
                     Modifier
                         .align(Alignment.BottomEnd)
-                        .size(22.dp)
+                        .size(24.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(15.dp))
                 }
             }
         }
@@ -457,6 +498,24 @@ private fun SourceTile(source: ImageSource, polygonIndex: Int, selected: Boolean
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+@Composable
+private fun HeroArrow(visible: Boolean, icon: ImageVector, description: String, haze: HazeState, onClick: () -> Unit) {
+    Box(Modifier.size(48.dp)) {
+        AnimatedVisibility(visible, enter = fadeIn() + scaleIn(initialScale = 0.6f), exit = fadeOut() + scaleOut(targetScale = 0.6f)) {
+            Box(
+                Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .glass(haze)
+                    .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = description, tint = Color.White)
+            }
+        }
     }
 }
 
@@ -636,26 +695,64 @@ private fun About(image: CosmicImage) {
 
 // MARK: - Setting the wallpaper
 
+/**
+ * One button, two parts: "Preview" on top, "Set as wallpaper" below — together half
+ * again as tall as a normal button, so both are clearly one action family.
+ */
 @Composable
-private fun SetWallpaperButton(applying: Boolean, onClick: () -> Unit) {
-    ExtendedFloatingActionButton(
-        onClick = { if (!applying) onClick() },
-        expanded = true,
-        icon = {
-            AnimatedContent(targetState = applying, label = "fab-icon") { busy ->
-                if (busy) {
-                    LoadingIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                } else {
-                    Icon(Icons.Rounded.Wallpaper, contentDescription = null)
-                }
+private fun WallpaperActions(applying: Boolean, onPreview: () -> Unit, onSet: () -> Unit) {
+    val outer = 28.dp
+    val inner = 6.dp
+    Column(
+        Modifier.padding(bottom = 8.dp).width(IntrinsicSize.Max),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Surface(
+            onClick = onPreview,
+            shape = RoundedCornerShape(topStart = outer, topEnd = outer, bottomStart = inner, bottomEnd = inner),
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            shadowElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth().height(34.dp),
+        ) {
+            Row(
+                Modifier.padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Rounded.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.preview), style = MaterialTheme.typography.labelLarge)
             }
-        },
-        text = { Text(stringResource(if (applying) R.string.setting_wallpaper else R.string.set_wallpaper)) },
-        modifier = Modifier.padding(bottom = 8.dp),
-    )
+        }
+        Surface(
+            onClick = { if (!applying) onSet() },
+            shape = RoundedCornerShape(topStart = inner, topEnd = inner, bottomStart = outer, bottomEnd = outer),
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            shadowElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+        ) {
+            Row(
+                Modifier.padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AnimatedContent(targetState = applying, label = "fab-icon") { busy ->
+                    if (busy) {
+                        LoadingIndicator(Modifier.size(22.dp), color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    } else {
+                        Icon(Icons.Rounded.Wallpaper, contentDescription = null, modifier = Modifier.size(22.dp))
+                    }
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    stringResource(if (applying) R.string.setting_wallpaper else R.string.set_wallpaper),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
+        }
+    }
 }
 
 @Composable

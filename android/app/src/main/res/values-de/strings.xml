@@ -62,17 +62,18 @@
     <!-- Hintergrund -->
     <string name="group_wallpaper">Hintergrund</string>
     <string name="scrolling_title">Mit Startseiten scrollen</string>
-    <string name="scrolling_off_subtitle">Aus: exakt auf deinen Bildschirm zugeschnitten, bewegt sich nie – egal, was der Launcher einstellt</string>
-    <string name="scrolling_on_subtitle">An: breiter als der Bildschirm, gleitet beim Wischen zwischen den Seiten mit</string>
+    <string name="scrolling_off_subtitle">Aus: exakt auf deinen Bildschirm zugeschnitten, bewegt sich nie – egal, was der Launcher einstellt. Gilt sofort für den aktuellen Hintergrund.</string>
+    <string name="scrolling_on_subtitle">An: doppelt so breit wie der Bildschirm, gleitet beim Wischen zwischen den Seiten mit (wenn der Launcher es zulässt). Gilt sofort.</string>
     <string name="haptics_title">Haptik</string>
     <string name="haptics_subtitle">Jeden Tipp, jedes Scrollen und jeden Warp-Sprung spüren</string>
 
-    <!-- Experimentell -->
-    <string name="group_experimental">Experimentell</string>
-    <string name="live_title">Live-Startbildschirm</string>
-    <string name="live_subtitle">Die Startseite wird zu deinem Homescreen: Bilder hinter deinen eigenen Apps durchwischen. Gedrückt halten zeigt deinen aktuellen Hintergrund.</string>
+
+    <!-- Vorschau -->
+    <string name="preview">Vorschau</string>
     <string name="live_home">Start</string>
     <string name="live_lock">Sperre</string>
     <string name="live_current">Dein aktueller Hintergrund</string>
-    <string name="live_hint">Wischen zum Blättern · Tippen zum Ausblenden · Halten zum Vergleichen</string>
+    <string name="previous_picture">Vorheriges Bild</string>
+    <string name="next_picture">Nächstes Bild</string>
+    <string name="close">Schließen</string>
 </resources>

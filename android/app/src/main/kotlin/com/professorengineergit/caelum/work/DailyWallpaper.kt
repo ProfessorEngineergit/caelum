@@ -50,6 +50,7 @@ class DailyWallpaperWorker(
             if (newest != null && newest.id != settings.lastDailyImageId) {
                 container.wallpaper.apply(newest, settings.dailyTarget, settings.wallpaperScrolling)
                 container.settings.setLastDailyImage(newest.id)
+                container.settings.recordApplied(newest, settings.dailyTarget)
                 container.settings.recordDailyRun(DailyResult.APPLIED)
             } else {
                 container.settings.recordDailyRun(DailyResult.UP_TO_DATE)

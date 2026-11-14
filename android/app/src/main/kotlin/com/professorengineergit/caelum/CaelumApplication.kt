@@ -21,11 +21,17 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import okhttp3.Dns
 import okhttp3.OkHttpClient
+import java.net.Inet4Address
+import java.net.Inet6Address
+import java.net.InetAddress
+import java.net.UnknownHostException
 
 /** The app's few long-lived objects, created once. */
 class AppContainer(context: Context) {
     val okHttp: OkHttpClient = HttpClient.defaultClient().newBuilder()
+        .dns(PublicOnlyDns)
         .addInterceptor { chain ->
             chain.proceed(chain.request().newBuilder().header("User-Agent", USER_AGENT).build())
         }
@@ -46,6 +52,30 @@ class AppContainer(context: Context) {
         .build()
 
     val wallpaper = WallpaperSetter(context, imageLoader)
+}
+
+/**
+ * Caelum only ever talks to public servers. Should a name resolve to an address in the
+ * local network — a DNS ad blocker answering with a router or 0.0.0.0 address, say —
+ * the connection is refused instead of made, so Android never has a reason to ask for
+ * local network access.
+ */
+private object PublicOnlyDns : Dns {
+    override fun lookup(hostname: String): List<InetAddress> {
+        val public = Dns.SYSTEM.lookup(hostname).filterNot { a ->
+            a.isAnyLocalAddress || a.isLoopbackAddress || a.isLinkLocalAddress ||
+                a.isSiteLocalAddress || a.isMulticastAddress || a.isUniqueLocalV6() || a.isCarrierGradeNat()
+        }
+        if (public.isEmpty()) throw UnknownHostException("$hostname has no public address")
+        return public
+    }
+
+    /** fc00::/7 */
+    private fun InetAddress.isUniqueLocalV6() = this is Inet6Address && (address[0].toInt() and 0xFE) == 0xFC
+
+    /** 100.64.0.0/10 */
+    private fun InetAddress.isCarrierGradeNat() =
+        this is Inet4Address && address[0].toInt() and 0xFF == 100 && (address[1].toInt() and 0xC0) == 64
 }
 
 class CaelumApplication : Application(), SingletonImageLoader.Factory {
