@@ -1,7 +1,10 @@
 package com.professorengineergit.caelum.ui
 
+import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.provider.Settings
+import android.text.format.DateUtils
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +25,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.BatteryAlert
+import androidx.compose.material.icons.rounded.BatteryFull
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.SwipeLeft
+import androidx.compose.material.icons.rounded.Vibration
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Schedule
@@ -44,6 +54,11 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +73,8 @@ import androidx.graphics.shapes.RoundedPolygon
 import com.professorengineergit.caelum.BuildConfig
 import com.professorengineergit.caelum.R
 import com.professorengineergit.caelum.data.ColorMode
+import com.professorengineergit.caelum.data.DailyResult
+import com.professorengineergit.caelum.work.DailyWallpaper
 import com.professorengineergit.caelum.data.WallpaperTarget
 
 @Composable
@@ -68,9 +85,36 @@ fun SettingsScreen(
     onDailyTarget: (WallpaperTarget) -> Unit,
     onUnmeteredOnly: (Boolean) -> Unit,
     onColorMode: (ColorMode) -> Unit,
+    onScrolling: (Boolean) -> Unit,
+    onHaptics: (Boolean) -> Unit,
 ) {
     val settings = state.settings
     val context = LocalContext.current
+    val haptics = LocalHaptics.current
+    // Every switch and choice answers with its own little haptic.
+    val toggle: ((Boolean) -> Unit) -> (Boolean) -> Unit = { action ->
+        { value ->
+            haptics.toggle(value)
+            action(value)
+        }
+    }
+    val dailyEnabled = toggle(onDailyEnabled)
+    val unmeteredOnly = toggle(onUnmeteredOnly)
+    val scrolling = toggle(onScrolling)
+    val hapticsToggle: (Boolean) -> Unit = { value ->
+        if (value) {
+            haptics.enabled = true
+            haptics.toggle(true)
+        }
+        onHaptics(value)
+    }
+
+    // Re-read on every return to the app: the user may have just changed it in the system settings.
+    var unrestricted by remember { mutableStateOf(DailyWallpaper.isUnrestricted(context)) }
+    LifecycleResumeEffect(Unit) {
+        unrestricted = DailyWallpaper.isUnrestricted(context)
+        onPauseOrDispose { }
+    }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
     Scaffold(
@@ -102,8 +146,8 @@ fun SettingsScreen(
                     title = stringResource(R.string.daily_title),
                     subtitle = stringResource(R.string.daily_subtitle, state.source.name),
                     position = Position.FIRST,
-                    onClick = { onDailyEnabled(!settings.dailyEnabled) },
-                    trailing = { Switch(checked = settings.dailyEnabled, onCheckedChange = onDailyEnabled) },
+                    onClick = { dailyEnabled(!settings.dailyEnabled) },
+                    trailing = { Switch(checked = settings.dailyEnabled, onCheckedChange = dailyEnabled) },
                 )
                 SettingRow(
                     icon = Icons.Rounded.Wifi,
@@ -112,11 +156,11 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.unmetered_subtitle),
                     position = Position.MIDDLE,
                     enabled = settings.dailyEnabled,
-                    onClick = { onUnmeteredOnly(!settings.unmeteredOnly) },
+                    onClick = { unmeteredOnly(!settings.unmeteredOnly) },
                     trailing = {
                         Switch(
                             checked = settings.unmeteredOnly,
-                            onCheckedChange = onUnmeteredOnly,
+                            onCheckedChange = unmeteredOnly,
                             enabled = settings.dailyEnabled,
                         )
                     },
@@ -125,7 +169,7 @@ fun SettingsScreen(
                     icon = Icons.Rounded.Wallpaper,
                     polygon = MaterialShapes.Clover4Leaf,
                     title = stringResource(R.string.daily_target_title),
-                    position = Position.LAST,
+                    position = Position.MIDDLE,
                     enabled = settings.dailyEnabled,
                     below = {
                         Choice(
@@ -145,6 +189,42 @@ fun SettingsScreen(
                         )
                     },
                 )
+                SettingRow(
+                    icon = if (unrestricted) Icons.Rounded.BatteryFull else Icons.Rounded.BatteryAlert,
+                    polygon = MaterialShapes.Pentagon,
+                    title = stringResource(if (unrestricted) R.string.background_ok_title else R.string.background_title),
+                    subtitle = stringResource(if (unrestricted) R.string.background_ok_subtitle else R.string.background_subtitle),
+                    position = Position.MIDDLE,
+                    enabled = settings.dailyEnabled,
+                    onClick = {
+                        haptics.click()
+                        openBackgroundSettings(context, unrestricted)
+                    },
+                )
+                SettingRow(
+                    icon = when (settings.lastDailyResult) {
+                        DailyResult.FAILED -> Icons.Rounded.ErrorOutline
+                        null -> Icons.Rounded.History
+                        else -> Icons.Rounded.CheckCircle
+                    },
+                    polygon = MaterialShapes.Cookie6Sided,
+                    title = stringResource(R.string.last_check_title),
+                    subtitle = lastCheckText(settings.lastDailyCheck, settings.lastDailyResult),
+                    position = Position.LAST,
+                    enabled = settings.dailyEnabled,
+                )
+            }
+
+            Group(stringResource(R.string.group_wallpaper)) {
+                SettingRow(
+                    icon = Icons.Rounded.SwipeLeft,
+                    polygon = MaterialShapes.Puffy,
+                    title = stringResource(R.string.scrolling_title),
+                    subtitle = stringResource(if (settings.wallpaperScrolling) R.string.scrolling_on_subtitle else R.string.scrolling_off_subtitle),
+                    position = Position.ONLY,
+                    onClick = { scrolling(!settings.wallpaperScrolling) },
+                    trailing = { Switch(checked = settings.wallpaperScrolling, onCheckedChange = scrolling) },
+                )
             }
 
             Group(stringResource(R.string.group_appearance)) {
@@ -156,7 +236,7 @@ fun SettingsScreen(
                     subtitle = stringResource(
                         if (settings.colorMode == ColorMode.COSMIC) R.string.colors_cosmic_subtitle else R.string.colors_system_subtitle,
                     ),
-                    position = Position.ONLY,
+                    position = Position.FIRST,
                     below = {
                         Choice(
                             options = if (systemColors) ColorMode.entries else listOf(ColorMode.COSMIC),
@@ -168,6 +248,15 @@ fun SettingsScreen(
                         )
                     },
                 )
+                SettingRow(
+                    icon = Icons.Rounded.Vibration,
+                    polygon = MaterialShapes.SoftBurst,
+                    title = stringResource(R.string.haptics_title),
+                    subtitle = stringResource(R.string.haptics_subtitle),
+                    position = Position.LAST,
+                    onClick = { hapticsToggle(!settings.hapticsEnabled) },
+                    trailing = { Switch(checked = settings.hapticsEnabled, onCheckedChange = hapticsToggle) },
+                )
             }
 
             Group(stringResource(R.string.group_about)) {
@@ -178,6 +267,7 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.about_app_subtitle),
                     position = Position.ONLY,
                     onClick = {
+                        haptics.click()
                         context.startActivity(
                             Intent(Intent.ACTION_VIEW, "https://github.com/ProfessorEngineergit/caelum".toUri()),
                         )
@@ -271,11 +361,15 @@ private fun <T> Choice(
     onSelect: (T) -> Unit,
     enabled: Boolean = true,
 ) {
+    val haptics = LocalHaptics.current
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
         options.forEachIndexed { index, option ->
             SegmentedButton(
                 selected = option == selected,
-                onClick = { onSelect(option) },
+                onClick = {
+                    if (option != selected) haptics.select()
+                    onSelect(option)
+                },
                 shape = SegmentedButtonDefaults.itemShape(index, options.size),
                 enabled = enabled,
             ) {
@@ -283,4 +377,36 @@ private fun <T> Choice(
             }
         }
     }
+}
+
+/** Asks to lift battery optimisation, or — once lifted — opens the app's system page (ColorOS keeps "auto launch" there). */
+private fun openBackgroundSettings(context: Context, unrestricted: Boolean) {
+    val pkg = "package:${context.packageName}".toUri()
+    val attempts = buildList {
+        if (!unrestricted) add(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, pkg))
+        add(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkg))
+    }
+    for (intent in attempts) {
+        if (runCatching { context.startActivity(intent) }.isSuccess) return
+    }
+}
+
+@Composable
+private fun lastCheckText(at: Long?, result: DailyResult?): String {
+    if (at == null || result == null) return stringResource(R.string.last_check_never)
+    val time = DateUtils.getRelativeDateTimeString(
+        LocalContext.current,
+        at,
+        DateUtils.MINUTE_IN_MILLIS,
+        DateUtils.WEEK_IN_MILLIS,
+        0,
+    ).toString()
+    return stringResource(
+        when (result) {
+            DailyResult.APPLIED -> R.string.last_check_applied
+            DailyResult.UP_TO_DATE -> R.string.last_check_up_to_date
+            DailyResult.FAILED -> R.string.last_check_failed
+        },
+        time,
+    )
 }

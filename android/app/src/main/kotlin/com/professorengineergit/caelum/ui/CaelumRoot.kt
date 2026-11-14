@@ -4,11 +4,22 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,49 +38,110 @@ import coil3.request.allowHardware
 import coil3.toBitmap
 import com.professorengineergit.caelum.core.CosmicImage
 import com.professorengineergit.caelum.ui.theme.CaelumTheme
+import com.professorengineergit.caelum.ui.theme.isCosmicAccent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private enum class Screen { HOME, SETTINGS }
+private enum class Screen { HOME, SETTINGS, PREVIEW }
 
 @Composable
-fun CaelumRoot(viewModel: MainViewModel) {
+fun CaelumRoot(viewModel: MainViewModel, onShowSystemWallpaper: (Boolean) -> Unit = {}) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val seed by rememberSeedColor(state.image, fallback = Color(state.source.accent))
 
     CaelumTheme(seed = seed, colorMode = state.settings.colorMode) {
-        var screen by rememberSaveable { mutableStateOf(Screen.HOME) }
-        BackHandler(enabled = screen != Screen.HOME) { screen = Screen.HOME }
+        ProvideHaptics(enabled = state.settings.hapticsEnabled) {
+            val haptics = LocalHaptics.current
+            var screen by rememberSaveable { mutableStateOf(Screen.HOME) }
+            BackHandler(enabled = screen != Screen.HOME) {
+                haptics.close()
+                screen = Screen.HOME
+            }
 
-        val spatial = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
-        val effects = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
-        AnimatedContent(
-            targetState = screen,
-            transitionSpec = {
-                val forward = targetState == Screen.SETTINGS
-                (slideInHorizontally(spatial) { if (forward) it / 3 else -it / 3 } + fadeIn(effects))
-                    .togetherWith(slideOutHorizontally(spatial) { if (forward) -it / 3 else it / 3 } + fadeOut(effects))
-            },
-            label = "screen",
-        ) { current ->
-            when (current) {
-                Screen.HOME -> HomeScreen(
-                    state = state,
-                    messages = viewModel.messages,
-                    onSelectSource = viewModel::selectSource,
-                    onPick = viewModel::pick,
-                    onRetry = viewModel::refresh,
-                    onSetWallpaper = viewModel::setWallpaper,
-                    onOpenSettings = { screen = Screen.SETTINGS },
-                )
-                Screen.SETTINGS -> SettingsScreen(
-                    state = state,
-                    onBack = { screen = Screen.HOME },
-                    onDailyEnabled = { viewModel.setDailyEnabled(it) },
-                    onDailyTarget = { viewModel.setDailyTarget(it) },
-                    onUnmeteredOnly = { viewModel.setUnmeteredOnly(it) },
-                    onColorMode = { viewModel.setColorMode(it) },
-                )
+            // Setting a wallpaper ends with a haptic; the picture on the home screen then
+            // wears its "current" outline. The app stays where it is.
+            val apply = state.apply
+            LaunchedEffect(apply?.status, apply?.startedAt) {
+                when (apply?.status) {
+                    ApplyStatus.DONE -> {
+                        haptics.land()
+                        viewModel.finishApply()
+                    }
+                    ApplyStatus.FAILED -> {
+                        haptics.error()
+                        viewModel.finishApply()
+                    }
+                    else -> Unit
+                }
+            }
+
+            val openSettings = {
+                haptics.open()
+                screen = Screen.SETTINGS
+            }
+
+            Box(Modifier.fillMaxSize()) {
+                val spatial = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
+                val effects = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
+                val grow = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+                AnimatedContent(
+                    targetState = screen,
+                    transitionSpec = {
+                        if (targetState == Screen.PREVIEW || initialState == Screen.PREVIEW) {
+                            // The preview grows out of the picture, and shrinks back into it.
+                            val opening = targetState == Screen.PREVIEW
+                            (fadeIn(effects) + scaleIn(grow, initialScale = if (opening) 0.92f else 1.04f))
+                                .togetherWith(fadeOut(effects) + scaleOut(grow, targetScale = if (opening) 1.04f else 0.92f))
+                        } else {
+                            val forward = targetState == Screen.SETTINGS
+                            (slideInHorizontally(spatial) { if (forward) it / 3 else -it / 3 } + fadeIn(effects))
+                                .togetherWith(slideOutHorizontally(spatial) { if (forward) -it / 3 else it / 3 } + fadeOut(effects))
+                        }
+                    },
+                    label = "screen",
+                    modifier = Modifier.fillMaxSize(),
+                ) { current ->
+                    when (current) {
+                        Screen.HOME -> HomeScreen(
+                            state = state,
+                            messages = viewModel.messages,
+                            onSelectSource = viewModel::selectSource,
+                            onPick = viewModel::pick,
+                            onStep = viewModel::step,
+                            onRetry = viewModel::refresh,
+                            onPrepare = viewModel::prepareCurrent,
+                            onSetWallpaper = viewModel::setWallpaper,
+                            onOpenPreview = {
+                                haptics.open()
+                                screen = Screen.PREVIEW
+                            },
+                            onOpenSettings = openSettings,
+                        )
+                        Screen.PREVIEW -> PreviewScreen(
+                            state = state,
+                            messages = viewModel.messages,
+                            onPick = viewModel::pick,
+                            onPrepare = viewModel::prepareCurrent,
+                            onSetWallpaper = viewModel::setWallpaper,
+                            onClose = { screen = Screen.HOME },
+                            onShowSystemWallpaper = onShowSystemWallpaper,
+                        )
+                        Screen.SETTINGS -> SettingsScreen(
+                            state = state,
+                            onBack = {
+                                haptics.close()
+                                screen = Screen.HOME
+                            },
+                            onDailyEnabled = { viewModel.setDailyEnabled(it) },
+                            onDailyTarget = { viewModel.setDailyTarget(it) },
+                            onUnmeteredOnly = { viewModel.setUnmeteredOnly(it) },
+                            onColorMode = { viewModel.setColorMode(it) },
+                            onScrolling = { viewModel.setWallpaperScrolling(it) },
+                            onHaptics = { viewModel.setHaptics(it) },
+                        )
+                    }
+                }
+
             }
         }
     }
@@ -88,7 +160,7 @@ private fun rememberSeedColor(image: CosmicImage?, fallback: Color): State<Color
             return@produceState
         }
         val request = ImageRequest.Builder(context)
-            .data(image.previewUrl)
+            .data(image.thumbnailUrl(small = true))
             .size(96)
             .allowHardware(false)
             .build()
@@ -97,6 +169,6 @@ private fun rememberSeedColor(image: CosmicImage?, fallback: Color): State<Color
         val swatch = withContext(Dispatchers.Default) {
             Palette.from(bitmap).generate().let { it.vibrantSwatch ?: it.lightVibrantSwatch ?: it.dominantSwatch }
         }
-        value = swatch?.let { Color(it.rgb) } ?: fallback
+        value = swatch?.let { Color(it.rgb) }?.takeIf(::isCosmicAccent) ?: fallback
     }
 }

@@ -149,4 +149,25 @@ class SourcesTest {
         assertEquals(Resolution.HD, Resolution.classify(1920, 1080))
         assertEquals(Resolution.SD, Resolution.classify(1600, 800))
     }
+
+    @Test
+    fun thumbnailsUseTheCdnsSmallerSizes() {
+        assertEquals(
+            "https://cdn.esawebb.org/archives/images/thumb700x/weic2622c.jpg",
+            smallerVariant("https://cdn.esawebb.org/archives/images/screen/weic2622c.jpg", small = false),
+        )
+        assertEquals(
+            "https://cdn.eso.org/images/thumb300y/potw2645a.jpg",
+            smallerVariant("https://cdn.eso.org/images/screen/potw2645a.jpg", small = true),
+        )
+        assertEquals(
+            "https://images-assets.nasa.gov/image/PIA01384/PIA01384~small.jpg",
+            smallerVariant("https://images-assets.nasa.gov/image/PIA01384/PIA01384~medium.jpg", small = true),
+        )
+        assertEquals(
+            "https://assets.science.nasa.gov/dynamicimage/assets/science/a.jpg?w=720&fit=clip",
+            smallerVariant("https://assets.science.nasa.gov/dynamicimage/assets/science/a.jpg?w=2181&h=2200&fit=clip", small = false),
+        )
+        assertEquals("https://example.org/x.jpg", smallerVariant("https://example.org/x.jpg", small = true))
+    }
 }

@@ -12,10 +12,18 @@ class DjangoplicitySource(
     private val feedUrl: String,
     private val credit: String,
     private val http: HttpClient = HttpClient(),
+    /** A second feed of the same site, tried when the first one fails (esahubble.org's POTW feed stalls at times). */
+    private val fallbackFeedUrl: String? = null,
 ) : ImageSource {
 
     override suspend fun fetchRecent(limit: Int): List<CosmicImage> {
-        val images = Rss.parse(http.fetchText(feedUrl))
+        val body = try {
+            http.fetchText(feedUrl)
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException || fallbackFeedUrl == null) throw e
+            http.fetchText(fallbackFeedUrl)
+        }
+        val images = Rss.parse(body)
             .filter { it.imageUrl != null && IMAGE_EXT.containsMatchIn(it.imageUrl) }
             .map { item ->
                 val url = item.imageUrl!!
@@ -44,6 +52,7 @@ class DjangoplicitySource(
         fun hubble(http: HttpClient = HttpClient()) = DjangoplicitySource(
             "hubble", "ESA/Hubble", "Picture of the Week", 0xFF8B7CFFL,
             "https://esahubble.org/images/potw/feed/", "ESA/Hubble & NASA", http,
+            fallbackFeedUrl = "https://esahubble.org/images/feed/",
         )
 
         fun webb(http: HttpClient = HttpClient()) = DjangoplicitySource(

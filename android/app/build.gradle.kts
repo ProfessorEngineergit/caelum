@@ -94,4 +94,6 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.material.kolor)
+    implementation(libs.haze)
+    implementation(libs.kotlinx.serialization.json)
 }
