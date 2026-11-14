@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.materialkolor.hct.Hct
+import com.materialkolor.scheme.SchemeNeutral
 import com.materialkolor.scheme.SchemeVibrant
 import com.materialkolor.toColorScheme
 import com.professorengineergit.caelum.data.ColorMode
@@ -62,8 +63,43 @@ fun CaelumTheme(
     )
 }
 
-fun cosmicColorScheme(seed: Color, dark: Boolean): ColorScheme =
-    SchemeVibrant(Hct.fromInt(seed.toArgb()), dark, 0.0).toColorScheme()
+/**
+ * Accents from the picture, surfaces in a cool, neutral space grey — never tinted by
+ * the picture, so warm photos can't turn the whole app brown.
+ */
+fun cosmicColorScheme(seed: Color, dark: Boolean): ColorScheme {
+    val accents = SchemeVibrant(Hct.fromInt(seed.toArgb()), dark, 0.0).toColorScheme()
+    val neutral = SchemeNeutral(Hct.from(255.0, 6.0, 50.0), dark, 0.0).toColorScheme()
+    return accents.copy(
+        background = neutral.background,
+        onBackground = neutral.onBackground,
+        surface = neutral.surface,
+        onSurface = neutral.onSurface,
+        surfaceVariant = neutral.surfaceVariant,
+        onSurfaceVariant = neutral.onSurfaceVariant,
+        inverseSurface = neutral.inverseSurface,
+        inverseOnSurface = neutral.inverseOnSurface,
+        outline = neutral.outline,
+        outlineVariant = neutral.outlineVariant,
+        surfaceBright = neutral.surfaceBright,
+        surfaceDim = neutral.surfaceDim,
+        surfaceContainer = neutral.surfaceContainer,
+        surfaceContainerHigh = neutral.surfaceContainerHigh,
+        surfaceContainerHighest = neutral.surfaceContainerHighest,
+        surfaceContainerLow = neutral.surfaceContainerLow,
+        surfaceContainerLowest = neutral.surfaceContainerLowest,
+    )
+}
+
+/**
+ * Whether a picture's colour is a good accent: grey, beige and brown photos (the Moon,
+ * Mars, dust) aren't — the source's own colour stands in for them.
+ */
+fun isCosmicAccent(color: Color): Boolean {
+    val hct = Hct.fromInt(color.toArgb())
+    val warm = hct.hue in 20.0..100.0
+    return hct.chroma >= 40.0 || (!warm && hct.chroma >= 18.0)
+}
 
 private val CaelumShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),

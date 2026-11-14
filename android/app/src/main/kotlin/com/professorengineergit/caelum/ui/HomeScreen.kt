@@ -2,6 +2,17 @@ package com.professorengineergit.caelum.ui
 
 import android.content.Intent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathMeasure
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -171,7 +182,11 @@ fun HomeScreen(
             contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
         ) {
             item(key = "hero") {
-                Hero(state = state, onStep = onStep, onOpenSettings = onOpenSettings)
+                val isCurrent = state.image != null && state.image?.id == state.settings.lastApplied?.id
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Hero(state = state, isCurrent = isCurrent, onStep = onStep, onOpenSettings = onOpenSettings)
+                    CurrentLabel(isCurrent)
+                }
             }
             item(key = "sources") {
                 SectionTitle(stringResource(R.string.section_sources))
@@ -215,8 +230,15 @@ fun HomeScreen(
 // MARK: - Hero
 
 @Composable
-private fun Hero(state: UiState, onStep: (Int) -> Unit, onOpenSettings: () -> Unit) {
+private fun Hero(state: UiState, isCurrent: Boolean, onStep: (Int) -> Unit, onOpenSettings: () -> Unit) {
     val haptics = LocalHaptics.current
+    val accent = MaterialTheme.colorScheme.primary
+    // The "chin": an accent line along the rounded bottom, drawn out from the middle
+    // when this picture is the wallpaper right now.
+    val chin = remember { Animatable(if (isCurrent) 1f else 0f) }
+    LaunchedEffect(isCurrent) {
+        chin.animateTo(if (isCurrent) 1f else 0f, tween(if (isCurrent) 750 else 250, easing = FastOutSlowInEasing))
+    }
     val height = (LocalConfiguration.current.screenHeightDp * 0.62f).dp
     val shape = RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp)
     val haze = remember { HazeState() }
@@ -226,7 +248,11 @@ private fun Hero(state: UiState, onStep: (Int) -> Unit, onOpenSettings: () -> Un
             .fillMaxWidth()
             .height(height)
             .clip(shape)
-            .background(Obsidian),
+            .background(Obsidian)
+            .drawWithContent {
+                drawContent()
+                drawChin(chin.value, accent, cornerRadius = 40.dp.toPx(), stroke = 5.dp.toPx(), rise = 56.dp.toPx())
+            },
     ) {
         // Everything the glass badges blur: the picture and its scrims.
         Box(Modifier.fillMaxSize().hazeSource(haze)) {
@@ -241,12 +267,7 @@ private fun Hero(state: UiState, onStep: (Int) -> Unit, onOpenSettings: () -> Un
                 modifier = Modifier.fillMaxSize(),
             ) { image ->
                 if (image != null) {
-                    AsyncImage(
-                        model = image.previewUrl,
-                        contentDescription = image.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    ProgressiveImage(image, Modifier.fillMaxSize())
                 } else {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         if (state.feed is Feed.Loading) LoadingIndicator(Modifier.size(72.dp))
@@ -321,7 +342,6 @@ private fun Hero(state: UiState, onStep: (Int) -> Unit, onOpenSettings: () -> Un
             Caption(
                 image = image,
                 source = state.source,
-                position = if (index >= 0 && state.images.size > 1) "${index + 1} / ${state.images.size}" else null,
                 haze = haze,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -332,13 +352,12 @@ private fun Hero(state: UiState, onStep: (Int) -> Unit, onOpenSettings: () -> Un
 }
 
 @Composable
-private fun Caption(image: CosmicImage, source: ImageSource, position: String?, haze: HazeState, modifier: Modifier = Modifier) {
+private fun Caption(image: CosmicImage, source: ImageSource, haze: HazeState, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Badge(text = source.name, haze = haze, dot = Color(source.accent))
             image.date?.let { Badge(text = it, haze = haze) }
             Badge(text = if (image.isVideo) stringResource(R.string.badge_video) else image.resolution.label, haze = haze)
-            position?.let { Badge(text = it, haze = haze) }
         }
         Text(
             text = image.title,
@@ -402,7 +421,7 @@ private fun SourcePicker(state: UiState, sources: List<ImageSource>, selectedId:
         itemsIndexed(sources, key = { _, source -> source.id }) { index, source ->
             SourceTile(
                 source = source,
-                cover = (state.feeds[source.id] as? Feed.Ready)?.images?.firstOrNull { !it.isVideo }?.previewUrl,
+                cover = (state.feeds[source.id] as? Feed.Ready)?.images?.firstOrNull { !it.isVideo }?.thumbnailUrl(small = true),
                 polygonIndex = index,
                 selected = source.id == selectedId,
                 onClick = {
@@ -564,7 +583,7 @@ private fun Recent(state: UiState, onPick: (CosmicImage) -> Unit, onRetry: () ->
                             },
                     ) {
                         AsyncImage(
-                            model = image.previewUrl,
+                            model = image.thumbnailUrl(),
                             contentDescription = image.title,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize(),
@@ -846,5 +865,67 @@ fun TickOnScroll(state: LazyListState) {
     val haptics = LocalHaptics.current
     LaunchedEffect(state) {
         snapshotFlow { state.firstVisibleItemIndex }.drop(1).collect { haptics.tick(0.35f) }
+    }
+}
+
+/**
+ * The chin outline: up the left rounded corner, along the bottom, up the right one —
+ * growing from the bottom centre as [progress] goes 0 → 1, fading out as it rises.
+ */
+private fun DrawScope.drawChin(progress: Float, color: Color, cornerRadius: Float, stroke: Float, rise: Float) {
+    if (progress <= 0f) return
+    val inset = stroke / 2
+    val w = size.width
+    val h = size.height
+    val r = cornerRadius - inset
+    val top = h - cornerRadius - rise
+    fun half(left: Boolean): Path = Path().apply {
+        val x = if (left) inset else w - inset
+        moveTo(w / 2, h - inset)
+        lineTo(if (left) cornerRadius else w - cornerRadius, h - inset)
+        val oval = if (left) {
+            Rect(inset, h - inset - 2 * r, inset + 2 * r, h - inset)
+        } else {
+            Rect(w - inset - 2 * r, h - inset - 2 * r, w - inset, h - inset)
+        }
+        arcTo(oval, 90f, if (left) 90f else -90f, false)
+        lineTo(x, top)
+    }
+    val brush = Brush.verticalGradient(
+        0f to color.copy(alpha = 0f),
+        0.45f to color,
+        1f to color,
+        startY = top,
+        endY = h,
+    )
+    for (left in listOf(true, false)) {
+        val full = half(left)
+        val measure = PathMeasure().apply { setPath(full, false) }
+        val part = Path()
+        measure.getSegment(0f, measure.length * progress, part, true)
+        drawPath(part, brush, style = Stroke(width = stroke, cap = StrokeCap.Round))
+    }
+}
+
+/** "Current", under the picture that is the wallpaper right now. */
+@Composable
+private fun CurrentLabel(visible: Boolean) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(300, delayMillis = 450)) + expandVertically(),
+        exit = fadeOut() + shrinkVertically(),
+    ) {
+        Row(
+            Modifier.padding(top = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Box(Modifier.size(6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
+            Text(
+                stringResource(R.string.current),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }

@@ -12,6 +12,7 @@ import coil3.request.crossfade
 import com.professorengineergit.caelum.core.HttpClient
 import com.professorengineergit.caelum.core.SourceRegistry
 import com.professorengineergit.caelum.core.USER_AGENT
+import com.professorengineergit.caelum.data.FeedCache
 import com.professorengineergit.caelum.data.SettingsRepository
 import com.professorengineergit.caelum.data.WallpaperSetter
 import com.professorengineergit.caelum.work.DailyWallpaper
@@ -21,6 +22,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import okhttp3.Dispatcher
 import okhttp3.Dns
 import okhttp3.OkHttpClient
 import java.net.Inet4Address
@@ -32,6 +34,8 @@ import java.net.UnknownHostException
 class AppContainer(context: Context) {
     val okHttp: OkHttpClient = HttpClient.defaultClient().newBuilder()
         .dns(PublicOnlyDns)
+        // Many thumbnails come from the same CDN at once; don't queue them five at a time.
+        .dispatcher(Dispatcher().apply { maxRequests = 48; maxRequestsPerHost = 16 })
         .addInterceptor { chain ->
             chain.proceed(chain.request().newBuilder().header("User-Agent", USER_AGENT).build())
         }
@@ -39,6 +43,7 @@ class AppContainer(context: Context) {
 
     val sources = SourceRegistry(HttpClient(okHttp))
     val settings = SettingsRepository(context)
+    val feedCache = FeedCache(context)
 
     val imageLoader: ImageLoader = ImageLoader.Builder(context)
         .components { add(OkHttpNetworkFetcherFactory(okHttp)) }
@@ -48,7 +53,7 @@ class AppContainer(context: Context) {
                 .maxSizeBytes(256L * 1024 * 1024)
                 .build()
         }
-        .crossfade(true)
+        .crossfade(160)
         .build()
 
     val wallpaper = WallpaperSetter(context, imageLoader)

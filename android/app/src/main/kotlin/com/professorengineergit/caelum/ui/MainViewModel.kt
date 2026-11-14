@@ -85,7 +85,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         // Every source's newest picture becomes its tile in the picker.
         viewModelScope.launch {
-            delay(300)
             container.sources.all.forEach { load(it.id) }
         }
         // Catch up on a night the system skipped, whenever the app is opened.
@@ -100,7 +99,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 .distinctUntilChanged()
                 .collectLatest { (image, scrolling) ->
                     if (image == null || image.isVideo) return@collectLatest
-                    delay(1200)
+                    // Wait until the user lingers, so thumbnails get the bandwidth first.
+                    delay(3500)
                     if (isUnmetered()) container.wallpaper.prepare(image, scrolling)
                 }
         }
@@ -138,19 +138,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refresh() = load(state.value.source.id, force = true)
 
+    /**
+     * Shows the cached list at once (if there is one), then replaces it with a fresh one.
+     * A failed refresh keeps what's on screen; only an empty screen shows the error.
+     */
     private fun load(sourceId: String, force: Boolean = false) {
         val current = local.value.feeds[sourceId]
         if (!force && current != null && current !is Feed.Failed) return
-        local.update { it.copy(feeds = it.feeds + (sourceId to Feed.Loading)) }
+        if (current !is Feed.Ready) local.update { it.copy(feeds = it.feeds + (sourceId to Feed.Loading)) }
         viewModelScope.launch {
-            val feed = try {
-                Feed.Ready(container.sources.byId(sourceId).fetchRecent(12))
+            if (current == null) {
+                container.feedCache.read(sourceId)?.let { cached ->
+                    local.update { s ->
+                        if (s.feeds[sourceId] is Feed.Ready) s else s.copy(feeds = s.feeds + (sourceId to Feed.Ready(cached)))
+                    }
+                }
+            }
+            val fresh = try {
+                container.sources.byId(sourceId).fetchRecent(12)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Feed.Failed(e.message)
+                local.update { s ->
+                    if (s.feeds[sourceId] is Feed.Ready) s else s.copy(feeds = s.feeds + (sourceId to Feed.Failed(e.message)))
+                }
+                return@launch
             }
-            local.update { it.copy(feeds = it.feeds + (sourceId to feed)) }
+            local.update { it.copy(feeds = it.feeds + (sourceId to Feed.Ready(fresh))) }
+            container.feedCache.write(sourceId, fresh)
         }
     }
 

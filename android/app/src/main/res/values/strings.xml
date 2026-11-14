@@ -71,6 +71,7 @@
 
 
     <!-- Preview -->
+    <string name="current">Current</string>
     <string name="preview">Preview</string>
     <string name="live_home">Home</string>
     <string name="live_lock">Lock</string>

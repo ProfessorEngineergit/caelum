@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +38,7 @@ import coil3.request.allowHardware
 import coil3.toBitmap
 import com.professorengineergit.caelum.core.CosmicImage
 import com.professorengineergit.caelum.ui.theme.CaelumTheme
+import com.professorengineergit.caelum.ui.theme.isCosmicAccent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -56,13 +58,23 @@ fun CaelumRoot(viewModel: MainViewModel, onShowSystemWallpaper: (Boolean) -> Uni
                 screen = Screen.HOME
             }
 
-            // While the warp reveals the new wallpaper, the app itself steps aside.
-            var hideContent by remember { mutableStateOf(false) }
-            val contentAlpha by animateFloatAsState(
-                targetValue = if (hideContent) 0f else 1f,
-                animationSpec = tween(if (hideContent) 380 else 320),
-                label = "content-alpha",
-            )
+            // Setting a wallpaper ends with a haptic; the picture on the home screen then
+            // wears its "current" outline. The app stays where it is.
+            val apply = state.apply
+            LaunchedEffect(apply?.status, apply?.startedAt) {
+                when (apply?.status) {
+                    ApplyStatus.DONE -> {
+                        haptics.land()
+                        viewModel.finishApply()
+                    }
+                    ApplyStatus.FAILED -> {
+                        haptics.error()
+                        viewModel.finishApply()
+                    }
+                    else -> Unit
+                }
+            }
+
             val openSettings = {
                 haptics.open()
                 screen = Screen.SETTINGS
@@ -87,9 +99,7 @@ fun CaelumRoot(viewModel: MainViewModel, onShowSystemWallpaper: (Boolean) -> Uni
                         }
                     },
                     label = "screen",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer { alpha = contentAlpha },
+                    modifier = Modifier.fillMaxSize(),
                 ) { current ->
                     when (current) {
                         Screen.HOME -> HomeScreen(
@@ -132,12 +142,6 @@ fun CaelumRoot(viewModel: MainViewModel, onShowSystemWallpaper: (Boolean) -> Uni
                     }
                 }
 
-                WarpOverlay(
-                    apply = state.apply,
-                    onShowSystemWallpaper = onShowSystemWallpaper,
-                    onHideContent = { hideContent = it },
-                    onFinished = viewModel::finishApply,
-                )
             }
         }
     }
@@ -156,7 +160,7 @@ private fun rememberSeedColor(image: CosmicImage?, fallback: Color): State<Color
             return@produceState
         }
         val request = ImageRequest.Builder(context)
-            .data(image.previewUrl)
+            .data(image.thumbnailUrl(small = true))
             .size(96)
             .allowHardware(false)
             .build()
@@ -165,6 +169,6 @@ private fun rememberSeedColor(image: CosmicImage?, fallback: Color): State<Color
         val swatch = withContext(Dispatchers.Default) {
             Palette.from(bitmap).generate().let { it.vibrantSwatch ?: it.lightVibrantSwatch ?: it.dominantSwatch }
         }
-        value = swatch?.let { Color(it.rgb) } ?: fallback
+        value = swatch?.let { Color(it.rgb) }?.takeIf(::isCosmicAccent) ?: fallback
     }
 }

@@ -69,6 +69,7 @@
 
 
     <!-- Vorschau -->
+    <string name="current">Aktuell</string>
     <string name="preview">Vorschau</string>
     <string name="live_home">Start</string>
     <string name="live_lock">Sperre</string>

@@ -165,10 +165,8 @@ fun PreviewScreen(
                 } else {
                     HorizontalPager(state = pager, modifier = Modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
                         val image = images[page]
-                        AsyncImage(
-                            model = image.previewUrl,
-                            contentDescription = image.title,
-                            contentScale = ContentScale.Crop,
+                        ProgressiveImage(
+                            image = image,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .pointerInput(image.id) {
@@ -260,10 +258,11 @@ fun PreviewScreen(
                         ) {
                             Box(Modifier.size(8.dp).clip(CircleShape).background(Color(state.source.accent)))
                             Text(state.source.name, color = Color.White, style = MaterialTheme.typography.labelLarge)
-                            if (images.isNotEmpty()) {
+                            val shownIsCurrent = images.getOrNull(pager.currentPage)?.id == state.settings.lastApplied?.id
+                            AnimatedVisibility(shownIsCurrent) {
                                 Text(
-                                    "${pager.currentPage + 1} / ${images.size}",
-                                    color = Color.White.copy(alpha = 0.7f),
+                                    "· " + stringResource(R.string.current),
+                                    color = Color.White.copy(alpha = 0.75f),
                                     style = MaterialTheme.typography.labelLarge,
                                 )
                             }
@@ -541,23 +540,11 @@ private fun MockLock(haze: HazeState) {
     }
 }
 
-/** One of your apps. It doesn't open — it wobbles, because this is only a preview. */
+/** One of your apps — just a picture of it: nothing on the mock screens can be tapped. */
 @Composable
 private fun AppIcon(app: HomeApp, showLabel: Boolean) {
-    val haptics = LocalHaptics.current
-    val scope = rememberCoroutineScope()
-    val wobble = remember { Animatable(0f) }
-    Column(
-        Modifier
-            .width(60.dp)
-            .graphicsLayer { rotationZ = wobble.value }
-            .clickable(interactionSource = null, indication = null) {
-                haptics.tick(0.8f)
-                scope.launch { for (a in listOf(-9f, 8f, -6f, 4f, -2f, 0f)) wobble.animateTo(a, tween(55)) }
-            },
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Image(app.icon, contentDescription = app.label, modifier = Modifier.size(50.dp))
+    Column(Modifier.width(60.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Image(app.icon, contentDescription = null, modifier = Modifier.size(50.dp))
         if (showLabel) {
             Text(
                 app.label,
